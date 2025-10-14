@@ -46,6 +46,8 @@ print('min angle:', mesh_min_angle(editor.points, editor.triangles))
 
 ## Gallery
 
+This gallery illustrates typical operations and drivers: improvements before/after (greedy, collapse, pocket fill), patch batching, and strict-mode guards.
+
 <table>
   <tr>
     <td align="center">
@@ -104,6 +106,25 @@ print('min angle:', mesh_min_angle(editor.points, editor.triangles))
     </td>
   </tr>
 </table>
+
+### Reproduce these figures
+
+You can generate similar snapshots using the bundled demos and scripts:
+
+- Patch batches: see `demos/patch_batches.py`
+- Edge collapse (before/after): see `demos/edge_collapse_demo.py`
+- Greedy improvement scenarios: see `demos/mesh_editor_demos.py` and `demos/refinement_scenario.py`
+- Pocket fill (before/after): see `utilities/patch_fill_check.py`
+- Patch partitioning: see `demos/partition_parallel.py`
+- Strict-mode checks and boundary visuals: see `scripts/generate_boundary_screenshots.py`
+
+Run them as standard Python scripts, for example:
+
+```bash
+python demos/patch_batches.py
+python demos/edge_collapse_demo.py
+python utilities/patch_fill_check.py
+```
 
 ## Tests
 
