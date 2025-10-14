@@ -44,6 +44,29 @@ from sofia.sofia.quality import mesh_min_angle
 print('min angle:', mesh_min_angle(editor.points, editor.triangles))
 ```
 
+## Gallery
+
+A few highlights from the operations and drivers:
+
+- Greedy improvement on skinny configuration:
+
+  before:
+  
+  <img src="docs/greedy_skinny_before.png" width="320" alt="greedy skinny before" />
+
+  after:
+
+  <img src="docs/greedy_skinny_after.png" width="320" alt="greedy skinny after" />
+
+- Patch batches identification:
+
+  <img src="docs/patch_batches.png" width="360" alt="patch batches" />
+
+- Strict mode checks (pre/post):
+
+  <img src="docs/strict_before.png" width="320" alt="strict before" />
+  <img src="docs/strict_after_split.png" width="320" alt="strict after split" />
+
 ## Tests
 
 ```bash
