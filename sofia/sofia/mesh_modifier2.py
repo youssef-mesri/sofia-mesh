@@ -68,6 +68,7 @@ class PatchBasedMeshEditor:
                  reject_boundary_loop_increase: bool = False,
                  reject_any_boundary_loops: bool = False,
                  reject_crossing_edges: bool = False,
+                 virtual_boundary_mode: bool = False,
                  enable_polygon_simplification: bool = True,
                  simplify_log_every: int = 50,
                  enforce_split_quality: bool = True):
@@ -127,6 +128,9 @@ class PatchBasedMeshEditor:
         self.simplify_log_every = max(1, int(simplify_log_every))
         # Policy: enforce non-worsening quality for split_edge (improvement) vs relax for refinement
         self.enforce_split_quality = bool(enforce_split_quality)
+        # Treat boundary as interior topologically (no flips over boundary edges).
+        # This does not modify triangles; it only changes certain operation guards/fallbacks.
+        self.virtual_boundary_mode = bool(virtual_boundary_mode)
         # Unified operation stats registry
         self._op_stats = defaultdict(OpStats)
         # Backwards compat alias (remove_node_stats was previously used in tests)

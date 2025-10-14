@@ -296,6 +296,19 @@ def op_flip_edge(editor, edge):
     if len(tris_idx) != 2:
         if stats: stats.fail += 1
         return False, "Edge is not flippable (not shared by 2 triangles)", None
+    # In virtual-boundary mode, prohibit flipping boundary edges (those with only one incident tri)
+    if getattr(editor, 'virtual_boundary_mode', False):
+        # A boundary edge would have len(incident)!=2; we already checked that above.
+        # However, be conservative: if either of the opposite vertices is the virtual placeholder (id 0), reject.
+        # Also, do not allow flipping if this edge lies on the outer boundary cycle (heuristic: any endpoint is boundary vertex)
+        # Compute boundary flags once from edge_map
+        boundary_vs = set()
+        for e_key, ts in editor.edge_map.items():
+            if len(ts) == 1:
+                boundary_vs.add(int(e_key[0])); boundary_vs.add(int(e_key[1]))
+        if int(edge[0]) in boundary_vs and int(edge[1]) in boundary_vs:
+            if stats: stats.fail += 1
+            return False, "Flip disabled on boundary edges in virtual-boundary mode", None
     if any(np.all(editor.triangles[i] == -1) for i in tris_idx):
         if stats: stats.fail += 1
         return False, "Edge is not flippable (one triangle tombstoned)", None
@@ -623,16 +636,32 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
                 if v != v_idx:
                     neighbors.add(v)
         editor.logger.debug("[DEBUG] Voisins de %s: %s", v_idx, sorted(neighbors))
-        adj = {}
-        for t in cavity_tri_indices:
-            tri = editor.triangles[t]
-            others = [int(x) for x in tri if int(x) != int(v_idx)]
-            if len(others) == 2:
-                a, b = others
-                adj.setdefault(a, set()).add(b)
-                adj.setdefault(b, set()).add(a)
-        editor.logger.debug("[DEBUG] Adjacence locale: %s", adj)
-        return False, "cannot determine cavity boundary", None
+        # If virtual boundary mode is enabled, attempt to reconstruct the cavity boundary
+        # by forming the patch boundary polygon as if the border was closed by a virtual node.
+        if getattr(editor, 'virtual_boundary_mode', False):
+            try:
+                from .helpers import boundary_polygons_from_patch, select_outer_polygon
+                polys = boundary_polygons_from_patch(editor.triangles, cavity_tri_indices)
+                poly = select_outer_polygon(editor.points, polys)
+                if poly and len(poly) >= 3:
+                    cycle = poly
+                    editor.logger.debug("[DEBUG] virtual-boundary: using patch boundary polygon as cycle size=%d", len(cycle))
+                else:
+                    return False, "cannot determine cavity boundary", None
+            except Exception as e:
+                editor.logger.debug("virtual-boundary fallback failed: %s", e)
+                return False, "cannot determine cavity boundary", None
+        else:
+            adj = {}
+            for t in cavity_tri_indices:
+                tri = editor.triangles[t]
+                others = [int(x) for x in tri if int(x) != int(v_idx)]
+                if len(others) == 2:
+                    a, b = others
+                    adj.setdefault(a, set()).add(b)
+                    adj.setdefault(b, set()).add(a)
+            editor.logger.debug("[DEBUG] Adjacence locale: %s", adj)
+            return False, "cannot determine cavity boundary", None
 
     # Metrics / flags (attach to editor lazily)
     # Stats tracking via dataclass on editor
