@@ -137,7 +137,7 @@ python utilities/patch_fill_check.py
 
 ## Contributing
 
-Contributions are welcome! See `CONTRIBUTING.md` for full guidelines. In short:
+Contributions are welcome! See `CONTRIBUTING.md` for full guidelines. Please also review our `CODE_OF_CONDUCT.md`.
 
 - Open an issue to discuss substantial changes before a PR.
 - Use feature branches (e.g., `feat/…`, `fix/…`) and small, focused commits.
