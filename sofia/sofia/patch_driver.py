@@ -77,9 +77,15 @@ def pick_operation_for_patch(editor, patch, rng: random.Random):
     vert_set = set(patch.get('verts', []))
 
     interior_edges = [e for e, tset in editor.edge_map.items() if set(tset).issubset(tri_set)]
-    interior_edges = [e for e in interior_edges if len(editor.edge_map.get(e, [])) >= 1]
-    interior_vs = [v for v in vert_set if not is_boundary_vertex_from_maps(int(v), editor.edge_map)]
-    interior_vs = [v for v in interior_vs if len(editor.v_map.get(v, [])) >= 3]
+    # Only consider edges with exactly two adjacent triangles for edge ops (prevent boundary edges)
+    candidate_edges = [e for e in interior_edges if len(editor.edge_map.get(e, [])) == 2]
+    # Vertex candidates: interior-only by default; if virtual-boundary mode, allow boundary vertices as well
+    if getattr(editor, 'virtual_boundary_mode', False):
+        # permit removing boundary vertices with degree >= 2
+        candidate_vs = [v for v in vert_set if len(editor.v_map.get(int(v), [])) >= 2]
+    else:
+        interior_vs = [v for v in vert_set if not is_boundary_vertex_from_maps(int(v), editor.edge_map)]
+        candidate_vs = [v for v in interior_vs if len(editor.v_map.get(int(v), [])) >= 3]
 
     if tri_set and rng.random() < 0.6:
         tri_idx = rng.choice(list(tri_set))
@@ -89,11 +95,11 @@ def pick_operation_for_patch(editor, patch, rng: random.Random):
             centroid = pts.mean(axis=0)
             return 'add', (tri_idx, centroid)
 
-    if interior_vs and rng.random() < 0.5:
-        return 'remove', int(rng.choice(interior_vs))
+    if candidate_vs and rng.random() < 0.5:
+        return 'remove', int(rng.choice(candidate_vs))
 
-    if interior_edges:
-        e = rng.choice(interior_edges)
+    if candidate_edges:
+        e = rng.choice(candidate_edges)
         r = rng.random()
         if r < 0.5:
             return 'flip', e
