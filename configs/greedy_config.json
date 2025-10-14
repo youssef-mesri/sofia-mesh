@@ -1,0 +1,12 @@
+{
+  "type": "greedy",
+  "config": {
+    "max_vertex_passes": 2,
+    "max_edge_passes": 1,
+    "strict": true,
+    "reject_crossings": false,
+    "reject_new_loops": false,
+    "force_pocket_fill": false,
+    "verbose": false
+  }
+}

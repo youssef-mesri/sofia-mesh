@@ -1,0 +1,45 @@
+ [build-system]
+ requires = ["setuptools>=67", "wheel"]
+ build-backend = "setuptools.build_meta"
+
+ [project]
+ name = "sofia-mesh"
+ version = "0.1.0"
+ description = "2D triangle mesh remeshing toolkit (greedy + patch drivers, pocket fill, visualization)."
+ readme = "README.md"
+ license = { file = "LICENSE" }
+ authors = [{ name = "Youssef Mesri", email = "youssef.mesri@minesparis.psl.eu" }]
+ requires-python = ">=3.8"
+ dependencies = [
+   "numpy",
+   "matplotlib",
+   "scipy",
+   "imageio",
+ ]
+ classifiers = [
+   "Programming Language :: Python :: 3",
+   "License :: OSI Approved :: MIT License",
+   "Intended Audience :: Science/Research",
+   "Topic :: Scientific/Engineering :: Visualization",
+ ]
+
+ [project.optional-dependencies]
+ dev = [
+   "pytest",
+   "flake8",
+   "mypy; python_version >= '3.10'",
+ ]
+
+ [project.urls]
+ Homepage = "https://github.com/youssef-mesri/sofia"
+ Issues = "https://github.com/youssef-mesri/sofia/issues"
+
+ [project.scripts]
+ sofia-remesh = "sofia.sofia.remesh_driver:main"
+
+ [tool.setuptools]
+ include-package-data = true
+
+ [tool.setuptools.packages.find]
+ where = ["."]
+ include = ["sofia", "sofia.*", "demos", "demos.*"]

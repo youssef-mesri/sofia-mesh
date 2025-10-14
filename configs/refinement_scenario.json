@@ -1,0 +1,20 @@
+{
+  "mesh": { "type": "random_delaunay", "npts": 60, "seed": 7 },
+  "auto": {
+    "order": "tri_first",
+    "refine_large_tris": true,
+    "split_long_edges": true,
+    "collapse_shortest_edges": true,
+    "collapse_k": 10,
+  "collapse_order": "before",
+    "target_h_factor": null,
+    "max_h_iters": 10,
+    "max_h_splits_per_iter": null,
+    "h_tolerance": 1e-6,
+    "max_tri_ops": null,
+    "max_edge_ops": null,
+    "move_to_barycenter": true,
+    "barycenter_passes": 1
+  },
+  "plot": { "out_before": "refine_before.png", "out_after": "refine_after.png" }
+}

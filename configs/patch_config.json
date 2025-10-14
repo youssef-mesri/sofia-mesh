@@ -1,0 +1,21 @@
+{
+  "type": "patch",
+  "config": {
+    "threshold": 25.0,
+    "max_iterations": 10,
+    "patch_radius": 1,
+    "top_k": 40,
+    "disjoint_on": "tri",
+    "allow_overlap": false,
+    "batch_attempts": 2,
+    "min_triangle_area": 1e-12,
+    "reject_min_angle_deg": null,
+    "reject_new_loops": true,
+    "reject_crossings": true,
+    "auto_fill_pockets": false,
+    "angle_unit": "deg",
+    "plot_every": 1000000000,
+    "use_greedy_remesh": false,
+    "gif_capture": false
+  }
+}

@@ -1,0 +1,5 @@
+numpy>=1.20
+scipy>=1.7
+matplotlib>=3.3
+imageio>=2.9; extra == 'optional'
+pytest>=7.0

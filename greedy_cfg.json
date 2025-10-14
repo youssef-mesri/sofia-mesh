@@ -1,0 +1,17 @@
+{
+  "type": "greedy",
+  "config": {
+    "max_vertex_passes": 4,
+    "max_edge_passes": 2,
+    "strict": true,
+    "reject_crossings": true,
+    "reject_new_loops": true,
+    "force_pocket_fill": false,
+    "verbose": true,
+    "gif_capture": false,
+    "gif_dir": "greedy_frames",
+    "gif_out": "greedy_run.gif",
+    "gif_fps": 4,
+    "allow_flips": true
+  }
+}

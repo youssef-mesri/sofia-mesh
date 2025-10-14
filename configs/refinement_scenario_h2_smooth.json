@@ -1,0 +1,40 @@
+{
+  "mesh": {
+    "type": "random_delaunay",
+    "npts": 60,
+    "seed": 7
+  },
+  "auto": {
+    "order": "tri_first",
+    "refine_large_tris": false,
+    "split_long_edges": false,
+    "collapse_shortest_edges": false,
+    "collapse_k": 10,
+    "collapse_order": "before",
+    "target_h_factor": 0.5,
+    "h_metric": "avg_equilateral_h",
+    "max_h_iters": 20,
+    "max_h_splits_per_iter": 100,
+    "h_tolerance": 1e-06,
+    "h_split_strategy": "scan",
+    "h_batch_order": "longest",
+    "h_batch_limit": 400,
+    "h_dynamic_threshold": true,
+    "h_spread_splits": true,
+    "h_spread_global": true,
+    "h_spread_history_iters": 4,
+    "h_randomize_candidates": true,
+    "h_min_split_separation": 0.3,
+    "pre_smooth_passes": 1,
+    "round_smooth_passes": 1,
+    "retry_local_smooth_on_fail": 1,
+    "max_tri_ops": null,
+    "max_edge_ops": null,
+    "move_to_barycenter": true,
+    "barycenter_passes": 1
+  },
+  "plot": {
+    "out_before": "refine_before.png",
+    "out_after": "refine_after.png"
+  }
+}
