@@ -8,6 +8,8 @@
 - [Quick start](#quick-start)
 - [Gallery](#gallery)
 - [Reproduce](#reproduce)
+ - [Contributing](#contributing)
+ - [License](#license)
 
 Sofia is a fast, patch-based mesh editing and remeshing toolkit for 2D triangular meshes. It focuses on high-quality local operations (split, collapse, flip, fill pockets) with robust conformity checks and optional strict-mode simulations.
 
@@ -132,6 +134,27 @@ python demos/patch_batches.py
 python demos/edge_collapse_demo.py
 python utilities/patch_fill_check.py
 ```
+
+## Contributing
+
+Contributions are welcome! Please:
+
+- Open an issue to discuss substantial changes before a PR.
+- Use feature branches (e.g., `feat/…`, `fix/…`) and small, focused commits.
+- Follow basic style: PEP 8, informative names, and docstrings for public APIs.
+- Prefer type hints on new/edited public functions; run mypy if available (Python ≥ 3.10).
+- Keep tests green and add tests for new behavior:
+  - Run locally: `pytest -q`
+  - Style/lint (optional but recommended): `flake8`
+
+PR checklist (quick):
+- [ ] Unit tests updated/added and passing
+- [ ] No regression in CI (see the “CI” badge)
+- [ ] Docs/README examples updated if behavior changes
+
+## License
+
+This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 ## Tests
 
