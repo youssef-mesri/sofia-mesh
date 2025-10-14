@@ -95,6 +95,10 @@ Thumbs.db
 *.pdf
 *.log
 
+# Allow documentation images to be tracked
+!docs/**/*.png
+!docs/*.png
+
 # Pytest run artifacts in repo root
 pytest-of-*/
 # Byte-compiled / cache
