@@ -15,6 +15,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: |
+            pyproject.toml
+            setup.cfg
+            setup.py
+            requirements.txt
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip

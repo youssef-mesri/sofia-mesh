@@ -1,5 +1,7 @@
 # Sofia: Patch-based 2D Mesh Editor and Remesher
 
+[![CI](https://github.com/youssef-mesri/sofia/actions/workflows/ci.yml/badge.svg)](https://github.com/youssef-mesri/sofia/actions/workflows/ci.yml)
+
 Sofia is a fast, patch-based mesh editing and remeshing toolkit for 2D triangular meshes. It focuses on high-quality local operations (split, collapse, flip, fill pockets) with robust conformity checks and optional strict-mode simulations.
 
 ## Features
