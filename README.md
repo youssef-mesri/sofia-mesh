@@ -2,6 +2,13 @@
 
 [![CI](https://github.com/youssef-mesri/sofia/actions/workflows/ci.yml/badge.svg)](https://github.com/youssef-mesri/sofia/actions/workflows/ci.yml)
 
+## Table of contents
+
+- [Install](#install)
+- [Quick start](#quick-start)
+- [Gallery](#gallery)
+- [Reproduce](#reproduce)
+
 Sofia is a fast, patch-based mesh editing and remeshing toolkit for 2D triangular meshes. It focuses on high-quality local operations (split, collapse, flip, fill pockets) with robust conformity checks and optional strict-mode simulations.
 
 ## Features
@@ -107,7 +114,7 @@ This gallery illustrates typical operations and drivers: improvements before/aft
   </tr>
 </table>
 
-### Reproduce these figures
+## Reproduce
 
 You can generate similar snapshots using the bundled demos and scripts:
 
