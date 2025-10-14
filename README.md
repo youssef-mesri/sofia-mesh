@@ -46,26 +46,64 @@ print('min angle:', mesh_min_angle(editor.points, editor.triangles))
 
 ## Gallery
 
-A few highlights from the operations and drivers:
-
-- Greedy improvement on skinny configuration:
-
-  before:
-  
-  <img src="docs/greedy_skinny_before.png" width="320" alt="greedy skinny before" />
-
-  after:
-
-  <img src="docs/greedy_skinny_after.png" width="320" alt="greedy skinny after" />
-
-- Patch batches identification:
-
-  <img src="docs/patch_batches.png" width="360" alt="patch batches" />
-
-- Strict mode checks (pre/post):
-
-  <img src="docs/strict_before.png" width="320" alt="strict before" />
-  <img src="docs/strict_after_split.png" width="320" alt="strict after split" />
+<table>
+  <tr>
+    <td align="center">
+      <img src="docs/greedy_skinny_before.png" width="260" alt="greedy skinny before" />
+      <br/><sub>Greedy skinny (before)</sub>
+    </td>
+    <td align="center">
+      <img src="docs/greedy_skinny_after.png" width="260" alt="greedy skinny after" />
+      <br/><sub>Greedy skinny (after)</sub>
+    </td>
+    <td align="center">
+      <img src="docs/patch_batches.png" width="260" alt="patch batches" />
+      <br/><sub>Patch batches</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/strict_before.png" width="260" alt="strict before" />
+      <br/><sub>Strict mode (before)</sub>
+    </td>
+    <td align="center">
+      <img src="docs/strict_after_split.png" width="260" alt="strict after split" />
+      <br/><sub>Strict mode (after)</sub>
+    </td>
+    <td align="center">
+      <img src="docs/partition_before.png" width="260" alt="partition before" />
+      <br/><sub>Patch partition (before)</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/partition_after.png" width="260" alt="partition after" />
+      <br/><sub>Patch partition (after)</sub>
+    </td>
+    <td align="center">
+      <img src="docs/collapse_before.png" width="260" alt="collapse before" />
+      <br/><sub>Edge collapse (before)</sub>
+    </td>
+    <td align="center">
+      <img src="docs/collapse_after.png" width="260" alt="collapse after" />
+      <br/><sub>Edge collapse (after)</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/pocket_fill_before.png" width="260" alt="pocket fill before" />
+      <br/><sub>Pocket fill (before)</sub>
+    </td>
+    <td align="center">
+      <img src="docs/pocket_fill_after.png" width="260" alt="pocket fill after" />
+      <br/><sub>Pocket fill (after)</sub>
+    </td>
+    <td align="center">
+      <img src="docs/split_edge_test.png" width="260" alt="split edge test" />
+      <br/><sub>Split edge (test)</sub>
+    </td>
+  </tr>
+</table>
 
 ## Tests
 
