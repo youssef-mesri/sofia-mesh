@@ -94,6 +94,9 @@ Thumbs.db
 *.svg
 *.pdf
 *.log
+
+# Pytest run artifacts in repo root
+pytest-of-*/
 # Byte-compiled / cache
 __pycache__/
 *.py[cod]
