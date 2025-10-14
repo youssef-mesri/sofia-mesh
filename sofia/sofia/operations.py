@@ -214,21 +214,30 @@ def op_split_edge(editor, edge=None):
         return False, "Specify edge", None
     edge = tuple(sorted(edge))
     tris_idx = list(editor.edge_map.get(edge, []))
-    if len(tris_idx) != 2:
-        if stats: stats.fail += 1
-        return False, "Edge is not splittable (not shared by 2 triangles)", None
-    t1, t2 = [editor.triangles[i] for i in tris_idx]
-    opp1 = [v for v in t1 if v not in edge][0]
-    opp2 = [v for v in t2 if v not in edge][0]
     mid = 0.5*(editor.points[edge[0]] + editor.points[edge[1]])
     new_points_candidate = np.vstack([editor.points, mid])
     new_idx = len(editor.points)
-    new_tris = [
-        [edge[0], new_idx, opp1],
-        [edge[1], new_idx, opp1],
-        [edge[0], new_idx, opp2],
-        [edge[1], new_idx, opp2]
-    ]
+    if len(tris_idx) == 2:
+        t1, t2 = [editor.triangles[i] for i in tris_idx]
+        opp1 = [v for v in t1 if v not in edge][0]
+        opp2 = [v for v in t2 if v not in edge][0]
+        new_tris = [
+            [edge[0], new_idx, opp1],
+            [edge[1], new_idx, opp1],
+            [edge[0], new_idx, opp2],
+            [edge[1], new_idx, opp2]
+        ]
+    elif len(tris_idx) == 1:
+        # Boundary edge: split single adjacent triangle into two
+        t = editor.triangles[tris_idx[0]]
+        opp = [v for v in t if v not in edge][0]
+        new_tris = [
+            [edge[0], new_idx, opp],
+            [edge[1], new_idx, opp]
+        ]
+    else:
+        if stats: stats.fail += 1
+        return False, "Edge is not splittable (no incident triangles)", None
     try:
         tmp_tri_full = [tuple(t) for i,t in enumerate(editor.triangles) if i not in tris_idx and not np.all(np.array(t) == -1)]
         tmp_tri_full.extend(new_tris)
