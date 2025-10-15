@@ -1,17 +1,10 @@
-"""Unified configuration objects for Sofia remeshing drivers.
-
-This module centralizes tunable parameters that were previously scattered
-across global variables (in `remesh_driver`) and the `PatchDriverConfig`
-dataclass inside `patch_driver`. A single `RemeshConfig` can be passed
-to greedy or patch drivers; a light adapter exposes the legacy
-`PatchDriverConfig` shape for backwards compatibility.
-"""
+"""Configuration objects for Sofia remeshing, including boundary removal prefs."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Optional, Any, Dict
 
-from .constants import EPS_AREA
+from .constants import EPS_AREA, EPS_TINY
 
 @dataclass
 class GreedyConfig:
@@ -99,6 +92,25 @@ class RemeshConfig:
 # Backwards compatibility alias (external tests may still import PatchDriverConfig)
 PatchDriverConfig = PatchConfig
 
+# --- Boundary removal preferences ---
+
+@dataclass
+class BoundaryRemoveConfig:
+    """Preferences for boundary node removal triangulation.
+
+    - prefer_area_preserving_star: try area-preserving star candidates.
+    - prefer_worst_angle_star: try worst-min-angle star candidates.
+    - require_area_preservation: if True, reject any candidate that fails area test.
+    - area_tol_rel: relative tolerance for area equality.
+    - area_tol_abs_factor: absolute tolerance factor multiplied by EPS_AREA.
+    """
+    prefer_area_preserving_star: bool = True
+    prefer_worst_angle_star: bool = True
+    require_area_preservation: bool = True
+    area_tol_rel: float = EPS_TINY
+    area_tol_abs_factor: float = 4.0
+
 __all__ = [
-    'GreedyConfig','PatchConfig','RemeshConfig','PatchDriverConfig'
+    'GreedyConfig', 'PatchConfig', 'RemeshConfig', 'PatchDriverConfig',
+    'BoundaryRemoveConfig'
 ]

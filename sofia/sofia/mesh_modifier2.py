@@ -71,7 +71,9 @@ class PatchBasedMeshEditor:
                  virtual_boundary_mode: bool = False,
                  enable_polygon_simplification: bool = True,
                  simplify_log_every: int = 50,
-                 enforce_split_quality: bool = True):
+                 enforce_split_quality: bool = True,
+                 enforce_remove_quality: bool = True,
+                 boundary_remove_config=None):
         """Primary mesh editor.
 
         Parameters
@@ -128,6 +130,14 @@ class PatchBasedMeshEditor:
         self.simplify_log_every = max(1, int(simplify_log_every))
         # Policy: enforce non-worsening quality for split_edge (improvement) vs relax for refinement
         self.enforce_split_quality = bool(enforce_split_quality)
+        # Policy: enforce non-worsening quality for remove_node_with_patch; can be relaxed to allow removal even if quality worsens
+        self.enforce_remove_quality = bool(enforce_remove_quality)
+        # Boundary removal strategy preferences
+        try:
+            from .config import BoundaryRemoveConfig
+            self.boundary_remove_config = boundary_remove_config or BoundaryRemoveConfig()
+        except Exception:
+            self.boundary_remove_config = None
         # Treat boundary as interior topologically (no flips over boundary edges).
         # This does not modify triangles; it only changes certain operation guards/fallbacks.
         self.virtual_boundary_mode = bool(virtual_boundary_mode)
@@ -253,28 +263,60 @@ class PatchBasedMeshEditor:
         """
         Reconstruit la numérotation des triangles (0...N-1) et les maps d'adjacence.
         À appeler après toutes les modifications locales pour garantir la cohérence.
+
+        Side-effects:
+        - Stores fast, vectorizable mappings for vertices:
+          * `last_compaction_old_to_new` -> np.ndarray (N_old,), int32, -1 for removed, else new index.
+          * `last_compaction_new_to_old` -> np.ndarray (N_new,), int32, mapping new index -> old index.
+
+        Returns
+        -------
+        np.ndarray
+            The old-to-new index mapping array (shape (N_old,), int32), with -1 for removed vertices.
         """
         # Ensure arrays
-        self.triangles = np.ascontiguousarray(np.asarray(self.triangles, dtype=np.int32))
-        self.points = np.ascontiguousarray(np.asarray(self.points, dtype=np.float64))
+        tris = np.ascontiguousarray(np.asarray(self.triangles, dtype=np.int32))
+        pts = np.ascontiguousarray(np.asarray(self.points, dtype=np.float64))
+
         # 1) keep only active triangles
-        mask = ~np.all(self.triangles == -1, axis=1)
-        active_tris = self.triangles[mask]
-        old_ntri = len(self.triangles)
-        kept_ntri = len(active_tris)
-        # 2) determine used vertex indices
-        used_vertices = sorted(set(int(v) for tri in active_tris for v in tri))
-        old_to_new = {old: new for new, old in enumerate(used_vertices)}
-        # 3) build new points array containing only used vertices (preserve order by used_vertices)
-        new_points = np.vstack([self.points[old] for old in used_vertices]) if used_vertices else np.empty((0,2), dtype=np.float64)
-        # 4) remap triangles to new vertex indices
-        remapped_tris = np.array([[old_to_new[int(v)] for v in tri] for tri in active_tris], dtype=np.int32) if kept_ntri else np.empty((0,3), dtype=np.int32)
+        mask = ~np.all(tris == -1, axis=1)
+        active_tris = tris[mask]
+        old_ntri = tris.shape[0]
+        kept_ntri = active_tris.shape[0]
+
+        # 2) determine used vertex indices and build vectorized mappings
+        n_old = pts.shape[0]
+        if kept_ntri == 0:
+            used_vertices = []
+            old_to_new_arr = np.full(n_old, -1, dtype=np.int32)
+            new_to_old_arr = np.empty((0,), dtype=np.int32)
+            new_points = np.empty((0, 2), dtype=np.float64)
+            remapped_tris = np.empty((0, 3), dtype=np.int32)
+        else:
+            used_vertices = sorted({int(v) for tri in active_tris for v in tri})
+            old_to_new_arr = np.full(n_old, -1, dtype=np.int32)
+            for new_idx, old in enumerate(used_vertices):
+                old_to_new_arr[int(old)] = int(new_idx)
+            new_to_old_arr = np.asarray(used_vertices, dtype=np.int32)
+            # 3) build new points array containing only used vertices (order corresponds to new indices)
+            new_points = pts[new_to_old_arr]
+            # 4) remap triangles to new vertex indices (vectorized)
+            remapped_tris = old_to_new_arr[active_tris]
+
         # Commit
-        self.points = np.ascontiguousarray(np.asarray(new_points, dtype=np.float64))
-        self.triangles = np.ascontiguousarray(np.asarray(remapped_tris, dtype=np.int32))
+        self.points = np.ascontiguousarray(new_points)
+        self.triangles = np.ascontiguousarray(remapped_tris)
+        # Expose mapping info for downstream validation/tests (robust vs FP coordinate checks)
+        self.last_compaction_old_to_new = old_to_new_arr
+        self.last_compaction_new_to_old = new_to_old_arr if kept_ntri != 0 else np.empty((0,), dtype=np.int32)
+
         # 5) rebuild maps
         self._update_maps(force=True)
-        self.logger.info("[INFO] Triangles and vertices compacted: triangles %d->%d, vertices %d->%d", old_ntri, kept_ntri, len(old_to_new), len(self.points))
+        # Log summary with valid counts
+        self.logger.info(
+            "[INFO] Triangles and vertices compacted: triangles %d->%d, vertices %d->%d",
+            old_ntri, kept_ntri, n_old, self.points.shape[0])
+        return self.last_compaction_old_to_new
 
     def _simulate_compaction_and_check(self, cand_points, cand_tris, eps_area=EPS_AREA):
         from .conformity import simulate_compaction_and_check
@@ -573,6 +615,42 @@ class PatchBasedMeshEditor:
         t0 = time.perf_counter()
         try:
             self._assert_canonical()
+            # Early default area-preservation guard for boundary removals
+            try:
+                if bool(getattr(self, 'virtual_boundary_mode', False)):
+                    cfg = getattr(self, 'boundary_remove_config', None)
+                    require_area = bool(getattr(cfg, 'require_area_preservation', False)) if cfg is not None else False
+                    if require_area:
+                        # Compute cavity (incident triangles) area
+                        tri_idx = sorted(set(self.v_map.get(int(v_idx), [])))
+                        if tri_idx:
+                            from .geometry import triangle_area as _tarea
+                            removed_area = 0.0
+                            for ti in tri_idx:
+                                t = self.triangles[int(ti)]
+                                a,b,c = int(t[0]), int(t[1]), int(t[2])
+                                p0,p1,p2 = self.points[a], self.points[b], self.points[c]
+                                removed_area += abs(_tarea(p0,p1,p2))
+                            # Build sanitized boundary polygon and compare areas
+                            from .helpers import boundary_polygons_from_patch, select_outer_polygon
+                            from .triangulation import polygon_signed_area as _poly_area
+                            polys = boundary_polygons_from_patch(self.triangles, tri_idx)
+                            cyc = select_outer_polygon(self.points, polys)
+                            if cyc:
+                                filtered = [int(v) for v in cyc if int(v) != int(v_idx)]
+                                if len(filtered) >= 2 and filtered[0] == filtered[-1]:
+                                    filtered = filtered[:-1]
+                                if len(filtered) >= 3:
+                                    poly_area = abs(_poly_area([self.points[int(v)] for v in filtered]))
+                                    from .constants import EPS_TINY, EPS_AREA
+                                    tol_rel = float(getattr(cfg, 'area_tol_rel', EPS_TINY)) if cfg is not None else EPS_TINY
+                                    tol_abs = float(getattr(cfg, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
+                                    if abs(poly_area - removed_area) > max(tol_abs, tol_rel*max(1.0, removed_area)):
+                                        return False, (
+                                            f"polygon fill would change cavity area: poly={poly_area:.6e} cavity={removed_area:.6e}"
+                                        ), None
+            except Exception:
+                pass
             return op_remove_node_with_patch(self, v_idx, force_strict=force_strict)
         finally:
             self._record_time('remove_node', time.perf_counter() - t0)

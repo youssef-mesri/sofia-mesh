@@ -25,6 +25,10 @@ def compact_copy(editor):
 
     Tombstoned triangles (all -1) are removed and vertex indices remapped so the
     returned arrays are dense and suitable for conformity / inversion checks or plotting.
+
+    mapping is returned as a numpy ndarray of shape (N_old,) with dtype int32:
+      - mapping[old] = new compacted vertex index
+      - mapping[old] = -1 for vertices not present in the compacted mesh
     """
     tris = np.ascontiguousarray(np.asarray(editor.triangles, dtype=np.int32))
     pts = np.ascontiguousarray(np.asarray(editor.points, dtype=np.float64))
@@ -32,21 +36,21 @@ def compact_copy(editor):
     active_tris = tris[active_mask]
     active_idx = np.nonzero(active_mask)[0].tolist()
     if active_tris.size == 0:
-        return pts, np.empty((0, 3), dtype=np.int32), {}, []
+        return pts, np.empty((0, 3), dtype=np.int32), np.empty((0,), dtype=np.int32), []
     used_verts = sorted(set(active_tris.flatten().tolist()))
     used_verts = [v for v in used_verts if v >= 0]
-    mapping = {old: new for new, old in enumerate(used_verts)}
+    # vectorized old->new array mapping
+    n_old = int(pts.shape[0])
+    old_to_new = np.full(n_old, -1, dtype=np.int32)
+    for new_i, old_i in enumerate(used_verts):
+        old_to_new[int(old_i)] = int(new_i)
     new_points = pts[used_verts]
-    new_tris = []
-    for t in active_tris:
-        if np.any(t < 0):
-            continue
-        try:
-            new_tris.append([mapping[int(t[0])], mapping[int(t[1])], mapping[int(t[2])]])
-        except KeyError:
-            continue
-    new_tris = np.ascontiguousarray(np.array(new_tris, dtype=np.int32)) if new_tris else np.empty((0, 3), dtype=np.int32)
-    return new_points, new_tris, mapping, active_idx
+    # vectorized remap of triangles using array indexing
+    remapped = old_to_new[active_tris]
+    # filter out any rows with -1 (shouldn't occur for active_tris, but keep safe)
+    row_ok = ~np.any(remapped < 0, axis=1)
+    new_tris = np.ascontiguousarray(remapped[row_ok]) if remapped.size else np.empty((0, 3), dtype=np.int32)
+    return new_points, new_tris, old_to_new, active_idx
 
 
 def _vectorized_boundary_edges(tris: np.ndarray) -> np.ndarray:
@@ -134,28 +138,28 @@ def count_boundary_loops(points, tris) -> int:
 
 
 def compact_from_arrays(points_arr, tris_arr):
-    """Compaction helper for raw arrays: return (new_points, new_tris, mapping, active_idx)."""
+    """Compaction helper for raw arrays: return (new_points, new_tris, mapping, active_idx).
+
+    mapping is an ndarray old->new (int32), -1 for removed.
+    """
     pts = np.ascontiguousarray(np.asarray(points_arr, dtype=np.float64))
     tris = np.ascontiguousarray(np.asarray(tris_arr, dtype=np.int32))
     if tris.size == 0:
-        return pts, np.empty((0, 3), dtype=np.int32), {}, []
+        return pts, np.empty((0, 3), dtype=np.int32), np.empty((0,), dtype=np.int32), []
     active_mask = ~np.all(tris == -1, axis=1)
     active_tris = tris[active_mask]
     active_idx = np.nonzero(active_mask)[0].tolist()
     used_verts = sorted(set(active_tris.flatten().tolist()))
     used_verts = [v for v in used_verts if v >= 0]
-    mapping = {old: new for new, old in enumerate(used_verts)}
+    n_old = int(pts.shape[0])
+    old_to_new = np.full(n_old, -1, dtype=np.int32)
+    for new_i, old_i in enumerate(used_verts):
+        old_to_new[int(old_i)] = int(new_i)
     new_points = pts[used_verts]
-    new_tris = []
-    for t in active_tris:
-        if np.any(t < 0):
-            continue
-        try:
-            new_tris.append([mapping[int(t[0])], mapping[int(t[1])], mapping[int(t[2])]])
-        except Exception:
-            continue
-    new_tris = np.ascontiguousarray(np.array(new_tris, dtype=np.int32)) if new_tris else np.empty((0, 3), dtype=np.int32)
-    return new_points, new_tris, mapping, active_idx
+    remapped = old_to_new[active_tris]
+    row_ok = ~np.any(remapped < 0, axis=1)
+    new_tris = np.ascontiguousarray(remapped[row_ok]) if remapped.size else np.empty((0, 3), dtype=np.int32)
+    return new_points, new_tris, old_to_new, active_idx
 
 
 def find_inverted_triangles(points, tris, eps=EPS_AREA):
@@ -245,7 +249,7 @@ def detect_and_dump_pockets(editor, op_desc=None, dump: bool = None):
         return pockets, mapping_c
     except Exception as e:
         logger.debug('detect_and_dump_pockets failed: %s', e)
-    return [], {}
+    return [], (np.empty((0,), dtype=np.int32))
 
 
 __all__ = [

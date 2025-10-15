@@ -581,8 +581,26 @@ def greedy_remesh(editor, max_vertex_passes=1, max_edge_passes=1, verbose=False,
                 # For now we only aggressively auto-fill quads (len==4) unless force_pocket_fill is set; in force mode allow any size
                 if (len(verts_local) != 4) and not force_pocket_fill:
                     continue
-                inv_map = {v_new: v_old for v_old, v_new in mapping.items()}
-                verts_global = [inv_map.get(int(v)) for v in verts_local]
+                # mapping may be a dict (old->new) or a numpy array old->new (-1 for removed)
+                try:
+                    import numpy as _np
+                except Exception:
+                    _np = None
+                if _np is not None and isinstance(mapping, _np.ndarray):
+                    old_to_new = mapping
+                    if old_to_new.size == 0 or not _np.any(old_to_new >= 0):
+                        verts_global = []
+                    else:
+                        n_new = int(_np.max(old_to_new)) + 1
+                        new_to_old = _np.full((n_new,), -1, dtype=_np.int32)
+                        mask = old_to_new >= 0
+                        old_idx = _np.nonzero(mask)[0]
+                        new_idx = old_to_new[mask]
+                        new_to_old[new_idx] = old_idx
+                        verts_global = [int(new_to_old[int(v)]) if (0 <= int(v) < n_new) else None for v in verts_local]
+                else:
+                    inv_map = {v_new: v_old for v_old, v_new in mapping.items()} if isinstance(mapping, dict) else {}
+                    verts_global = [inv_map.get(int(v)) for v in verts_local]
                 if any(vg is None for vg in verts_global):
                     continue
                 try:

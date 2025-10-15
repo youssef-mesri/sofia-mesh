@@ -627,7 +627,7 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
     Returns (success, message, info_dict).
     """
     import numpy as np  # local to limit namespace pollution
-    from .triangulation import optimal_star_triangulation, retriangulate_patch_strict, simplify_polygon_cycle  # extracted utilities
+    from .triangulation import optimal_star_triangulation, best_star_triangulation_by_min_angle, ear_clip_triangulation, retriangulate_patch_strict, simplify_polygon_cycle  # extracted utilities
 
     cavity_tri_indices = sorted(set(editor.v_map.get(int(v_idx), [])))
     editor.logger.debug("[DEBUG] Triangles incidents à %s: %s", v_idx, cavity_tri_indices)
@@ -638,6 +638,11 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
 
     cycle = boundary_cycle_from_incident_tris(editor.triangles, cavity_tri_indices, v_idx)
     editor.logger.debug("[DEBUG] Cycle reconstruit autour de %s: %s", v_idx, cycle)
+
+    # Metrics / flags (attach to editor lazily) - define before any early returns/branches use it
+    stats_fn = getattr(editor, '_get_op_stats', None)
+    stats = stats_fn('remove_node') if stats_fn else None
+    if stats: stats.attempts += 1
     if cycle is None or len(cycle) < 3:
         neighbors = set()
         for t in cavity_tri_indices:
@@ -656,27 +661,137 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
                     cycle = poly
                     editor.logger.debug("[DEBUG] virtual-boundary: using patch boundary polygon as cycle size=%d", len(cycle))
                 else:
-                    return False, "cannot determine cavity boundary", None
+                    # Fallback: construct neighbor cycle manually (generic boundary removal)
+                    neighbors = []
+                    for t in cavity_tri_indices:
+                        tri = [int(x) for x in editor.triangles[int(t)] if int(x) != int(v_idx) and int(x) >= 0]
+                        for nv in tri:
+                            if nv not in neighbors:
+                                neighbors.append(nv)
+                    if len(neighbors) < 2:
+                        return False, "cannot determine cavity boundary", None
+                    # Order neighbors angularly around centroid for polygon fan
+                    pts_neighbors = editor.points[neighbors]
+                    centroid = pts_neighbors.mean(axis=0)
+                    angles = np.arctan2(pts_neighbors[:,1]-centroid[1], pts_neighbors[:,0]-centroid[0])
+                    ordered = [nbr for _, nbr in sorted(zip(angles, neighbors))]
+                    if len(ordered) >= 3:
+                        cycle = ordered
+                        editor.logger.debug("[DEBUG] virtual-boundary: constructed neighbor cycle size=%d", len(cycle))
+                    else:
+                        return False, "cannot determine cavity boundary", None
             except Exception as e:
                 editor.logger.debug("virtual-boundary fallback failed: %s", e)
                 return False, "cannot determine cavity boundary", None
-        else:
-            adj = {}
-            for t in cavity_tri_indices:
-                tri = editor.triangles[t]
-                others = [int(x) for x in tri if int(x) != int(v_idx)]
-                if len(others) == 2:
-                    a, b = others
-                    adj.setdefault(a, set()).add(b)
-                    adj.setdefault(b, set()).add(a)
-            editor.logger.debug("[DEBUG] Adjacence locale: %s", adj)
-            return False, "cannot determine cavity boundary", None
 
-    # Metrics / flags (attach to editor lazily)
-    # Stats tracking via dataclass on editor
-    stats_fn = getattr(editor, '_get_op_stats', None)
-    stats = stats_fn('remove_node') if stats_fn else None
-    if stats: stats.attempts += 1
+    # Pre-compute area of cavity (sum of absolute areas of triangles to be removed)
+    try:
+        removed_area = 0.0
+        for ti in cavity_tri_indices:
+            tri = editor.triangles[int(ti)]
+            a, b, c = int(tri[0]), int(tri[1]), int(tri[2])
+            p0, p1, p2 = editor.points[a], editor.points[b], editor.points[c]
+            removed_area += abs(triangle_area(p0, p1, p2))
+    except Exception:
+        removed_area = None
+
+    # Early robust area-preservation guard: build the patch boundary polygon around v_idx
+    # and compare its sanitized area (excluding v_idx) to the removed cavity area. If they
+    # differ and area preservation is required, reject immediately.
+    try:
+        cfg0 = getattr(editor, 'boundary_remove_config', None)
+        if cfg0 is not None and bool(getattr(cfg0, 'require_area_preservation', False)):
+            from .helpers import boundary_polygons_from_patch, select_outer_polygon
+            from .triangulation import polygon_signed_area as _poly_area0
+            polys0 = boundary_polygons_from_patch(editor.triangles, cavity_tri_indices)
+            cyc0 = select_outer_polygon(editor.points, polys0)
+            if cyc0 and removed_area is not None:
+                filtered0 = [int(v) for v in cyc0 if int(v) != int(v_idx)]
+                if len(filtered0) >= 2 and filtered0[0] == filtered0[-1]:
+                    filtered0 = filtered0[:-1]
+                if len(filtered0) >= 3:
+                    poly_area0 = abs(_poly_area0([editor.points[int(v)] for v in filtered0]))
+                    from .constants import EPS_TINY
+                    tol_rel0 = float(getattr(cfg0, 'area_tol_rel', EPS_TINY))
+                    tol_abs0 = float(getattr(cfg0, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
+                    if abs(poly_area0 - removed_area) > max(tol_abs0, tol_rel0*max(1.0, removed_area)):
+                        return False, (
+                            f"polygon fill would change cavity area: poly={poly_area0:.6e} cavity={removed_area:.6e}"
+                        ), None
+    except Exception:
+        pass
+
+    # In virtual boundary mode we conceptually remove v_idx and connect its neighbors (treat border as closed by virtual node)
+    if getattr(editor, 'virtual_boundary_mode', False) and cycle:
+        filtered = []
+        for c in cycle:
+            if int(c) == int(v_idx):
+                continue
+            if filtered and filtered[-1] == c:
+                continue
+            filtered.append(int(c))
+        if len(filtered) >= 2 and filtered[0] == filtered[-1]:
+            filtered = filtered[:-1]
+        if len(filtered) >= 3:
+            editor.logger.debug("[DEBUG] virtual-boundary: sanitized cycle removed vertex %s -> size %d", v_idx, len(filtered))
+            cycle = filtered
+            # Pre-compute polygon target area for diagnostics (fallback only)
+            try:
+                from .triangulation import polygon_signed_area as _poly_area
+                poly_target_area = abs(_poly_area([editor.points[int(v)] for v in cycle]))
+            except Exception:
+                poly_target_area = None
+            # Early guard: if area preservation is required by config and we can compute both
+            # removed cavity area and sanitized polygon area, reject when they differ beyond tolerance.
+            try:
+                cfg = getattr(editor, 'boundary_remove_config', None)
+                if cfg is not None and bool(getattr(cfg, 'require_area_preservation', False)):
+                    if (poly_target_area is not None) and ('removed_area' in locals()) and (removed_area is not None):
+                        from .constants import EPS_TINY
+                        tol_rel = float(getattr(cfg, 'area_tol_rel', EPS_TINY))
+                        tol_abs = float(getattr(cfg, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
+                        if abs(poly_target_area - removed_area) > max(tol_abs, tol_rel*max(1.0, removed_area)):
+                            return False, (
+                                f"polygon fill would change cavity area: poly={poly_target_area:.6e} cavity={removed_area:.6e}"
+                            ), None
+            except Exception:
+                pass
+        else:
+            # Degenerate boundary corner removal: after excluding v_idx, there are fewer than 3 neighbors.
+            # In this case, simply remove incident triangles and do not add any new triangles.
+            editor.logger.debug("[DEBUG] virtual-boundary: degenerate boundary cavity after removing %s (cycle size %d). Proceeding with deletion only.", v_idx, len(filtered))
+            cycle = filtered  # keep for logging; will yield zero new triangles
+            new_triangles = []
+            used_fallback = False
+            # Validate local conformity of the mesh with incident triangles tombstoned
+            try:
+                tmp_tri_full = [tuple(t) for i, t in enumerate(editor.triangles) if i not in cavity_tri_indices and not np.all(np.array(t) == -1)]
+                tmp_tri_full = np.array(tmp_tri_full, dtype=int) if tmp_tri_full else np.empty((0,3), dtype=int)
+                ok_sub, msgs = check_mesh_conformity(editor.points, tmp_tri_full, allow_marked=False)
+            except Exception as e:
+                return False, f"retriangulation validation error: {e}", None
+            if not ok_sub:
+                return False, f"retriangulation failed local conformity: {msgs}", None
+            # Simulated compaction preflight (no new tris)
+            ok_sim, sim_msg = _simulate_preflight(
+                editor, editor.points.copy(), cavity_tri_indices, [], stats,
+                reject_msg_prefix="retriangulation ")
+            if not ok_sim:
+                editor.logger.debug('remove_node_with_patch: simulated compaction rejected deletion-only candidate: %s', sim_msg)
+                return False, sim_msg, None
+            # Commit: tombstone cavity, append nothing
+            for idx in cavity_tri_indices:
+                editor._remove_triangle_from_maps(idx)
+                editor.triangles[idx] = [-1, -1, -1]
+            if hasattr(editor, '_on_op_committed'):
+                try:
+                    editor._on_op_committed(tombstoned=len(cavity_tri_indices), appended=0)
+                except Exception:
+                    pass
+            if stats: stats.success += 1
+            return True, "remove successful (deletion-only boundary corner)", {'npts': len(editor.points), 'ntri': len(editor.triangles)}
+
+    # Metrics / flags were initialized above
 
     enable_simplify = getattr(editor, 'enable_polygon_simplification', True)
 
@@ -708,7 +823,62 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
                     except ValueError:
                         new_triangles = None
             # If still None we proceed to fallback below
-    if not new_triangles:  # fallback strict retriangulation
+    # If optimal star failed and we're in virtual-boundary mode, prefer polygon-based fallbacks
+    if not new_triangles and getattr(editor, 'virtual_boundary_mode', False) and cycle:
+        # Strategy order according to editor.boundary_remove_config
+        prefer_area = False; prefer_worst = True; area_tol_rel = None; area_abs = None; require_area = False
+        cfg = getattr(editor, 'boundary_remove_config', None)
+        if cfg is not None:
+            prefer_area = bool(getattr(cfg, 'prefer_area_preserving_star', True))
+            prefer_worst = bool(getattr(cfg, 'prefer_worst_angle_star', True))
+            require_area = bool(getattr(cfg, 'require_area_preservation', False))
+            try:
+                from .constants import EPS_AREA
+                area_tol_rel = float(getattr(cfg, 'area_tol_rel', None)) if getattr(cfg, 'area_tol_rel', None) is not None else None
+                area_abs = float(getattr(cfg, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
+            except Exception:
+                area_tol_rel = None; area_abs = None
+        # Helper to try area-preserving star with optional tolerances
+        def _try_area_star():
+            try:
+                from .triangulation import best_star_triangulation_area_preserving
+                if area_tol_rel is None or area_abs is None:
+                    return best_star_triangulation_area_preserving(editor.points, cycle, debug=False)
+                return best_star_triangulation_area_preserving(editor.points, cycle, area_tol_rel=area_tol_rel, area_tol_abs=area_abs, debug=False)
+            except ValueError as e:
+                editor.logger.debug("best_star_triangulation_area_preserving raised ValueError: %s", e)
+                return None
+        # Helper to try worst-angle star
+        def _try_worst_star():
+            try:
+                return best_star_triangulation_by_min_angle(editor.points, cycle, debug=False)
+            except ValueError as e:
+                editor.logger.debug("best_star_triangulation_by_min_angle raised ValueError: %s", e)
+                return None
+        # Order: If both preferred, try to get area-preserving that also has good quality implicitly
+        order = []
+        if prefer_area and prefer_worst:
+            # Try area star first; if None, try worst star; if worst found and require_area, validate area later
+            order = [_try_area_star, _try_worst_star]
+        elif prefer_area:
+            order = [_try_area_star]
+        elif prefer_worst:
+            order = [_try_worst_star]
+        else:
+            order = []
+        for fn in order:
+            if new_triangles:
+                break
+            new_triangles = fn()
+        # 2) Ear-clip polygon triangulation
+        if not new_triangles:
+            try:
+                new_triangles = ear_clip_triangulation(editor.points, cycle)
+            except ValueError as e:
+                editor.logger.debug("ear_clip_triangulation raised ValueError: %s", e)
+                new_triangles = None
+
+    if not new_triangles:  # fallback strict retriangulation (generic)
         editor.logger.debug("optimal_star_triangulation skipped/failed; trying strict retriangulation fallback")
         try:
             new_points, triangles_new, ok_sub, new_tri_list = retriangulate_patch_strict(
@@ -718,34 +888,344 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
             return False, "retriangulation failed", None
         if not ok_sub or not new_tri_list:
             return False, "retriangulation failed", None
-        new_triangles = [list(t) for t in new_tri_list]
+        # In virtual-boundary mode, drop any triangles that still reference the removed vertex
+        cand_tris = [list(t) for t in new_tri_list]
+        if getattr(editor, 'virtual_boundary_mode', False):
+            cand_tris = [list(t) for t in cand_tris if int(v_idx) not in (int(t[0]), int(t[1]), int(t[2]))]
+        new_triangles = cand_tris
         used_fallback = True
         if stats: stats.fallback_used += 1
     else:
         if stats: stats.star_success += 1
 
-    # Validate candidate locally
+    # Safety: in virtual boundary mode, ensure the removed vertex does not appear in candidate triangles
+    if getattr(editor, 'virtual_boundary_mode', False) and new_triangles:
+        if any(int(v_idx) in [int(t[0]), int(t[1]), int(t[2])] for t in new_triangles):
+            editor.logger.debug("virtual-boundary: new triangulation contains removed vertex %s; filtering and retrying polygonal fallback", v_idx)
+            # First, filter out any triangles referencing v_idx
+            new_triangles = [list(t) for t in new_triangles if int(v_idx) not in (int(t[0]), int(t[1]), int(t[2]))]
+            # If filtering emptied the set, try polygon-based fill again (ear-clip)
+            if not new_triangles and cycle:
+                try:
+                    new_triangles = ear_clip_triangulation(editor.points, cycle)
+                except ValueError as e:
+                    editor.logger.debug("ear_clip_triangulation retry failed: %s", e)
+                    return False, "retriangulation failed", None
+
+    # Before validation, filter candidates to avoid introducing non-manifold edges, duplicates, or crossings
     try:
-        tmp_tri_full = [tuple(t) for i, t in enumerate(editor.triangles) if i not in cavity_tri_indices and not np.all(np.array(t) == -1)]
-        tmp_tri_full.extend(new_triangles)
-        tmp_tri_full = np.array(tmp_tri_full, dtype=int) if tmp_tri_full else np.empty((0,3), dtype=int)
-        ok_sub, msgs = check_mesh_conformity(editor.points, tmp_tri_full, allow_marked=False)
+        # Existing triangles kept (outside the cavity)
+        tris_keep = [tuple(t) for i, t in enumerate(editor.triangles) if i not in cavity_tri_indices and not np.all(np.array(t) == -1)]
+        # Build edge degree map from kept triangles
+        from collections import defaultdict
+        edge_deg = defaultdict(int)
+        kept_edges = set()
+        for ta, tb, tc in tris_keep:
+            ea = tuple(sorted((int(ta), int(tb))))
+            eb = tuple(sorted((int(tb), int(tc))))
+            ec = tuple(sorted((int(tc), int(ta))))
+            edge_deg[ea] += 1; edge_deg[eb] += 1; edge_deg[ec] += 1
+            kept_edges.add(ea); kept_edges.add(eb); kept_edges.add(ec)
+        # Track duplicate triangles (by vertex set)
+        existing_tri_sets = set([frozenset((int(ta), int(tb), int(tc))) for (ta, tb, tc) in tris_keep])
+        accepted = []
+        accepted_sets = set()
+        accepted_edges = set()
+        # Simple geometry guard for zero-area
+        def _area2(p0, p1, p2):
+            return (p1[0]-p0[0])*(p2[1]-p0[1]) - (p1[1]-p0[1])*(p2[0]-p0[0])
+        from .constants import EPS_AREA as _EPS
+        # Segment intersection helpers (mirror conformity.simulate_compaction_and_check behavior)
+        def _orient(a, b, c):
+            return (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0])
+        def _seg_intersect(p1, p2, p3, p4):
+            # Exclude shared endpoints
+            if (p1[0]==p3[0] and p1[1]==p3[1]) or (p1[0]==p4[0] and p1[1]==p4[1]) or (p2[0]==p3[0] and p2[1]==p3[1]) or (p2[0]==p4[0] and p2[1]==p4[1]):
+                return False
+            o1 = _orient(p1, p2, p3); o2 = _orient(p1, p2, p4); o3 = _orient(p3, p4, p1); o4 = _orient(p3, p4, p2)
+            # Colinear overlapping ignored (valid adjacency shares endpoints only)
+            if o1 == 0 and o2 == 0 and o3 == 0 and o4 == 0:
+                return False
+            return (o1*o2 < 0) and (o3*o4 < 0)
+        def _edge_crosses_existing(u, v):
+            pu, pv = editor.points[int(u)], editor.points[int(v)]
+            # Against kept edges
+            for a, b in kept_edges:
+                if a in (u, v) or b in (u, v):
+                    continue
+                pa, pb = editor.points[int(a)], editor.points[int(b)]
+                # quick bbox reject
+                min_abx = min(pa[0], pb[0]); max_abx = max(pa[0], pb[0])
+                min_aby = min(pa[1], pb[1]); max_aby = max(pa[1], pb[1])
+                min_uvx = min(pu[0], pv[0]); max_uvx = max(pu[0], pv[0])
+                min_uvy = min(pu[1], pv[1]); max_uvy = max(pu[1], pv[1])
+                if (max_abx < min_uvx) or (max_uvx < min_abx) or (max_aby < min_uvy) or (max_uvy < min_aby):
+                    pass
+                else:
+                    if _seg_intersect(pa, pb, pu, pv):
+                        return True
+            # Against already accepted candidate edges
+            for a, b in accepted_edges:
+                if a in (u, v) or b in (u, v):
+                    continue
+                pa, pb = editor.points[int(a)], editor.points[int(b)]
+                min_abx = min(pa[0], pb[0]); max_abx = max(pa[0], pb[0])
+                min_aby = min(pa[1], pb[1]); max_aby = max(pa[1], pb[1])
+                min_uvx = min(pu[0], pv[0]); max_uvx = max(pu[0], pv[0])
+                min_uvy = min(pu[1], pv[1]); max_uvy = max(pu[1], pv[1])
+                if (max_abx < min_uvx) or (max_uvx < min_abx) or (max_aby < min_uvy) or (max_uvy < min_aby):
+                    pass
+                else:
+                    if _seg_intersect(pa, pb, pu, pv):
+                        return True
+            return False
+        # normalize candidate triangles to a list-of-lists of ints
+        cand_iter = []
+        try:
+            import numpy as _np
+            if isinstance(new_triangles, _np.ndarray):
+                cand_iter = [[int(t[0]), int(t[1]), int(t[2])] for t in new_triangles.tolist()]
+            elif isinstance(new_triangles, (list, tuple)):
+                cand_iter = [[int(t[0]), int(t[1]), int(t[2])] for t in new_triangles]
+        except Exception:
+            try:
+                cand_iter = [[int(t[0]), int(t[1]), int(t[2])] for t in new_triangles]
+            except Exception:
+                cand_iter = []
+        for cand in cand_iter:
+            a, b, c = int(cand[0]), int(cand[1]), int(cand[2])
+            # drop duplicates or degenerate
+            tri_set = frozenset((a, b, c))
+            if tri_set in existing_tri_sets or tri_set in accepted_sets:
+                continue
+            p0, p1, p2 = editor.points[a], editor.points[b], editor.points[c]
+            if abs(_area2(p0, p1, p2)) <= float(_EPS):
+                continue
+            # check non-manifold: no edge should exceed degree 2 after adding
+            ea = tuple(sorted((a, b)))
+            eb = tuple(sorted((b, c)))
+            ec = tuple(sorted((c, a)))
+            if edge_deg[ea] >= 2 or edge_deg[eb] >= 2 or edge_deg[ec] >= 2:
+                continue
+            # crossing check: candidate edges must not cross kept or accepted edges (excluding shared endpoints)
+            if _edge_crosses_existing(a, b) or _edge_crosses_existing(b, c) or _edge_crosses_existing(c, a):
+                continue
+            # accept and update state
+            accepted.append([a, b, c])
+            accepted_sets.add(tri_set)
+            edge_deg[ea] += 1; edge_deg[eb] += 1; edge_deg[ec] += 1
+            accepted_edges.add(ea); accepted_edges.add(eb); accepted_edges.add(ec)
+        if accepted:
+            new_triangles = accepted
+    except Exception:
+        # If anything goes wrong, proceed with original set and let validation catch issues
+        pass
+
+    # Validate candidate locally
+    def _validate_candidate(tris_cand):
+        arr = [tuple(t) for i, t in enumerate(editor.triangles) if i not in cavity_tri_indices and not np.all(np.array(t) == -1)]
+        arr.extend(tris_cand)
+        arr = np.array(arr, dtype=int) if arr else np.empty((0,3), dtype=int)
+        # For boundary removal with a polygon cycle, optionally enforce area preservation
+        if getattr(editor, 'virtual_boundary_mode', False) and tris_cand:
+            try:
+                cand_area = 0.0
+                for t in tris_cand:
+                    p0 = editor.points[int(t[0])]; p1 = editor.points[int(t[1])]; p2 = editor.points[int(t[2])]
+                    cand_area += abs(triangle_area(p0, p1, p2))
+                # allow small tolerance; compare against local removed area when available, else polygon area
+                from .constants import EPS_TINY
+                cfg = getattr(editor, 'boundary_remove_config', None)
+                tol_rel = EPS_TINY if cfg is None else float(getattr(cfg, 'area_tol_rel', EPS_TINY))
+                tol_abs = 4.0*EPS_AREA if cfg is None else float(getattr(cfg, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
+                # Prefer conservation against removed cavity area (sum of incident triangles);
+                # fall back to sanitized polygon area only if removed_area unavailable.
+                target_area = removed_area
+                if target_area is None:
+                    try:
+                        target_area = poly_target_area
+                    except NameError:
+                        target_area = None
+                if target_area is not None and abs(cand_area - target_area) > max(tol_abs, tol_rel*max(1.0, target_area)):
+                    # If strict area preservation required, reject; otherwise allow but log
+                    if cfg is not None and bool(getattr(cfg, 'require_area_preservation', False)):
+                        return False, [f"patch area changed: appended={cand_area:.6e} target={target_area:.6e}"]
+                    else:
+                        editor.logger.debug("area changed within relaxed policy: appended=%.6e target=%.6e", cand_area, target_area)
+            except Exception:
+                pass
+        ok_c, msgs_c = check_mesh_conformity(editor.points, arr, allow_marked=False)
+        if not ok_c:
+            return ok_c, msgs_c
+        # Also reject if any edge crossings are detected after adding candidates
+        try:
+            from .conformity import simulate_compaction_and_check
+            ok_sim, sim_msgs, _ = simulate_compaction_and_check(editor.points, arr, reject_crossing_edges=True)
+            if not ok_sim:
+                # only keep crossing messages for brevity
+                msgs_x = [m for m in sim_msgs if 'crossing edges detected' in m] or sim_msgs
+                return False, msgs_x
+        except Exception:
+            pass
+        return True, []
+    try:
+        ok_sub, msgs = _validate_candidate(new_triangles)
     except Exception as e:
         return False, f"retriangulation validation error: {e}", None
-    if not ok_sub:
+    if not ok_sub and getattr(editor, 'virtual_boundary_mode', False) and cycle:
+        # Retry by rotating/reversing the polygon and using ear-clip again, with non-manifold filtering
+        tried = 0
+        best = None
+        from .triangulation import ear_clip_triangulation
+        for rev in (False, True):
+            cyc_seq = list(cycle)[::-1] if rev else list(cycle)
+            for k in range(len(cyc_seq)):
+                cyc2 = cyc_seq[k:] + cyc_seq[:k]
+                try:
+                    cand = ear_clip_triangulation(editor.points, cyc2)
+                except Exception:
+                    continue
+                # Apply the same non-manifold/duplicate filtering
+                try:
+                    # rebuild edge degree over kept tris
+                    from collections import defaultdict
+                    edge_deg = defaultdict(int)
+                    keep_tris = [tuple(t) for i, t in enumerate(editor.triangles) if i not in cavity_tri_indices and not np.all(np.array(t) == -1)]
+                    kept_edges = set()
+                    for ta, tb, tc in keep_tris:
+                        ea = tuple(sorted((int(ta), int(tb))))
+                        eb = tuple(sorted((int(tb), int(tc))))
+                        ec = tuple(sorted((int(tc), int(ta))))
+                        edge_deg[ea] += 1; edge_deg[eb] += 1; edge_deg[ec] += 1
+                        kept_edges.add(ea); kept_edges.add(eb); kept_edges.add(ec)
+                    exist_sets = set([frozenset((int(ta), int(tb), int(tc))) for (ta, tb, tc) in keep_tris])
+                    # normalize and filter
+                    filtered = []
+                    fsets = set()
+                    fedges = set()
+                    def _area2(p0, p1, p2):
+                        return (p1[0]-p0[0])*(p2[1]-p0[1]) - (p1[1]-p0[1])*(p2[0]-p0[0])
+                    from .constants import EPS_AREA as _EPS
+                    def _orient(a, b, c):
+                        return (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0])
+                    def _seg_intersect(p1, p2, p3, p4):
+                        if (p1[0]==p3[0] and p1[1]==p3[1]) or (p1[0]==p4[0] and p1[1]==p4[1]) or (p2[0]==p3[0] and p2[1]==p3[1]) or (p2[0]==p4[0] and p2[1]==p4[1]):
+                            return False
+                        o1 = _orient(p1, p2, p3); o2 = _orient(p1, p2, p4); o3 = _orient(p3, p4, p1); o4 = _orient(p3, p4, p2)
+                        if o1 == 0 and o2 == 0 and o3 == 0 and o4 == 0:
+                            return False
+                        return (o1*o2 < 0) and (o3*o4 < 0)
+                    def _edge_crosses(u, v):
+                        pu, pv = editor.points[int(u)], editor.points[int(v)]
+                        for a, b in kept_edges:
+                            if a in (u, v) or b in (u, v):
+                                continue
+                            pa, pb = editor.points[int(a)], editor.points[int(b)]
+                            min_abx = min(pa[0], pb[0]); max_abx = max(pa[0], pb[0])
+                            min_aby = min(pa[1], pb[1]); max_aby = max(pa[1], pb[1])
+                            min_uvx = min(pu[0], pv[0]); max_uvx = max(pu[0], pv[0])
+                            min_uvy = min(pu[1], pv[1]); max_uvy = max(pu[1], pv[1])
+                            if (max_abx < min_uvx) or (max_uvx < min_abx) or (max_aby < min_uvy) or (max_uvy < min_aby):
+                                pass
+                            else:
+                                if _seg_intersect(pa, pb, pu, pv):
+                                    return True
+                        for a, b in fedges:
+                            if a in (u, v) or b in (u, v):
+                                continue
+                            pa, pb = editor.points[int(a)], editor.points[int(b)]
+                            min_abx = min(pa[0], pb[0]); max_abx = max(pa[0], pb[0])
+                            min_aby = min(pa[1], pb[1]); max_aby = max(pa[1], pb[1])
+                            min_uvx = min(pu[0], pv[0]); max_uvx = max(pu[0], pv[0])
+                            min_uvy = min(pu[1], pv[1]); max_uvy = max(pu[1], pv[1])
+                            if (max_abx < min_uvx) or (max_uvx < min_abx) or (max_aby < min_uvy) or (max_uvy < min_aby):
+                                pass
+                            else:
+                                if _seg_intersect(pa, pb, pu, pv):
+                                    return True
+                        return False
+                    for t in cand:
+                        a, b, c = int(t[0]), int(t[1]), int(t[2])
+                        s = frozenset((a, b, c))
+                        if s in exist_sets or s in fsets:
+                            continue
+                        p0, p1, p2 = editor.points[a], editor.points[b], editor.points[c]
+                        if abs(_area2(p0, p1, p2)) <= float(_EPS):
+                            continue
+                        ea = tuple(sorted((a, b))); eb = tuple(sorted((b, c))); ec = tuple(sorted((c, a)))
+                        if edge_deg[ea] >= 2 or edge_deg[eb] >= 2 or edge_deg[ec] >= 2:
+                            continue
+                        if _edge_crosses(a, b) or _edge_crosses(b, c) or _edge_crosses(c, a):
+                            continue
+                        filtered.append([a, b, c])
+                        fsets.add(s)
+                        edge_deg[ea] += 1; edge_deg[eb] += 1; edge_deg[ec] += 1
+                        fedges.add(ea); fedges.add(eb); fedges.add(ec)
+                    if filtered:
+                        ok_sub2, msgs2 = _validate_candidate(filtered)
+                        if ok_sub2:
+                            best = filtered
+                            break
+                except Exception:
+                    continue
+                tried += 1
+            if best is not None:
+                break
+        if best is not None:
+            new_triangles = best
+            ok_sub = True
+        else:
+            return False, f"retriangulation failed local conformity: {msgs}", None
+    elif not ok_sub:
         return False, f"retriangulation failed local conformity: {msgs}", None
 
-    # Quality gating (non-worsening worst min-angle)
-    ok_q, msg_q = _evaluate_quality_change(
-        editor,
-        [editor.triangles[int(ti)] for ti in cavity_tri_indices],
-        new_triangles,
-        stats,
-        op_label="retriangulation",
-        before_kw='before', after_kw='post')
-    if not ok_q:
-        editor.logger.debug('remove_node_with_patch: rejecting candidate: %s', msg_q)
-        return False, msg_q, None
+    # Quality gating (non-worsening worst min-angle) unless disabled
+    enforce_remove_q = getattr(editor, 'enforce_remove_quality', True)
+    if enforce_remove_q:
+        ok_q, msg_q = _evaluate_quality_change(
+            editor,
+            [editor.triangles[int(ti)] for ti in cavity_tri_indices],
+            new_triangles,
+            stats,
+            op_label="retriangulation",
+            before_kw='before', after_kw='post')
+        if not ok_q:
+            editor.logger.debug('remove_node_with_patch: rejecting candidate: %s', msg_q)
+            return False, msg_q, None
+    else:
+        # Log pre/post worst min-angle for visibility but do not reject
+        try:
+            pre_list = [editor.triangles[int(ti)] for ti in cavity_tri_indices]
+            pre_mina = worst_min_angle(editor.points, pre_list)
+            post_mina = worst_min_angle(editor.points, new_triangles)
+            editor.logger.debug("remove_node (relaxed quality): before=%.6fdeg post=%.6fdeg", pre_mina, post_mina)
+        except Exception:
+            pass
+
+    # Final hard area-preservation gate (redundant with validation, ensures no bypass)
+    try:
+        if getattr(editor, 'virtual_boundary_mode', False) and new_triangles:
+            cand_area = 0.0
+            for t in new_triangles:
+                p0 = editor.points[int(t[0])]; p1 = editor.points[int(t[1])]; p2 = editor.points[int(t[2])]
+                cand_area += abs(triangle_area(p0, p1, p2))
+            cfg = getattr(editor, 'boundary_remove_config', None)
+            if cfg is not None and bool(getattr(cfg, 'require_area_preservation', False)):
+                # Prefer cavity area; fallback to polygon area computed earlier
+                tgt = removed_area
+                if tgt is None:
+                    try:
+                        tgt = poly_target_area
+                    except NameError:
+                        tgt = None
+                if tgt is not None:
+                    from .constants import EPS_TINY
+                    tol_rel = float(getattr(cfg, 'area_tol_rel', EPS_TINY))
+                    tol_abs = float(getattr(cfg, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
+                    if abs(cand_area - tgt) > max(tol_abs, tol_rel*max(1.0, tgt)):
+                        return False, f"patch area changed: appended={cand_area:.6e} target={tgt:.6e}", None
+    except Exception:
+        pass
 
     # Simulated compaction preflight
     ok_sim, sim_msg = _simulate_preflight(

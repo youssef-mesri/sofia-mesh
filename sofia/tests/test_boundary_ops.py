@@ -34,9 +34,11 @@ def test_remove_node_on_boundary_virtual_mode():
     ok_c, _ = check_mesh_conformity(editor.points, editor.triangles, allow_marked=True)
     assert ok_c, "Mesh must remain conforming after boundary remove"
     # After compaction, strict conformity should also hold
-    editor.compact_triangle_indices()
+    old_to_new = editor.compact_triangle_indices()
     ok_c2, _ = check_mesh_conformity(editor.points, editor.triangles, allow_marked=False)
     assert ok_c2, "Mesh must be conforming after compaction"
+    # The removed boundary vertex should not appear in the compaction vertex map
+    assert old_to_new[v] == -1, "Removed boundary vertex still present after compaction"
 
 
 def test_split_edge_on_boundary():
@@ -53,6 +55,27 @@ def test_split_edge_on_boundary():
     ok_c, _ = check_mesh_conformity(editor.points, editor.triangles, allow_marked=True)
     assert ok_c, "Mesh must remain conforming after boundary edge split"
     # After compaction, strict conformity should hold
-    editor.compact_triangle_indices()
+    old_to_new = editor.compact_triangle_indices()
     ok_c2, _ = check_mesh_conformity(editor.points, editor.triangles, allow_marked=False)
     assert ok_c2, "Mesh must be conforming after compaction"
+    # No removal in this test; nothing to assert about mapping here.
+
+
+def test_remove_node_on_boundary():
+    """Ensure removing a boundary vertex works in virtual boundary mode using the editor wrapper."""
+    pts, tris = square_mesh()
+    editor = PatchBasedMeshEditor(pts.copy(), tris.copy(), virtual_boundary_mode=True)
+
+    # Remove boundary vertex (choose a corner)
+    v = 0
+    ok, msg, _ = editor.remove_node_with_patch(int(v))
+    assert ok, f"remove_node_with_patch should succeed on boundary vertex in virtual mode: {msg}"
+
+    # Conformity before/after compaction
+    ok_c, _ = check_mesh_conformity(editor.points, editor.triangles, allow_marked=True)
+    assert ok_c, "Mesh must remain conforming immediately after removal (allowing tombstones)"
+    old_to_new = editor.compact_triangle_indices()
+    ok_c2, _ = check_mesh_conformity(editor.points, editor.triangles, allow_marked=False)
+    assert ok_c2, "Mesh must be conforming after compaction"
+    # The removed boundary vertex should not appear in the compaction vertex map
+    assert old_to_new[v] == -1, "Removed boundary vertex still present after compaction"

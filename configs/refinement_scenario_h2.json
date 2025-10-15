@@ -10,12 +10,17 @@
     "collapse_order": "before",
     "target_h_factor": 0.5,
     "h_metric": "avg_equilateral_h",
-    "max_h_iters": 20,
+    "include_boundary_edges": true,
+    "annotate_debug": true,
+    "annotate_dir": "refine_debug",
+    "annotate_stride": 1,
+    "max_h_iters": 10,
     "max_h_splits_per_iter": 100,
     "h_tolerance": 1e-06,
     "enforce_split_quality": false,
     "move_to_barycenter": true,
-    "barycenter_passes": 1
+  "barycenter_passes": 5,
+  "pre_remove_max": 20
   },
   "plot": {
     "out_before": "refine_before.png",

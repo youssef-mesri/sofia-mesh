@@ -7,6 +7,7 @@ import os
 import time
 
 from sofia.sofia.remesh_driver import compact_copy, check_mesh_conformity, find_inverted_triangles, count_boundary_loops, MIN_TRI_AREA, greedy_remesh
+from sofia.sofia.diagnostics import compact_from_arrays
 from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
 
 NPZ_IN = 'diagnostics/gfail_seed_0.npz'
@@ -48,7 +49,11 @@ def main():
         pts_comp, tris_comp, mapping, active_idx = compact_copy(editor)
         ok_comp, msgs_comp = check_mesh_conformity(pts_comp, tris_comp, allow_marked=False)
         inv_comp = find_inverted_triangles(pts_comp, tris_comp, eps=MIN_TRI_AREA)
-        pre_pts, pre_tris, _, _ = compact_from_arrays(editor) if 'compact_from_arrays' in globals() else (None,None,{},[])
+        # optional: compute a compact snapshot from raw arrays for sanity
+        try:
+            pre_pts, pre_tris, _, _ = compact_from_arrays(editor.points, editor.triangles)
+        except Exception:
+            pre_pts, pre_tris = None, None
         # use simple condition: not ok_comp or inv_comp
         if (not ok_comp) or inv_comp:
             fn = save_failure(editor, op_name, op_param, extra_msgs=msgs_comp)

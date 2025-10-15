@@ -22,6 +22,15 @@ Sofia is a fast, patch-based mesh editing and remeshing toolkit for 2D triangula
 - Greedy remesh driver and patch driver for batch processing
 - Tests via pytest and headless rendering via Matplotlib Agg
 
+### Boundary removal: area preservation (default)
+
+Boundary vertex removal treats the border as a closed polygon and, by default, preserves the local cavity area (the sum of areas of triangles incident to the removed vertex). If a candidate retriangulation would change this cavity area beyond a tiny tolerance, the operation is rejected.
+
+- Default behavior is controlled by `BoundaryRemoveConfig(require_area_preservation=True)`.
+- The enforcement compares the appended area to the removed cavity area; when that is unavailable, it falls back to the sanitized boundary polygon area.
+- To relax this (for exploratory runs), pass a config: `PatchBasedMeshEditor(..., boundary_remove_config=BoundaryRemoveConfig(require_area_preservation=False))`.
+
+
 ## Install
 
 Requires Python 3.8+.

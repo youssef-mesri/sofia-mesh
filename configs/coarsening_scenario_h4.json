@@ -1,0 +1,19 @@
+{
+  "mesh": { "type": "random_delaunay", "npts": 120, "seed": 7 },
+  "auto": {
+    "pre_smooth": true,
+    "barycenter_passes": 1,
+    "collapse_shortest_edges": true,
+    "target_h_factor": 4.0,
+    "h_metric": "avg_internal_edge_length",
+    "max_h_iters": 8,
+    "h_tolerance": 1e-6,
+    "remove_low_degree_vertices": true,
+    "remove_degree_max": 4,
+    "remove_max_per_iter": 12,
+    "allow_boundary_collapse": false,
+    "allow_boundary_remove": false,
+    "relax_remove_quality": false
+  },
+  "plot": { "out_before": "coarsen_before_h4.png", "out_after": "coarsen_after_h4.png" }
+}

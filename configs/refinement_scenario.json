@@ -3,7 +3,8 @@
   "auto": {
     "order": "tri_first",
     "refine_large_tris": true,
-    "split_long_edges": true,
+  "split_long_edges": true,
+  "include_boundary_edges": true,
     "collapse_shortest_edges": true,
     "collapse_k": 10,
   "collapse_order": "before",

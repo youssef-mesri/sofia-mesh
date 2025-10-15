@@ -12,10 +12,13 @@ EPS_IMPROVEMENT: float = 1e-12    # significance threshold for local improvement
 
 # Auxiliary small epsilons
 EPS_COLINEAR: float = 1e-15       # near-colinearity threshold for polygon/tri tests
+# Tiny relative tolerance for area/metric comparisons (prefer to raw literals like 1e-12)
+EPS_TINY: float = 1e-12
 
 __all__ = [
     'EPS_AREA',
     'EPS_MIN_ANGLE_DEG',
     'EPS_IMPROVEMENT',
     'EPS_COLINEAR',
+    'EPS_TINY',
 ]

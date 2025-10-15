@@ -221,9 +221,26 @@ def apply_patch_operation(editor, patch, rng: random.Random, config: PatchDriver
                 if pk.get('inside_pts'):  # not empty
                     continue
                 try:
-                    # mapping: global_old->local; invert
-                    local_to_global = {v_new: v_old for v_old, v_new in mapping.items()}
-                    verts_global = [local_to_global[int(v)] for v in pk['verts']]
+                    # mapping can be dict old->new or ndarray old->new (-1 for removed)
+                    try:
+                        import numpy as _np
+                    except Exception:
+                        _np = None
+                    if _np is not None and isinstance(mapping, _np.ndarray):
+                        old_to_new = mapping
+                        if old_to_new.size == 0 or not _np.any(old_to_new >= 0):
+                            verts_global = []
+                        else:
+                            n_new = int(_np.max(old_to_new)) + 1
+                            new_to_old = _np.full((n_new,), -1, dtype=_np.int32)
+                            mask = old_to_new >= 0
+                            old_idx = _np.nonzero(mask)[0]
+                            new_idx = old_to_new[mask]
+                            new_to_old[new_idx] = old_idx
+                            verts_global = [int(new_to_old[int(v)]) for v in pk['verts']]
+                    else:
+                        local_to_global = {v_new: v_old for v_old, v_new in mapping.items()} if isinstance(mapping, dict) else {}
+                        verts_global = [local_to_global[int(v)] for v in pk['verts']]
                     # Prefer config-provided overrides; otherwise fall back to current run's thresholds
                     use_min_area = (
                         config.autofill_min_triangle_area

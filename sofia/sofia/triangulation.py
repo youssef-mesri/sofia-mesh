@@ -4,13 +4,14 @@ import numpy as np
 import logging
 from scipy.spatial import Delaunay, ConvexHull
 from .geometry import triangle_area, triangle_angles
-from .constants import EPS_AREA, EPS_IMPROVEMENT
+from .constants import EPS_AREA, EPS_IMPROVEMENT, EPS_TINY
 from .conformity import check_mesh_conformity
 from .helpers import boundary_cycle_from_incident_tris
 
 __all__ = [
     'optimal_star_triangulation',            # min total area star
     'best_star_triangulation_by_min_angle',  # maximize worst (minimum) angle
+    'best_star_triangulation_area_preserving',  # choose star whose area matches polygon area
     'retriangulate_star',
     'retriangulate_patch_strict',
     'ear_clip_triangulation',
@@ -106,6 +107,59 @@ def best_star_triangulation_by_min_angle(points, boundary_indices, debug: bool=F
             best = tris
     if debug and best is not None:
         print(f"Chosen quality star worst_angle={best_quality:.4f} tris={best}")
+    return best
+
+def best_star_triangulation_area_preserving(points, boundary_indices, area_tol_rel: float = EPS_TINY, area_tol_abs: float = EPS_AREA*4, debug: bool=False):
+    """Enumerate star triangulations anchored at each boundary vertex and select one whose
+    summed triangle area matches the polygon area within tolerance. Among valid candidates,
+    prefer the one maximizing the worst (minimum) triangle angle for robustness.
+
+    Returns list of triangle index triplets or None.
+    """
+    if len(set(boundary_indices)) != len(boundary_indices):
+        raise ValueError("Duplicate vertices detected in boundary_indices for best_star_triangulation_area_preserving")
+    if _indices_polygon_self_intersects(points, boundary_indices):
+        raise ValueError("Self-intersecting polygon (boundary_indices) in best_star_triangulation_area_preserving")
+    n = len(boundary_indices)
+    if n < 3:
+        return None
+    # polygon area (absolute)
+    poly = [points[int(v)] for v in boundary_indices]
+    poly_area = abs(polygon_signed_area(poly))
+    best = None
+    best_quality = -1.0
+    for i in range(n):
+        v0 = boundary_indices[i]
+        cycle = boundary_indices[i:] + boundary_indices[:i]
+        tris = []
+        degenerate = False
+        worst_angle = 180.0
+        area_sum = 0.0
+        for j in range(1, n-1):
+            tri = [v0, cycle[j], cycle[j+1]]
+            p0 = points[int(tri[0])]; p1 = points[int(tri[1])]; p2 = points[int(tri[2])]
+            a = abs(triangle_area(p0, p1, p2))
+            if a < EPS_AREA:
+                degenerate = True
+                break
+            area_sum += a
+            try:
+                angs = triangle_angles(p0, p1, p2)
+                worst_angle = min(worst_angle, min(angs))
+            except Exception:
+                pass
+            tris.append(tri)
+        if degenerate or not tris:
+            continue
+        # area tolerance test
+        if abs(area_sum - poly_area) <= max(area_tol_abs, area_tol_rel * max(1.0, poly_area)):
+            if worst_angle > best_quality + EPS_IMPROVEMENT:
+                best_quality = worst_angle
+                best = tris
+                if debug:
+                    print(f"Area-preserving star (anchor={v0}) worst_angle={worst_angle:.4f} area_sum={area_sum:.6e} poly_area={poly_area:.6e}")
+    if debug and best is not None:
+        print(f"Chosen area-preserving star worst_angle={best_quality:.4f} tris={best}")
     return best
 
 def retriangulate_star(boundary_indices):
