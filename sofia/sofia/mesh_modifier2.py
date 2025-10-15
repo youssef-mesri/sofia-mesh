@@ -647,7 +647,7 @@ class PatchBasedMeshEditor:
                                     tol_abs = float(getattr(cfg, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
                                     if abs(poly_area - removed_area) > max(tol_abs, tol_rel*max(1.0, removed_area)):
                                         return False, (
-                                            f"polygon fill would change cavity area: poly={poly_area:.6e} cavity={removed_area:.6e}"
+                                            f"cavity area changed: poly={poly_area:.6e} cavity={removed_area:.6e}"
                                         ), None
             except Exception:
                 pass

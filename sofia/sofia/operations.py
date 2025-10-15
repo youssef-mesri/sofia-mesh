@@ -716,7 +716,7 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
                     tol_abs0 = float(getattr(cfg0, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
                     if abs(poly_area0 - removed_area) > max(tol_abs0, tol_rel0*max(1.0, removed_area)):
                         return False, (
-                            f"polygon fill would change cavity area: poly={poly_area0:.6e} cavity={removed_area:.6e}"
+                            f"cavity area changed: poly={poly_area0:.6e} cavity={removed_area:.6e}"
                         ), None
     except Exception:
         pass
@@ -752,7 +752,7 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
                         tol_abs = float(getattr(cfg, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
                         if abs(poly_target_area - removed_area) > max(tol_abs, tol_rel*max(1.0, removed_area)):
                             return False, (
-                                f"polygon fill would change cavity area: poly={poly_target_area:.6e} cavity={removed_area:.6e}"
+                                f"cavity area changed: poly={poly_target_area:.6e} cavity={removed_area:.6e}"
                             ), None
             except Exception:
                 pass
@@ -1049,7 +1049,7 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
                 if target_area is not None and abs(cand_area - target_area) > max(tol_abs, tol_rel*max(1.0, target_area)):
                     # If strict area preservation required, reject; otherwise allow but log
                     if cfg is not None and bool(getattr(cfg, 'require_area_preservation', False)):
-                        return False, [f"patch area changed: appended={cand_area:.6e} target={target_area:.6e}"]
+                        return False, [f"cavity area changed: appended={cand_area:.6e} target={target_area:.6e}"]
                     else:
                         editor.logger.debug("area changed within relaxed policy: appended=%.6e target=%.6e", cand_area, target_area)
             except Exception:
@@ -1223,7 +1223,7 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
                     tol_rel = float(getattr(cfg, 'area_tol_rel', EPS_TINY))
                     tol_abs = float(getattr(cfg, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
                     if abs(cand_area - tgt) > max(tol_abs, tol_rel*max(1.0, tgt)):
-                        return False, f"patch area changed: appended={cand_area:.6e} target={tgt:.6e}", None
+                        return False, f"cavity area changed: appended={cand_area:.6e} target={tgt:.6e}", None
     except Exception:
         pass
 

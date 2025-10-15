@@ -163,5 +163,5 @@ def test_default_rejects_non_preserving_corner_after_splits():
     ok_r, msg_r, _ = editor.remove_node_with_patch(1)
     assert not ok_r, "Removal should be rejected by default when cavity area is not preserved"
     msg_str = str(msg_r)
-    assert ('patch area changed' in msg_str) or ('polygon fill would change cavity area' in msg_str), \
+    assert ('cavity area changed' in msg_str), \
         f"Unexpected rejection reason: {msg_r}"
