@@ -741,7 +741,10 @@ class PatchBasedMeshEditor:
         Si start_tri_idx n'est pas donné, commence au triangle 0.
         Retourne l'indice du triangle contenant strictement le point, ou None.
         """
-        edge_map = build_edge_to_tri_map(self.triangles)
+        # Reuse existing edge_map if available; otherwise build once
+        edge_map = getattr(self, 'edge_map', None)
+        if not isinstance(edge_map, dict) or not edge_map:
+            edge_map = build_edge_to_tri_map(self.triangles)
         active = self.active_tri_indices()
         if start_tri_idx is None:
             curr = active[0] if active else None

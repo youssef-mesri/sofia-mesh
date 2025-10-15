@@ -71,19 +71,21 @@ def simulate_compaction_and_check(points, triangles, eps_area=EPS_AREA, reject_b
 			return (o1*o2<0) and (o3*o4<0)
 		coords = new_points
 		E = len(edges)
-		# Small meshes: fall back to O(E^2)
+		# Small meshes: fall back to O(E^2) with precomputed bounding boxes
 		if E <= 512:
+			ex0 = coords[[e[0] for e in edges]]; ex1 = coords[[e[1] for e in edges]]
+			minx_e = np.minimum(ex0[:,0], ex1[:,0]); maxx_e = np.maximum(ex0[:,0], ex1[:,0])
+			miny_e = np.minimum(ex0[:,1], ex1[:,1]); maxy_e = np.maximum(ex0[:,1], ex1[:,1])
 			for i,(a,b) in enumerate(edges):
 				pa, pb = coords[a], coords[b]
-				for j,(c,d) in enumerate(edges[i+1:], i+1):
+				min_abx = minx_e[i]; max_abx = maxx_e[i]
+				min_aby = miny_e[i]; max_aby = maxy_e[i]
+				for j in range(i+1, E):
+					c, d = edges[j]
 					# quick bbox reject
-					pc, pd = coords[c], coords[d]
-					min_abx = min(pa[0], pb[0]); max_abx = max(pa[0], pb[0])
-					min_aby = min(pa[1], pb[1]); max_aby = max(pa[1], pb[1])
-					min_cdx = min(pc[0], pd[0]); max_cdx = max(pc[0], pd[0])
-					min_cdy = min(pc[1], pd[1]); max_cdy = max(pc[1], pd[1])
-					if (max_abx < min_cdx) or (max_cdx < min_abx) or (max_aby < min_cdy) or (max_cdy < min_aby):
+					if (max_abx < minx_e[j]) or (maxx_e[j] < min_abx) or (max_aby < miny_e[j]) or (maxy_e[j] < min_aby):
 						continue
+					pc, pd = coords[c], coords[d]
 					if seg_intersect(pa, pb, pc, pd):
 						crossed = True
 						msgs.append(f"crossing edges detected: {(a,b)} intersects {(c,d)}")

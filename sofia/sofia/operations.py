@@ -182,9 +182,13 @@ def op_split_edge_delaunay(editor, edge, strict_mode='centroid'):
         editor.triangles[idx] = [-1,-1,-1]
     if oriented_appended:
         start = len(editor.triangles)
-        appended_arr = np.array(oriented_appended, dtype=np.int32)
-        editor.triangles = np.ascontiguousarray(np.vstack([editor.triangles, appended_arr]).astype(np.int32))
-        for i in range(start, len(editor.triangles)):
+        appended_arr = np.asarray(oriented_appended, dtype=np.int32)
+        # preallocate new array to avoid intermediate cast/copies
+        new_tris = np.empty((start + appended_arr.shape[0], 3), dtype=np.int32)
+        new_tris[:start, :] = editor.triangles
+        new_tris[start:, :] = appended_arr
+        editor.triangles = np.ascontiguousarray(new_tris)
+        for i in range(start, start + appended_arr.shape[0]):
             editor._add_triangle_to_maps(i)
     # Register commit for amortization tracking
     if hasattr(editor, '_on_op_committed'):
@@ -283,9 +287,13 @@ def op_split_edge(editor, edge=None):
         editor._remove_triangle_from_maps(idx)
         editor.triangles[idx] = [-1,-1,-1]
     start = len(editor.triangles)
-    new_arr = np.array(new_tris, dtype=np.int32)
-    editor.triangles = np.ascontiguousarray(np.vstack([editor.triangles, new_arr]).astype(np.int32))
-    for i in range(start, len(editor.triangles)):
+    new_arr = np.asarray(new_tris, dtype=np.int32)
+    total = len(editor.triangles) + new_arr.shape[0]
+    out = np.empty((total, 3), dtype=np.int32)
+    out[:len(editor.triangles), :] = editor.triangles
+    out[len(editor.triangles):, :] = new_arr
+    editor.triangles = np.ascontiguousarray(out)
+    for i in range(start, total):
         editor._add_triangle_to_maps(i)
     if hasattr(editor, '_on_op_committed'):
         try:

@@ -99,16 +99,37 @@ def triangles_signed_areas(points, tris):
 def ensure_positive_orientation(points, triangles):
 	pts = np.asarray(points, dtype=np.float64)
 	tris = np.asarray(triangles, dtype=np.int32).copy()
-	for i, t in enumerate(tris):
-		if np.all(t == -1):
-			continue
-		try:
-			p0 = pts[int(t[0])]; p1 = pts[int(t[1])]; p2 = pts[int(t[2])]
-			a = triangle_area(p0, p1, p2)
-			if a <= 0:
-				tris[i] = np.array([t[0], t[2], t[1]], dtype=int)
-		except Exception:
-			continue
+	if tris.size == 0:
+		return tris
+	# Skip tombstoned rows
+	mask_active = ~np.all(tris == -1, axis=1)
+	if not np.any(mask_active):
+		return tris
+	active = tris[mask_active]
+	try:
+		# Compute signed areas vectorially and flip rows with non-positive area
+		p0 = pts[active[:, 0]]; p1 = pts[active[:, 1]]; p2 = pts[active[:, 2]]
+		areas = 0.5 * np.cross(p1 - p0, p2 - p0)
+		flip = areas <= 0.0
+		if np.any(flip):
+			swapped = active.copy()
+			swapped[flip, 1], swapped[flip, 2] = active[flip, 2], active[flip, 1]
+			tris[mask_active] = swapped
+		else:
+			tris[mask_active] = active
+	except Exception:
+		# Fallback to scalar path if vectorized computation fails for any reason
+		for i in range(tris.shape[0]):
+			t = tris[i]
+			if np.all(t == -1):
+				continue
+			try:
+				p0 = pts[int(t[0])]; p1 = pts[int(t[1])]; p2 = pts[int(t[2])]
+				a = triangle_area(p0, p1, p2)
+				if a <= 0:
+					tris[i] = np.array([t[0], t[2], t[1]], dtype=int)
+			except Exception:
+				continue
 	return tris
 
 def point_in_polygon(x, y, poly):
