@@ -144,6 +144,21 @@ python demos/edge_collapse_demo.py
 python utilities/patch_fill_check.py
 ```
 
+## Profiling
+
+Two quick ways to profile and inspect hotspots:
+
+- scripts/profile_ops.py: runs a typical greedy pass on a random Delaunay mesh, prints per-op aggregated timings from the editor, and optionally dumps cProfile hotspots and raw .pstats.
+  - Example flags: `--npts`, `--seed`, `--vertex-passes`, `--edge-passes`, `--profile`, `--profile-out run-logs/ops.pstats`
+- scripts/profile_amortization.py: compares greedy runs with and without strict-check cooldown (amortized vs non-amortized) and reports wall time and key routine counts/times.
+
+Additionally, the CLI supports profiling:
+
+- Greedy: `python -m sofia.sofia.remesh_driver greedy --profile --profile-out run-logs/greedy.pstats`
+- Patch:  `python -m sofia.sofia.remesh_driver patch  --profile --profile-out run-logs/patch.pstats`
+
+You can open the .pstats files with tools like snakeviz or gprof2dot for deeper analysis.
+
 ## Contributing
 
 Contributions are welcome! See `CONTRIBUTING.md` for full guidelines. Please also review our `CODE_OF_CONDUCT.md`.
