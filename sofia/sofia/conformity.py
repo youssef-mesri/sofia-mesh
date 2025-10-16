@@ -8,7 +8,7 @@ from .constants import EPS_AREA
 __all__ = [
 	'build_edge_to_tri_map','build_vertex_to_tri_map','check_mesh_conformity',
 	'is_active_triangle','boundary_edges_from_map','is_boundary_vertex_from_maps',
-	'simulate_compaction_and_check'
+	'simulate_compaction_and_check','filter_crossing_candidate_edges'
 ]
 
 def simulate_compaction_and_check(points, triangles, eps_area=EPS_AREA, reject_boundary_loop_increase=False,
@@ -57,40 +57,40 @@ def simulate_compaction_and_check(points, triangles, eps_area=EPS_AREA, reject_b
 			edges.extend([(a,b),(b,c),(c,a)])
 		edges = [tuple(sorted(e)) for e in edges]
 		edges = sorted(set(edges))
-		# Geometry helpers
-		def orient(a,b,c):
-			return (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0])
-		def seg_intersect(p1,p2,p3,p4):
-			# Exclude shared endpoints
-			if (p1==p3).all() or (p1==p4).all() or (p2==p3).all() or (p2==p4).all():
-				return False
-			o1 = orient(p1,p2,p3); o2 = orient(p1,p2,p4); o3 = orient(p3,p4,p1); o4 = orient(p3,p4,p2)
-			# Colinear overlapping ignored (meshes share endpoints for valid adjacency)
-			if o1==0 and o2==0 and o3==0 and o4==0:
-				return False
-			return (o1*o2<0) and (o3*o4<0)
+		# Reuse geometry primitives for segment intersection
+		from .geometry import seg_intersect
 		coords = new_points
 		E = len(edges)
-		# Small meshes: fall back to O(E^2) with precomputed bounding boxes
+		# Vectorized approach: collect candidate pairs that pass bbox pruning and test in batch
+		import time
+		from .geometry import vectorized_seg_intersect, bbox_overlap
+		t_cross0 = time.perf_counter()
 		if E <= 512:
 			ex0 = coords[[e[0] for e in edges]]; ex1 = coords[[e[1] for e in edges]]
 			minx_e = np.minimum(ex0[:,0], ex1[:,0]); maxx_e = np.maximum(ex0[:,0], ex1[:,0])
 			miny_e = np.minimum(ex0[:,1], ex1[:,1]); maxy_e = np.maximum(ex0[:,1], ex1[:,1])
+			test_a = []; test_b = []; test_c = []; test_d = []; pair_info = []
 			for i,(a,b) in enumerate(edges):
 				pa, pb = coords[a], coords[b]
 				min_abx = minx_e[i]; max_abx = maxx_e[i]
 				min_aby = miny_e[i]; max_aby = maxy_e[i]
 				for j in range(i+1, E):
-					c, d = edges[j]
 					# quick bbox reject
-					if (max_abx < minx_e[j]) or (maxx_e[j] < min_abx) or (max_aby < miny_e[j]) or (maxy_e[j] < min_aby):
+					if not bbox_overlap(min_abx, max_abx, min_aby, max_aby, minx_e[j], maxx_e[j], miny_e[j], maxy_e[j]):
 						continue
+					c, d = edges[j]
 					pc, pd = coords[c], coords[d]
-					if seg_intersect(pa, pb, pc, pd):
+					test_a.append(pa); test_b.append(pb); test_c.append(pc); test_d.append(pd)
+					pair_info.append((a,b,c,d))
+			if test_a:
+				ta = np.asarray(test_a); tb = np.asarray(test_b); tc = np.asarray(test_c); td = np.asarray(test_d)
+				res = vectorized_seg_intersect(ta, tb, tc, td)
+				for k, ok in enumerate(res):
+					if ok:
+						a_, b_, c_, d_ = pair_info[k]
 						crossed = True
-						msgs.append(f"crossing edges detected: {(a,b)} intersects {(c,d)}")
+						msgs.append(f"crossing edges detected: {(a_,b_)} intersects {(c_,d_)}")
 						break
-				if crossed: break
 		else:
 			# Spatial grid pruning for large meshes
 			# Compute per-edge bounding boxes
@@ -127,26 +127,255 @@ def simulate_compaction_and_check(points, triangles, eps_area=EPS_AREA, reject_b
 					for m in range(k + 1, len(lst_sorted)):
 						jk = lst_sorted[m]
 						cand_pairs.add((ik, jk))
-			# Test candidate pairs
+			# Test candidate pairs in batch after bbox pruning
+			test_a = []; test_b = []; test_c = []; test_d = []; pair_info = []
 			for (i, j) in cand_pairs:
+				if (i == j):
+					continue
 				a, b = edges[i]; c, d = edges[j]
-				# quick bbox reject again as cheap filter
 				pa, pb = coords[a], coords[b]
 				pc, pd = coords[c], coords[d]
 				min_abx = min(pa[0], pb[0]); max_abx = max(pa[0], pb[0])
 				min_aby = min(pa[1], pb[1]); max_aby = max(pa[1], pb[1])
 				min_cdx = min(pc[0], pd[0]); max_cdx = max(pc[0], pd[0])
 				min_cdy = min(pc[1], pd[1]); max_cdy = max(pc[1], pd[1])
-				if (max_abx < min_cdx) or (max_cdx < min_abx) or (max_aby < min_cdy) or (max_cdy < min_aby):
+				if not bbox_overlap(min_abx, max_abx, min_aby, max_aby, min_cdx, max_cdx, min_cdy, max_cdy):
 					continue
-				if seg_intersect(pa, pb, pc, pd):
-					crossed = True
-					msgs.append(f"crossing edges detected: {(a,b)} intersects {(c,d)}")
-					break
-			if crossed:
-				pass
+				test_a.append(pa); test_b.append(pb); test_c.append(pc); test_d.append(pd)
+				pair_info.append((a,b,c,d))
+			if test_a:
+				ta = np.asarray(test_a); tb = np.asarray(test_b); tc = np.asarray(test_c); td = np.asarray(test_d)
+				res = vectorized_seg_intersect(ta, tb, tc, td)
+				for k, ok in enumerate(res):
+					if ok:
+						a_, b_, c_, d_ = pair_info[k]
+						crossed = True
+						msgs.append(f"crossing edges detected: {(a_,b_)} intersects {(c_,d_)}")
+						break
+		t_cross1 = time.perf_counter()
+		# optionally log crossing detection timing
+		try:
+			from .logging_utils import get_logger
+			logger = get_logger('sofia.conformity')
+			logger.info("crossing_detection_ms=%.3f pairs_tested=%d", 1000.0*(t_cross1-t_cross0), 0)
+		except Exception:
+			pass
 	ok = ok_conf and (len(inv) == 0) and (not crossed)
 	return ok, msgs, inv
+
+
+def build_kept_edge_grid(points, kept_edges):
+	"""Build a lightweight spatial grid index for kept edges.
+
+	Returns a dict with grid parameters and cells mapping to kept-edge indices.
+	The structure can be passed back to `filter_crossing_candidate_edges` via
+	the `kept_grid` parameter to avoid rebuilding the grid for multiple queries.
+	"""
+	pts = np.ascontiguousarray(np.asarray(points, dtype=np.float64))
+	ke = np.asarray(kept_edges, dtype=np.int32)
+	if ke.size == 0:
+		return None
+	ax = pts[ke[:,0], 0]; ay = pts[ke[:,0], 1]
+	bx = pts[ke[:,1], 0]; by = pts[ke[:,1], 1]
+	minx = np.minimum(ax, bx); maxx = np.maximum(ax, bx)
+	miny = np.minimum(ay, by); maxy = np.maximum(ay, by)
+	gx0 = float(np.min(minx)); gx1 = float(np.max(maxx))
+	gy0 = float(np.min(miny)); gy1 = float(np.max(maxy))
+	rangex = max(gx1 - gx0, EPS_AREA); rangey = max(gy1 - gy0, EPS_AREA)
+	E = ke.shape[0]
+	N = max(1, int(np.sqrt(E)))
+	cell = max(rangex, rangey) / N
+	if cell <= 0:
+		cell = max(rangex, rangey)
+	cells = {}
+	for idx in range(E):
+		i0 = int((minx[idx] - gx0) / cell); i1 = int((maxx[idx] - gx0) / cell)
+		j0 = int((miny[idx] - gy0) / cell); j1 = int((maxy[idx] - gy0) / cell)
+		if i1 < i0: i0, i1 = i1, i0
+		if j1 < j0: j0, j1 = j1, j0
+		for ii in range(max(0, i0), min(N, i1 + 1)):
+			for jj in range(max(0, j0), min(N, j1 + 1)):
+				cells.setdefault((ii, jj), []).append(idx)
+	return {
+		'pts': pts,
+		'ke': ke,
+		'minx': minx,
+		'maxx': maxx,
+		'miny': miny,
+		'maxy': maxy,
+		'gx0': gx0, 'gy0': gy0, 'cell': cell, 'N': N,
+		'cells': cells
+	}
+
+
+def filter_crossing_candidate_edges(points, kept_edges, cand_edges, kept_grid=None):
+	"""Return a boolean mask for candidate edges that cross any kept edge.
+
+	Parameters
+	----------
+	points : (N,2) array-like
+	kept_edges : (K,2) array-like of int
+	cand_edges : (M,2) array-like of int
+
+	Returns
+	-------
+	crosses : (M,) boolean array
+		True for candidate edges that intersect at least one kept edge (excluding shared endpoints).
+	"""
+	pts = np.ascontiguousarray(np.asarray(points, dtype=np.float64))
+	K = 0 if kept_edges is None else len(kept_edges)
+	M = 0 if cand_edges is None else len(cand_edges)
+	if K == 0 or M == 0:
+		return np.zeros((M,), dtype=bool)
+	ke = np.asarray(kept_edges, dtype=np.int32)
+	ce = np.asarray(cand_edges, dtype=np.int32)
+
+	import time
+	t0 = time.perf_counter()
+	# If a kept_grid is provided, reuse it to avoid rebuilding the grid for every call.
+	if kept_grid is not None:
+		# kept_grid was built for kept-edges only
+		pts_ke = kept_grid['pts']
+		ke_arr = kept_grid['ke']
+		ke_minx = kept_grid['minx']; ke_maxx = kept_grid['maxx']; ke_miny = kept_grid['miny']; ke_maxy = kept_grid['maxy']
+		gx0 = kept_grid['gx0']; gy0 = kept_grid['gy0']; cell = kept_grid['cell']; N = kept_grid['N']
+		cells = kept_grid['cells']
+		# Map candidate edges to grid cells and collect candidate pairs (kept_idx, cand_idx)
+		cand_pairs = []  # will store tuples (ke_idx, cand_idx)
+		for cand_idx, (c0, c1) in enumerate(ce):
+			pa = pts[int(c0)]; pb = pts[int(c1)]
+			min_ax = pa[0] if pa[0] < pb[0] else pb[0]
+			max_ax = pa[0] if pa[0] > pb[0] else pb[0]
+			min_ay = pa[1] if pa[1] < pb[1] else pb[1]
+			max_ay = pa[1] if pa[1] > pb[1] else pb[1]
+			i0 = int((min_ax - gx0) / cell); i1 = int((max_ax - gx0) / cell)
+			j0 = int((min_ay - gy0) / cell); j1 = int((max_ay - gy0) / cell)
+			if i1 < i0: i0, i1 = i1, i0
+			if j1 < j0: j0, j1 = j1, j0
+			seen = set()
+			for ii in range(max(0, i0), min(N, i1 + 1)):
+				for jj in range(max(0, j0), min(N, j1 + 1)):
+					for ke_idx in cells.get((ii, jj), []):
+						if ke_idx in seen:
+							continue
+						seen.add(ke_idx)
+						cand_pairs.append((ke_idx, cand_idx))
+		# Now cand_pairs holds candidate pairs between kept-edge indices and candidate-edge indices
+		# Prepare batch arrays to test
+		test_a = []; test_b = []; test_c = []; test_d = []; test_idx = []
+		for ke_idx, cand_idx in cand_pairs:
+			a, b = ke_arr[ke_idx]
+			c, d = ce[cand_idx]
+			pa = pts[int(a)]; pb = pts[int(b)]; pc = pts[int(c)]; pd = pts[int(d)]
+			from .geometry import bbox_overlap
+			min_abx = min(pa[0], pb[0]); max_abx = max(pa[0], pb[0])
+			min_aby = min(pa[1], pb[1]); max_aby = max(pa[1], pb[1])
+			min_cdx = min(pc[0], pd[0]); max_cdx = max(pc[0], pd[0])
+			min_cdy = min(pc[1], pd[1]); max_cdy = max(pc[1], pd[1])
+			if not bbox_overlap(min_abx, max_abx, min_aby, max_aby, min_cdx, max_cdx, min_cdy, max_cdy):
+				continue
+			test_a.append(pa); test_b.append(pb); test_c.append(pc); test_d.append(pd)
+			test_idx.append(cand_idx)
+		t1 = time.perf_counter()
+		if test_a:
+			ta = np.asarray(test_a); tb = np.asarray(test_b); tc = np.asarray(test_c); td = np.asarray(test_d)
+			t_vec0 = time.perf_counter()
+			from .geometry import vectorized_seg_intersect
+			res = vectorized_seg_intersect(ta, tb, tc, td)
+			t_vec1 = time.perf_counter()
+			crosses = np.zeros((M,), dtype=bool)
+			for k, ok in enumerate(res):
+				if ok:
+					crosses[int(test_idx[k])] = True
+			t2 = time.perf_counter()
+			try:
+				from .logging_utils import get_logger
+				logger = get_logger('sofia.conformity')
+				logger.info("filter_crossing_candidate_edges: grid_build_ms=%.3f pair_count=%d vectorized_ms=%.3f assign_ms=%.3f",
+							1000.0*(t1 - t0), len(test_a), 1000.0*(t_vec1 - t_vec0), 1000.0*(t2 - t_vec1))
+			except Exception:
+				pass
+			try:
+				print(f"[conformity] grid_ms={1000.0*(t1-t0):.3f} pairs={len(test_a)} vec_ms={1000.0*(t_vec1-t_vec0):.3f} assign_ms={1000.0*(t2-t_vec1):.3f}")
+			except Exception:
+				pass
+			return crosses
+		else:
+			t1 = time.perf_counter()
+			try:
+				from .logging_utils import get_logger
+				logger = get_logger('sofia.conformity')
+				logger.info("filter_crossing_candidate_edges: grid_build_ms=%.3f pair_count=0", 1000.0*(t1 - t0))
+			except Exception:
+				pass
+			try:
+				print(f"[conformity] grid_ms={1000.0*(t1-t0):.3f} pairs=0")
+			except Exception:
+				pass
+			return np.zeros((M,), dtype=bool)
+	# Otherwise, fallback to the original behavior (build grid across kept+candidate edges)
+    
+
+
+	from .geometry import vectorized_seg_intersect
+
+	crosses = np.zeros((M,), dtype=bool)
+	# Build arrays of segment endpoints to test in batch
+	test_a = [];
+	test_b = [];
+	test_c = [];
+	test_d = [];
+	test_idx = []  # candidate edge index
+	for (i, j) in cand_pairs:
+		if (i < K and j >= K) or (j < K and i >= K):
+			a, b = all_edges[i]; c, d = all_edges[j]
+			pa, pb = pts[a], pts[b]
+			pc, pd = pts[c], pts[d]
+			min_abx = min(pa[0], pb[0]); max_abx = max(pa[0], pb[0])
+			min_aby = min(pa[1], pb[1]); max_aby = max(pa[1], pb[1])
+			min_cdx = min(pc[0], pd[0]); max_cdx = max(pc[0], pd[0])
+			min_cdy = min(pc[1], pd[1]); max_cdy = max(pc[1], pd[1])
+			from .geometry import bbox_overlap
+			if not bbox_overlap(min_abx, max_abx, min_aby, max_aby, min_cdx, max_cdx, min_cdy, max_cdy):
+				continue
+			test_a.append(pa); test_b.append(pb); test_c.append(pc); test_d.append(pd)
+			test_idx.append(j-K if j >= K else i-K)
+	t1 = time.perf_counter()
+	if test_a:
+		ta = np.asarray(test_a); tb = np.asarray(test_b); tc = np.asarray(test_c); td = np.asarray(test_d)
+		t_vec0 = time.perf_counter()
+		res = vectorized_seg_intersect(ta, tb, tc, td)
+		t_vec1 = time.perf_counter()
+		for k, ok in enumerate(res):
+			if ok:
+				crosses[int(test_idx[k])] = True
+		t2 = time.perf_counter()
+		# log durations to help diagnose perf regression
+		try:
+			from .logging_utils import get_logger
+			logger = get_logger('sofia.conformity')
+			logger.info("filter_crossing_candidate_edges: grid_build_ms=%.3f pair_count=%d vectorized_ms=%.3f assign_ms=%.3f",
+						1000.0*(t1 - t0), len(test_a), 1000.0*(t_vec1 - t_vec0), 1000.0*(t2 - t_vec1))
+		except Exception:
+			pass
+		# also print to stdout for immediate diagnosis
+		try:
+			print(f"[conformity] grid_ms={1000.0*(t1-t0):.3f} pairs={len(test_a)} vec_ms={1000.0*(t_vec1-t_vec0):.3f} assign_ms={1000.0*(t2-t_vec1):.3f}")
+		except Exception:
+			pass
+	else:
+		t1 = time.perf_counter()
+		try:
+			from .logging_utils import get_logger
+			logger = get_logger('sofia.conformity')
+			logger.info("filter_crossing_candidate_edges: grid_build_ms=%.3f pair_count=0", 1000.0*(t1 - t0))
+		except Exception:
+			pass
+		try:
+			print(f"[conformity] grid_ms={1000.0*(t1-t0):.3f} pairs=0")
+		except Exception:
+			pass
+	return crosses
 
 def build_edge_to_tri_map(triangles):
 	edge_map = {}

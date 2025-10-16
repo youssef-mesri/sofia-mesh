@@ -31,6 +31,19 @@ class OpStats:
     time_total: float = 0.0
     time_max: float = 0.0
     time_min: float = 0.0  # 0 means uninitialized
+    # Remove-node specific counters (attempt granularity)
+    # Number of triangulation candidates we constructed and validated for a single remove operation
+    remove_candidate_attempts: int = 0
+    # Number of quality gate evaluations (non-worsening worst-min-angle checks)
+    remove_quality_checks: int = 0
+    # Number of early rejections (False returns not counted as fail/quality/simulation)
+    remove_early_rejects: int = 0
+    # Breakdown of early rejections
+    remove_early_area: int = 0           # area-preservation guard
+    remove_early_boundary: int = 0       # cannot determine cavity/boundary
+    remove_early_no_cand: int = 0        # no valid retriangulation candidate
+    remove_early_validation: int = 0     # local conformity/candidate validation failure
+    remove_early_exception: int = 0      # exception paths turned into conservative rejection
 
     def to_dict(self) -> Dict[str, Any]:  # pragma: no cover - simple mapping
         return {
@@ -43,6 +56,14 @@ class OpStats:
             'star_success': self.star_success,
             'simplify_attempted': self.simplify_attempted,
             'simplify_helped': self.simplify_helped,
+            'remove_candidate_attempts': self.remove_candidate_attempts,
+            'remove_quality_checks': self.remove_quality_checks,
+            'remove_early_rejects': self.remove_early_rejects,
+            'remove_early_area': self.remove_early_area,
+            'remove_early_boundary': self.remove_early_boundary,
+            'remove_early_no_cand': self.remove_early_no_cand,
+            'remove_early_validation': self.remove_early_validation,
+            'remove_early_exception': self.remove_early_exception,
             'success_rate': (self.success / self.attempts) if self.attempts else 0.0,
             'fallback_rate': (self.fallback_used / self.attempts) if self.attempts else 0.0,
             'quality_reject_rate': (self.quality_rejects / self.attempts) if self.attempts else 0.0,
@@ -67,7 +88,26 @@ def format_stats_table(stats_dict) -> str:
     """Return a human readable multi-line table summarizing op stats."""
     if not stats_dict:
         return "<no stats>"
-    header = ["op", "attempts", "succ", "fail", "qualRej", "simRej", "succ%", "avg_ms", "min_ms", "max_ms"]
+    # Determine whether to include optional remove-specific columns
+    include_rm_cand = any(s.get('remove_candidate_attempts', 0) for s in stats_dict.values())
+    include_rm_qchk = any(s.get('remove_quality_checks', 0) for s in stats_dict.values())
+    include_rm_early = any(s.get('remove_early_rejects', 0) for s in stats_dict.values())
+    include_rm_breakdown = any(
+        (s.get('remove_early_area', 0) or s.get('remove_early_boundary', 0) or s.get('remove_early_no_cand', 0)
+         or s.get('remove_early_validation', 0) or s.get('remove_early_exception', 0))
+        for s in stats_dict.values()
+    )
+    header = ["op", "attempts", "succ", "fail", "qualRej", "simRej"]
+    if include_rm_cand:
+        header.append("rmCand")
+    if include_rm_qchk:
+        header.append("rmQchk")
+    if include_rm_early:
+        header.append("rmEarly")
+    if include_rm_breakdown:
+        # compact short labels for readability
+        header.extend(["rmEA","rmEB","rmEN","rmEV","rmEX"])  # area, boundary, no-cand, validation, exception
+    header.extend(["succ%", "avg_ms", "min_ms", "max_ms"])
     rows = []
     for op in sorted(stats_dict.keys()):
         s = stats_dict[op]
@@ -75,10 +115,25 @@ def format_stats_table(stats_dict) -> str:
         qual = s['quality_rejects']; simr = s['simulation_rejects']
         succ_pct = (succ / attempts * 100.0) if attempts else 0.0
         avg_ms = s['time_avg'] * 1000.0; min_ms = s['time_min'] * 1000.0; max_ms = s['time_max'] * 1000.0
-        rows.append([
-            op, str(attempts), str(succ), str(fail), str(qual), str(simr),
+        row = [op, str(attempts), str(succ), str(fail), str(qual), str(simr)]
+        if include_rm_cand:
+            row.append(str(s.get('remove_candidate_attempts', 0)))
+        if include_rm_qchk:
+            row.append(str(s.get('remove_quality_checks', 0)))
+        if include_rm_early:
+            row.append(str(s.get('remove_early_rejects', 0)))
+        if include_rm_breakdown:
+            row.extend([
+                str(s.get('remove_early_area', 0)),
+                str(s.get('remove_early_boundary', 0)),
+                str(s.get('remove_early_no_cand', 0)),
+                str(s.get('remove_early_validation', 0)),
+                str(s.get('remove_early_exception', 0)),
+            ])
+        row.extend([
             f"{succ_pct:6.2f}", f"{avg_ms:8.3f}", f"{min_ms:8.3f}", f"{max_ms:8.3f}"
         ])
+        rows.append(row)
     col_w = [len(h) for h in header]
     for r in rows:
         for i,v in enumerate(r):

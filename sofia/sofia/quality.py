@@ -137,3 +137,49 @@ def compute_h(editor, metric: str) -> float:
 
 # extend the public export list with additional quality helpers
 __all__.extend(["worst_min_angle", "non_worsening_quality", "compute_h"])
+
+
+def _triangle_qualities_norm(points_arr, tris_arr):
+    """Module-level normalized triangle quality helper.
+
+    Returns an array of per-triangle quality values in [0,1].
+    Kept here so other modules can import and tests can monkeypatch it.
+    """
+    try:
+        pts = np.asarray(points_arr, dtype=np.float64)
+        tris = np.asarray(tris_arr, dtype=np.int32)
+        if tris.size == 0:
+            return np.empty((0,), dtype=np.float64)
+        p0 = pts[tris[:, 0]]
+        p1 = pts[tris[:, 1]]
+        p2 = pts[tris[:, 2]]
+        a = 0.5 * np.abs((p1[:,0]-p0[:,0])*(p2[:,1]-p0[:,1]) - (p1[:,1]-p0[:,1])*(p2[:,0]-p0[:,0]))
+        e0 = np.sum((p1 - p0)**2, axis=1)
+        e1 = np.sum((p2 - p1)**2, axis=1)
+        e2 = np.sum((p0 - p2)**2, axis=1)
+        denom = e0 + e1 + e2
+        safe = denom > 0
+        q = np.zeros(tris.shape[0], dtype=np.float64)
+        q[safe] = a[safe] / denom[safe]
+        norm_factor = 12.0 / (np.sqrt(3.0))
+        q = q * norm_factor
+        q = np.clip(q, 0.0, 1.0)
+        return q
+    except Exception:
+        out = []
+        for tri in tris_arr:
+            try:
+                p0 = points_arr[int(tri[0])]; p1 = points_arr[int(tri[1])]; p2 = points_arr[int(tri[2])]
+                a = abs(triangle_area(p0, p1, p2))
+                e0 = (p1[0]-p0[0])**2 + (p1[1]-p0[1])**2
+                e1 = (p2[0]-p1[0])**2 + (p2[1]-p1[1])**2
+                e2 = (p0[0]-p2[0])**2 + (p0[1]-p2[1])**2
+                denom = e0 + e1 + e2
+                qv = 0.0
+                if denom > 0:
+                    qv = (a / denom) * (12.0 / (3.0**0.5))
+                    if qv > 1.0: qv = 1.0
+                out.append(qv)
+            except Exception:
+                out.append(0.0)
+        return np.array(out, dtype=np.float64)

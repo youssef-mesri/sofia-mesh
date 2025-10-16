@@ -18,6 +18,9 @@ Example JSON (see configs/refinement_scenario.json):
 from __future__ import annotations
 
 import argparse
+import io as _io
+import cProfile as _cprof
+import pstats as _pstats
 import json
 import logging
 from typing import Any, Dict, Tuple
@@ -706,54 +709,92 @@ def main():
     ap = argparse.ArgumentParser(description='Apply refinement scenario (add_node, split_edge) from JSON')
     ap.add_argument('--scenario', type=str, required=True, help='Path to scenario JSON file')
     ap.add_argument('--log-level', type=str, choices=['DEBUG','INFO','WARNING','ERROR','CRITICAL'], default='INFO')
+    ap.add_argument('--profile', action='store_true', help='Enable cProfile and print top hotspots')
+    ap.add_argument('--profile-out', type=str, default=None, help='Write raw cProfile stats to this .pstats file when --profile is set')
+    ap.add_argument('--profile-top', type=int, default=25, help='How many entries to show in hotspots (default: 25)')
+    ap.add_argument('--op-stats', action='store_true', help='Print per-operation stats summary at the end')
+    ap.add_argument('--no-plot', action='store_true', help='Skip before/after plotting (useful for pure performance profiling)')
     args = ap.parse_args()
 
     configure_logging(getattr(logging, args.log_level.upper(), logging.INFO))
 
-    with open(args.scenario, 'r') as f:
-        scenario = json.load(f)
+    def _run():
+        with open(args.scenario, 'r') as f:
+            scenario = json.load(f)
 
-    mesh_cfg = scenario.get('mesh', {})
-    plot_cfg = scenario.get('plot', {})
-    out_before = plot_cfg.get('out_before', 'refine_before.png')
-    out_after = plot_cfg.get('out_after', 'refine_after.png')
+        mesh_cfg = scenario.get('mesh', {})
+        plot_cfg = scenario.get('plot', {})
+        out_before = plot_cfg.get('out_before', 'refine_before.png')
+        out_after = plot_cfg.get('out_after', 'refine_after.png')
 
-    editor = load_mesh_from_cfg(mesh_cfg)
-    plot_mesh(editor, outname=out_before)
-    log.info('Wrote %s', out_before)
+        editor = load_mesh_from_cfg(mesh_cfg)
+        if not args.no_plot:
+            plot_mesh(editor, outname=out_before)
+            log.info('Wrote %s', out_before)
 
-    # Either apply explicit ops list, or an auto refinement block
-    auto_cfg = scenario.get('auto', None)
-    if auto_cfg:
-        # Enable virtual boundary topological mode when requested or when refining boundary edges
-        try:
-            if 'virtual_boundary_mode' in auto_cfg:
-                editor.virtual_boundary_mode = bool(auto_cfg.get('virtual_boundary_mode', False))
-                log.info('virtual_boundary_mode from scenario: %s', editor.virtual_boundary_mode)
-            elif bool(auto_cfg.get('include_boundary_edges', False)):
-                editor.virtual_boundary_mode = True
-                log.info('virtual_boundary_mode enabled by include_boundary_edges')
-        except Exception:
-            pass
-        # Optional toggle: enforce split quality (improvement) vs relax (refinement)
-        if 'enforce_split_quality' in auto_cfg:
-            val = bool(auto_cfg.get('enforce_split_quality', True))
+        # Either apply explicit ops list, or an auto refinement block
+        auto_cfg = scenario.get('auto', None)
+        if auto_cfg:
+            # Enable virtual boundary topological mode when requested or when refining boundary edges
             try:
-                editor.enforce_split_quality = val
+                if 'virtual_boundary_mode' in auto_cfg:
+                    editor.virtual_boundary_mode = bool(auto_cfg.get('virtual_boundary_mode', False))
+                    log.info('virtual_boundary_mode from scenario: %s', editor.virtual_boundary_mode)
+                elif bool(auto_cfg.get('include_boundary_edges', False)):
+                    editor.virtual_boundary_mode = True
+                    log.info('virtual_boundary_mode enabled by include_boundary_edges')
             except Exception:
                 pass
-        auto_refine(editor, auto_cfg)
-    else:
-        for i, op in enumerate(scenario.get('ops', [])):
-            try:
-                apply_op(editor, op)
-            except Exception as e:
-                log.error('Failed to apply op %d: %s', i, e)
-                raise
+            # Optional toggle: enforce split quality (improvement) vs relax (refinement)
+            if 'enforce_split_quality' in auto_cfg:
+                val = bool(auto_cfg.get('enforce_split_quality', True))
+                try:
+                    editor.enforce_split_quality = val
+                except Exception:
+                    pass
+            # Optional toggle: enable quad fast-path in remove_node
+            if 'enable_remove_quad_fastpath' in auto_cfg:
+                try:
+                    editor.enable_remove_quad_fastpath = bool(auto_cfg.get('enable_remove_quad_fastpath', False))
+                    log.info('enable_remove_quad_fastpath from scenario: %s', editor.enable_remove_quad_fastpath)
+                except Exception:
+                    pass
+            auto_refine(editor, auto_cfg)
+        else:
+            for i, op in enumerate(scenario.get('ops', [])):
+                try:
+                    apply_op(editor, op)
+                except Exception as e:
+                    log.error('Failed to apply op %d: %s', i, e)
+                    raise
 
-    editor.compact_triangle_indices()
-    plot_mesh(editor, outname=out_after)
-    log.info('Wrote %s', out_after)
+        editor.compact_triangle_indices()
+        if not args.no_plot:
+            plot_mesh(editor, outname=out_after)
+            log.info('Wrote %s', out_after)
+        if args.op_stats:
+            try:
+                editor.print_stats(pretty=True)
+            except Exception:
+                # best-effort: stats are optional
+                pass
+
+    if args.profile:
+        pr = _cprof.Profile()
+        pr.enable()
+        _run()
+        pr.disable()
+        s = _io.StringIO()
+        _pstats.Stats(pr, stream=s).sort_stats('cumtime').print_stats(max(1, int(args.profile_top)))
+        log.info('Profile (top %d by cumulative time):\n%s', int(args.profile_top), s.getvalue())
+        if args.profile_out:
+            try:
+                pr.dump_stats(args.profile_out)
+                log.info('Raw pstats written to %s', args.profile_out)
+            except Exception as e:
+                log.warning('Failed to write pstats to %s: %s', args.profile_out, e)
+    else:
+        _run()
 
 
 if __name__ == '__main__':

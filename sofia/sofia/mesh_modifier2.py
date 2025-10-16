@@ -73,7 +73,8 @@ class PatchBasedMeshEditor:
                  simplify_log_every: int = 50,
                  enforce_split_quality: bool = True,
                  enforce_remove_quality: bool = True,
-                 boundary_remove_config=None):
+                 boundary_remove_config=None,
+                 enable_remove_quad_fastpath: bool = False):
         """Primary mesh editor.
 
         Parameters
@@ -132,6 +133,8 @@ class PatchBasedMeshEditor:
         self.enforce_split_quality = bool(enforce_split_quality)
         # Policy: enforce non-worsening quality for remove_node_with_patch; can be relaxed to allow removal even if quality worsens
         self.enforce_remove_quality = bool(enforce_remove_quality)
+        # Optional: enable fast path for 4-vertex cavity removal
+        self.enable_remove_quad_fastpath = bool(enable_remove_quad_fastpath)
         # Boundary removal strategy preferences
         try:
             from .config import BoundaryRemoveConfig
@@ -712,11 +715,13 @@ class PatchBasedMeshEditor:
         from .operations import op_move_vertices_to_barycenter
         import time
         t0 = time.perf_counter()
-        try:
-            self._assert_canonical()
-            return op_move_vertices_to_barycenter(self, only_interior=only_interior)
-        finally:
-            self._record_time('smooth_barycenter', time.perf_counter() - t0)
+        self._assert_canonical()
+        moved = op_move_vertices_to_barycenter(self, only_interior=only_interior)
+        stats = self._get_op_stats('smooth_barycenter')
+        stats.attempts += 1
+        stats.success += moved
+        self._record_time('smooth_barycenter', time.perf_counter() - t0)
+        return moved
 
     def locate_point(self, point):
         """

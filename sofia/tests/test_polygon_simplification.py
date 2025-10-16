@@ -40,7 +40,8 @@ def test_remove_node_with_simplification_enabled():
     ok, msg, info = editor.remove_node_with_patch(8)
     # Allow either success or quality-based rejection; primary assertion is no exception path and stats recorded.
     if not ok:
-        assert 'worsen worst-triangle' in msg
+        m = msg or ''
+        assert ('worsen worst-triangle' in m) or ('avg-quality' in m)
     ok_conf, msgs = check_mesh_conformity(editor.points, editor.triangles, allow_marked=True)
     assert ok_conf, f"Mesh not conforming after removal with simplification: {msgs}"
     # Stats migrated to dataclass remove_node_stats
@@ -55,8 +56,9 @@ def test_remove_node_with_simplification_disabled():
     editor = PatchBasedMeshEditor(pts, tris, enable_polygon_simplification=False)
     ok, msg, info = editor.remove_node_with_patch(8)
     if not ok:
-        # quality rejection acceptable
-        assert 'worsen worst-triangle' in msg
+        # quality rejection acceptable (old or new wording)
+        m = msg or ''
+        assert ('worsen worst-triangle' in m) or ('avg-quality' in m)
     stats_obj = getattr(editor, 'remove_node_stats', None)
     stats = stats_obj.to_dict() if stats_obj else {}
     assert stats.get('attempts',0) == 1

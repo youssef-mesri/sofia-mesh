@@ -667,6 +667,7 @@ def main(argv=None):  # pragma: no cover
     p_greedy.add_argument('--gif-out', type=str, default=None, help='Write an animated GIF of accepted greedy operations (path or filename)')
     p_greedy.add_argument('--gif-fps', type=int, default=4, help='Frames per second for GIF (default=4)')
     p_greedy.add_argument('--profile', action='store_true', help='Profile the run with cProfile and print top hotspots')
+    p_greedy.add_argument('--profile-out', type=str, default=None, help='Write raw cProfile stats to this .pstats file when --profile is set')
     p_greedy.add_argument('--config-json', type=str, default=None, help='Path to JSON file containing greedy configuration (as produced by config-dump)')
     # Visualization options
     p_greedy.add_argument('--loop-color-mode', type=str, choices=['per-loop','uniform'], default='per-loop', help='Boundary loop color mode for plots (default: per-loop)')
@@ -708,6 +709,7 @@ def main(argv=None):  # pragma: no cover
     p_patch.add_argument('--gif-out', type=str, default=None, help='Write an animated GIF for patch driver iterations (path or filename)')
     p_patch.add_argument('--gif-fps', type=int, default=4, help='Frames per second for patch GIF')
     p_patch.add_argument('--profile', action='store_true', help='Profile the run with cProfile and print top hotspots')
+    p_patch.add_argument('--profile-out', type=str, default=None, help='Write raw cProfile stats to this .pstats file when --profile is set (patch mode)')
     p_patch.add_argument('--rejected-log', type=str, default=None, help='Write JSON file with rejected op stats (patch mode)')
     p_patch.add_argument('--config-json', type=str, default=None, help='Path to JSON file containing patch configuration (as produced by config-dump)')
 
@@ -955,6 +957,13 @@ def main(argv=None):  # pragma: no cover
             ps = pstats.Stats(pr, stream=s).sort_stats('cumtime')
             ps.print_stats(20)
             logger.info('Profile (top 20 by cumulative time):\n%s', s.getvalue())
+            out = getattr(args, 'profile_out', None)
+            if out:
+                try:
+                    pr.dump_stats(out)
+                    logger.info('Raw pstats written to %s', out)
+                except Exception as e:
+                    logger.warning('Failed to write pstats to %s: %s', out, e)
         else:
             _greedy_body()
         return
@@ -1100,6 +1109,13 @@ def main(argv=None):  # pragma: no cover
             ps = pstats.Stats(pr, stream=s).sort_stats('cumtime')
             ps.print_stats(20)
             logger.info('Profile (top 20 by cumulative time):\n%s', s.getvalue())
+            out = getattr(args, 'profile_out', None)
+            if out:
+                try:
+                    pr.dump_stats(out)
+                    logger.info('Raw pstats written to %s', out)
+                except Exception as e:
+                    logger.warning('Failed to write pstats to %s: %s', out, e)
         else:
             _patch_body()
         return
