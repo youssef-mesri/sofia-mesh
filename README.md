@@ -144,6 +144,12 @@ python demos/edge_collapse_demo.py
 python utilities/patch_fill_check.py
 ```
 
+Example: generate a polygon scenario (pocket fill + refine)
+
+```bash
+python demos/generate_scenario.py --poly-file configs/sample_polygon_square.json --out-before demo_before.png --out-after demo_after.png
+```
+
 ## Profiling
 
 Two quick ways to profile and inspect hotspots:
