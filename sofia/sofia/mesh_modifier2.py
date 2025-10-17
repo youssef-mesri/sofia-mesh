@@ -21,7 +21,7 @@ from scipy.spatial import Delaunay, ConvexHull
 from .geometry import (triangle_area, triangle_angles, triangles_min_angles, ensure_positive_orientation,
                       point_in_polygon, opposite_edge_of_smallest_angle)
 from .quality import mesh_min_angle
-from .constants import EPS_AREA, EPS_MIN_ANGLE_DEG, EPS_IMPROVEMENT
+from .constants import EPS_AREA, EPS_MIN_ANGLE_DEG, EPS_IMPROVEMENT, EPS_TINY
 from .conformity import (build_edge_to_tri_map, build_vertex_to_tri_map, check_mesh_conformity,
                         boundary_edges_from_map, is_boundary_vertex_from_maps, is_active_triangle)
 from .stats import OpStats, print_stats as _print_stats
@@ -580,6 +580,140 @@ class PatchBasedMeshEditor:
     def global_min_angle(self):
         return mesh_min_angle(self.points, self.triangles)
 
+    def remove_degenerate_triangles(self, eps_area=None, attempt_fill=True):
+        """Detect and tombstone degenerate or inverted triangles.
+
+        Parameters
+        ----------
+        eps_area : float or None
+            Absolute area threshold below which triangles are considered degenerate. If None,
+            defaults to `EPS_AREA` from constants.
+        attempt_fill : bool
+            If True, after tombstoning degenerate triangles this method will compact the mesh
+            and attempt to fill any resulting boundary loops using `fill_boundary_loops`.
+
+        Returns
+        -------
+        dict
+            Summary with keys: 'tombstoned' (count), 'filled' (count of loops filled), 'failed_fills' (list)
+        """
+        from .geometry import triangle_area
+        from .constants import EPS_AREA
+        try:
+            eps = float(eps_area) if eps_area is not None else float(EPS_AREA)
+        except Exception:
+            eps = float(EPS_AREA)
+        tombstoned = 0
+        for ti, tri in enumerate(self.triangles):
+            try:
+                if np.all(np.asarray(tri, dtype=int) == -1):
+                    continue
+                a = triangle_area(self.points[int(tri[0])], self.points[int(tri[1])], self.points[int(tri[2])])
+            except Exception:
+                # If triangle references invalid indices, tombstone it
+                self._remove_triangle_from_maps(int(ti))
+                self.triangles[int(ti)] = np.array([-1, -1, -1], dtype=np.int32)
+                tombstoned += 1
+                continue
+            if abs(a) <= eps or a <= 0.0:
+                # tombstone
+                self._remove_triangle_from_maps(int(ti))
+                self.triangles[int(ti)] = np.array([-1, -1, -1], dtype=np.int32)
+                tombstoned += 1
+        filled = 0
+        failed = []
+        if attempt_fill and tombstoned > 0:
+            # compact to get contiguous indices and detect boundary loops
+            try:
+                self.compact_triangle_indices()
+            except Exception:
+                # fallback to updating maps
+                try:
+                    self._update_maps(force=True)
+                except Exception:
+                    pass
+            try:
+                ok, summary = self.fill_boundary_loops(reject_if_fail=False, verbose=False)
+                filled = len(summary.get('filled', [])) if isinstance(summary, dict) else 0
+                failed = summary.get('failed', []) if isinstance(summary, dict) else []
+            except Exception:
+                failed = ['exception during fill']
+        return {'tombstoned': int(tombstoned), 'filled': int(filled), 'failed_fills': failed}
+
+    def project_boundary_vertices(self, projection_fn=None, move_tol=None):
+        """Project boundary vertices onto a geometric boundary representation.
+
+        Default behavior (when projection_fn is None):
+        - Extract ordered boundary loops via `_extract_ordered_boundary_loops()`.
+        - For each vertex on a loop, project it onto the nearest segment of the loop polyline
+          (closest point on that polygonal chain). This snaps vertices onto the boundary curve
+          defined by the current boundary cycle.
+
+        Parameters
+        ----------
+        projection_fn : callable or None
+            If provided, called as projection_fn(v_idx, point, loop_indices, loop_points)
+            and must return a (2,) array-like new coordinate to assign for vertex v_idx.
+        move_tol : float
+            Minimum displacement magnitude to consider the vertex as moved (for reporting).
+
+        Returns
+        -------
+        int
+            Number of vertices moved.
+        """
+        import numpy as _np
+        # Get boundary loops (list of lists of vertex indices)
+        loops = self._extract_ordered_boundary_loops()
+        if not loops:
+            return 0
+        moved = 0
+        for loop in loops:
+            if not loop:
+                continue
+            # Build coordinates for loop vertices (indices)
+            pts_idx = [int(v) for v in loop]
+            # For each vertex in loop, compute projection
+            for local_i, vid in enumerate(pts_idx):
+                p = _np.asarray(self.points[int(vid)], dtype=float)
+                if projection_fn is not None:
+                    try:
+                        newp = _np.asarray(projection_fn(int(vid), p.copy(), pts_idx, coords.copy()), dtype=float)
+                    except Exception:
+                        # on failure, skip this vertex
+                        continue
+                else:
+                    # find nearest point on any segment of the closed polyline built without vid
+                    other_idx = [ii for ii in pts_idx if ii != int(vid)]
+                    if len(other_idx) < 2:
+                        continue
+                    other_coords = _np.asarray(self.points[other_idx], dtype=float)
+                    closed_other = _np.vstack([other_coords, other_coords[0]])
+                    best = None
+                    best_dist2 = float('inf')
+                    for si in range(closed_other.shape[0] - 1):
+                        a = closed_other[si]; b = closed_other[si+1]
+                        ab = b - a
+                        ab2 = float(ab[0]*ab[0] + ab[1]*ab[1])
+                        if ab2 <= 0.0:
+                            proj = a.copy()
+                        else:
+                            t = float(((p - a) @ ab) / ab2)
+                            t_clamped = max(0.0, min(1.0, t))
+                            proj = a + t_clamped * ab
+                        d2 = float((p[0]-proj[0])**2 + (p[1]-proj[1])**2)
+                        if d2 < best_dist2:
+                            best_dist2 = d2; best = proj
+                    if best is None:
+                        continue
+                    newp = best
+                # assign if moved significantly
+                tol = float(move_tol) if move_tol is not None else float(EPS_TINY)
+                if _np.linalg.norm(newp - p) > tol:
+                    self.points[int(vid)] = _np.asarray(newp, dtype=float)
+                    moved += 1
+        return int(moved)
+
     def split_edge_delaunay(self, edge, strict_mode='centroid'):
         from .operations import op_split_edge_delaunay
         import time
@@ -609,6 +743,89 @@ class PatchBasedMeshEditor:
             return op_edge_collapse(self, edge=edge, position=position)
         finally:
             self._record_time('edge_collapse', time.perf_counter() - t0)
+
+
+    def collapse_safe(self, edge, min_tri_area=None, min_angle_deg=10.0):
+        """Quick predicate: determine if collapsing `edge=(i,j)` to its midpoint is safe.
+
+        Checks performed:
+        - neither endpoint is a boundary vertex (uses editor edge_map via is_boundary_vertex_from_maps)
+        - for every incident triangle that would remain after collapse (triangles that do not contain both endpoints),
+          predict the triangle area and internal angles with the collapsed vertex at the midpoint and reject if any
+          triangle would be inverted, have area below `min_tri_area`, or have a minimum internal angle below
+          `min_angle_deg` degrees.
+
+        Parameters
+        ----------
+        edge : tuple(int,int)
+            Pair of vertex indices (u, v) describing the edge to test (order ignored).
+        min_tri_area : float or None
+            Absolute minimum allowed triangle area after collapse. If None, defaults to module `EPS_AREA`.
+        min_angle_deg : float
+            Minimum allowed internal angle (degrees) for any affected triangle after collapse.
+
+        Returns
+        -------
+        bool
+            True if collapse appears safe, False otherwise.
+        """
+        try:
+            from .conformity import is_boundary_vertex_from_maps
+            from .geometry import triangle_area, triangle_angles
+            from .constants import EPS_AREA
+        except Exception:
+            # If imports fail for any reason, be conservative and reject
+            return False
+        if edge is None or len(edge) != 2:
+            return False
+        u, v = int(edge[0]), int(edge[1])
+        # Boundary/constrained vertex guard
+        try:
+            if is_boundary_vertex_from_maps(u, getattr(self, 'edge_map', {})) or is_boundary_vertex_from_maps(v, getattr(self, 'edge_map', {})):
+                return False
+        except Exception:
+            return False
+        # thresholds
+        min_tri_area = float(min_tri_area) if min_tri_area is not None else float(EPS_AREA)
+        min_angle_deg = float(min_angle_deg)
+        # candidate position: midpoint
+        p_new = 0.5 * (self.points[u] + self.points[v])
+        # collect incident triangles
+        tris_u = set(int(t) for t in self.v_map.get(int(u), []))
+        tris_v = set(int(t) for t in self.v_map.get(int(v), []))
+        touched = sorted(tris_u.union(tris_v))
+        for ti in touched:
+            try:
+                tri = [int(x) for x in self.triangles[int(ti)]]
+            except Exception:
+                return False
+            if -1 in tri:
+                continue
+            # if triangle contains both endpoints, it will be removed by collapse -> skip
+            if (u in tri) and (v in tri):
+                continue
+            # build predicted vertex coordinates for this triangle after collapse
+            pts = []
+            for idx in tri:
+                if int(idx) == u or int(idx) == v:
+                    pts.append(p_new)
+                else:
+                    pts.append(self.points[int(idx)])
+            # predicted signed area
+            try:
+                a_new = triangle_area(pts[0], pts[1], pts[2])
+            except Exception:
+                return False
+            if a_new <= 0 or abs(a_new) < min_tri_area:
+                return False
+            # predicted angles
+            try:
+                angs = triangle_angles(pts[0], pts[1], pts[2])
+            except Exception:
+                return False
+            if min(angs) < min_angle_deg:
+                return False
+        return True
 
 
 

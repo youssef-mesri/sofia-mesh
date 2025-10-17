@@ -737,6 +737,18 @@ def main():
     args = parser.parse_args()
 
     configure_logging(getattr(logging, args.log_level.upper(), logging.INFO))
+    # delegate to the runner which contains the extracted workflow
+    run_generate_scenario(args)
+
+
+
+
+def run_generate_scenario(args: argparse.Namespace):
+    """Run the generate_scenario workflow using a parsed argparse Namespace.
+
+    This function contains the previous `main` body so callers (and tests)
+    can invoke the demo logic programmatically.
+    """
     # Load polygon from file if provided, otherwise create a regular n-gon
     if args.poly_file:
         def load_polygon(path: str) -> np.ndarray:
@@ -979,8 +991,6 @@ def main():
         ok_ref, det_ref = refine_to_target_h_local(editor, target_h, include_boundary=args.include_boundary,
                                                    max_splits=args.max_splits)
         print('refine_to_target_h_local result:', ok_ref, det_ref)
-
-
 
 
 if __name__ == '__main__':
