@@ -58,7 +58,10 @@ def plot_mesh(
             xs = list(pts[:, 0]) + [pts[0, 0]]
             ys = list(pts[:, 1]) + [pts[0, 1]]
             plt.plot(xs, ys, color=(0.85, 0.2, 0.2), linewidth=1.8)
-            plt.scatter(pts[:, 0], pts[:, 1], s=12, color='black')
+            # Scale marker size down for dense point sets so points don't dominate
+            npts = max(1, pts.shape[0])
+            s = max(0.6, min(12.0, 200.0 / float(npts)))
+            plt.scatter(pts[:, 0], pts[:, 1], s=s, color='black')
         plt.title('empty mesh (polygon only)')
         plt.gca().set_aspect('equal')
         plt.savefig(outname, dpi=150)
@@ -94,7 +97,10 @@ def plot_mesh(
         logger.warning('Plotting mesh: compacted copy NOT conforming: %s', msgs)
     plt.figure(figsize=(6, 6))
     plt.triplot(new_points[:, 0], new_points[:, 1], new_tris, lw=0.6)
-    plt.scatter(new_points[:, 0], new_points[:, 1], s=6)
+    # scale markers by vertex count
+    npts = max(1, new_points.shape[0])
+    s = max(0.6, min(8.0, 200.0 / float(npts)))
+    plt.scatter(new_points[:, 0], new_points[:, 1], s=s)
     tris_all = np.array(editor.triangles)
     active_mask = ~np.all(tris_all == -1, axis=1)
     active_idx = np.nonzero(active_mask)[0].tolist()
@@ -204,7 +210,10 @@ def plot_mesh_by_tri_groups(
     valid_rows = np.all(new_tris >= 0, axis=1)
     tri_plot = new_tris[valid_rows]
     plt.triplot(new_points[:, 0], new_points[:, 1], tri_plot, lw=0.6)
-    plt.scatter(new_points[:, 0], new_points[:, 1], s=6)
+    # scale markers by vertex count
+    npts = max(1, new_points.shape[0])
+    s = max(0.6, min(8.0, 200.0 / float(npts)))
+    plt.scatter(new_points[:, 0], new_points[:, 1], s=s)
 
     # paint groups
     legend_patches = []

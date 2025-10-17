@@ -1,0 +1,23 @@
+{
+  "poly": [
+    [1.0, 0.0], [0.7071, 0.7071], [0.0, 1.0], [-0.7071, 0.7071], [-1.0, 0.0], [-0.7071, -0.7071], [0.0, -1.0], [0.7071, -0.7071],
+    [0.5, 0.0], [0.3536, 0.3536], [0.0, 0.5], [-0.3536, 0.3536], [-0.5, 0.0], [-0.3536, -0.3536], [0.0, -0.5], [0.3536, -0.3536]
+  ],
+  "boundary": [0,1,2,3,4,5,6,7],
+  "holes": [[8,9,10,11,12,13,14,15]],
+  "auto": {
+    "target_h_factor": 0.5,
+    "h_metric": "avg_equilateral_h",
+    "include_boundary_edges": true,
+    "annotate_debug": false,
+    "annotate_dir": "generate_debug",
+    "annotate_stride": 1,
+    "max_h_iters": 10,
+    "max_h_splits_per_iter": 100,
+    "h_tolerance": 1e-06,
+    "enforce_split_quality": false,
+    "move_to_barycenter": true,
+    "barycenter_passes": 3
+  },
+  "plot": { "out_before": "letter_o_before.png", "out_after": "letter_o_after.png", "out_empty": "letter_o_empty.png" }
+}

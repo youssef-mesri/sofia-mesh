@@ -30,6 +30,7 @@ from sofia.sofia.quality import compute_h
 from sofia.sofia.constants import EPS_COLINEAR
 from sofia.sofia.quality import _triangle_qualities_norm
 from sofia.sofia.refinement import refine_to_target_h
+from sofia.sofia.triangulation import triangulate_polygon_with_holes
 
 import os as _os
 import matplotlib as _mpl
@@ -164,7 +165,7 @@ def _ear_clip_decompose(boundary_cycle, pts):
     log.debug("[ear_clip_decompose] All triangles/pieces: %s", pieces)
     return pieces
 
-def try_fill_first_boundary(editor: PatchBasedMeshEditor, boundary_cycle: List[int]):
+def try_fill_first_boundary(editor: PatchBasedMeshEditor, boundary_cycle: List[int], boundary_holes: List[List[int]] = None):
     """Try pocket fill strategies on the supplied `boundary_cycle` (list of vertex indices).
 
     Strategy order: quad -> steiner -> earclip; fallback: convex decomposition and fill each piece.
@@ -184,6 +185,57 @@ def try_fill_first_boundary(editor: PatchBasedMeshEditor, boundary_cycle: List[i
         sum_tri_area = sum(tri_areas)
         # Use package EPS_AREA tolerance for area checks
         return abs(sum_tri_area - abs(area_ref)) <= float(EPS_AREA), tri_areas, sum_tri_area
+
+    # If holes are provided as lists of editor vertex indices, try the
+    # polygon-with-holes triangulation helper which returns triangles as
+    # coordinate triplets. We then map coordinates back to vertex indices and
+    # append to the editor after area checks.
+    if boundary_holes:
+        try:
+            shell_coords = np.asarray([pts[i] for i in boundary_cycle], dtype=float)
+            hole_coords_list = [np.asarray([pts[int(j)] for j in h], dtype=float) for h in boundary_holes]
+            tris_coords = triangulate_polygon_with_holes(shell_coords, hole_coords_list, points=pts, prefer_earcut=True)
+            tris_to_add = []
+            for tri in tris_coords:
+                coords = np.asarray([tri[0], tri[1], tri[2]], dtype=float)
+                idxs = map_coords_to_indices(editor, coords)
+                tris_to_add.append([int(idxs[0]), int(idxs[1]), int(idxs[2])])
+            # compute reference area = outer - sum(hole areas)
+            hole_area_sum = 0.0
+            for hc in hole_coords_list:
+                hx = hc[:, 0]; hy = hc[:, 1]
+                hole_area_sum += 0.5 * (np.dot(hx, np.roll(hy, -1)) - np.dot(hy, np.roll(hx, -1)))
+            total_area_ref = abs(poly_area) - abs(hole_area_sum)
+            area_ok, tri_areas, sum_tri_area = area_preserving(tris_to_add, total_area_ref)
+            if not area_ok:
+                return False, {'holes': 'area not preserved', 'area': total_area_ref, 'tri_areas': tri_areas}
+            # append triangles (orient if necessary)
+            oriented = []
+            eps_area = EPS_AREA
+            for t in tris_to_add:
+                try:
+                    p0 = np.asarray(editor.points[int(t[0])]); p1 = np.asarray(editor.points[int(t[1])]); p2 = np.asarray(editor.points[int(t[2])])
+                    a = triangle_area(p0, p1, p2)
+                    if a <= eps_area:
+                        oriented.append((t[0], t[2], t[1]))
+                    else:
+                        oriented.append(tuple(t))
+                except Exception:
+                    oriented.append(tuple(t))
+            start = len(editor.triangles)
+            if oriented:
+                arr = np.array(oriented, dtype=np.int32)
+                editor.triangles = np.ascontiguousarray(np.vstack([editor.triangles, arr]).astype(np.int32))
+                for idx in range(start, len(editor.triangles)):
+                    try:
+                        editor._add_triangle_to_maps(idx)
+                    except Exception:
+                        pass
+            if hasattr(editor, '_update_maps'):
+                editor._update_maps()
+            return True, {'holes': 'triangulated', 'area': total_area_ref, 'tri_areas': tri_areas}
+        except Exception as e:
+            return False, {'holes': f'triangulation failed: {e}'}
 
     # Detect non-convexity: if any internal angle > 180 deg, it's non-convex
     def is_convex_polygon(indices, pts):
@@ -672,6 +724,8 @@ def main():
                         help='path to write mesh plot after pocket fill')
     parser.add_argument('--poly-file', type=str, dest='poly_file', default=None,
                         help='path to polygon file (.json, .csv, .npy) with sequence of [x,y] coords')
+    parser.add_argument('--use-holes', action='store_true', dest='use_holes',
+                        help='If set, read "holes" from the scenario JSON and pass them to try_fill_first_boundary')
     parser.add_argument('--target-h', type=float, dest='target_h', default=None,
                         help='absolute target average internal edge length to refine to')
     parser.add_argument('--target-factor', type=float, dest='target_factor', default=None,
@@ -711,6 +765,8 @@ def main():
     else:
         poly = regular_ngon(args.n, radius=args.radius)
     editor = build_mesh_from_polygon(poly, extra_seed_pts=0)
+    # default fill cycle: indices of polygon vertices (may be overridden by scenario)
+    fill_cycle = list(range(len(poly)))
 
     # Validate mapping and polygon winding/degeneracy
     try:
@@ -742,11 +798,6 @@ def main():
         pass
     if not out_empty:
         out_empty = 'empty_mesh.png'
-    try:
-        plot_mesh(editor, out_empty)
-        print('wrote empty-mesh plot', out_empty)
-    except Exception as e:
-        print('empty-mesh plot failed:', e)
 
     # Optional pre-fill plot (legacy: before pocket fill, but after empty mesh)
     if args.out_before:
@@ -756,8 +807,90 @@ def main():
         except Exception as e:
             print('before-plot failed:', e)
 
+    # Helper to draw polygon shell and holes for empty-mesh visualization
+    def _plot_empty_with_holes(shell_coords, holes_coords_list, outpath):
+        try:
+            plt.figure(figsize=(6, 6))
+            # outer shell
+            xs = list(shell_coords[:, 0]) + [shell_coords[0, 0]]
+            ys = list(shell_coords[:, 1]) + [shell_coords[0, 1]]
+            plt.plot(xs, ys, color=(0.85, 0.2, 0.2), linewidth=1.8)
+            # holes
+            for hc in holes_coords_list or []:
+                if len(hc) >= 2:
+                    hxs = list(hc[:, 0]) + [hc[0, 0]]
+                    hys = list(hc[:, 1]) + [hc[0, 1]]
+                    plt.plot(hxs, hys, color=(0.2, 0.6, 0.8), linewidth=1.6)
+            # points
+            all_pts = np.vstack([shell_coords] + (holes_coords_list or [])) if holes_coords_list else shell_coords
+            npts = max(1, all_pts.shape[0])
+            s = max(0.6, min(12.0, 200.0 / float(npts)))
+            plt.scatter(all_pts[:, 0], all_pts[:, 1], s=s, color='black')
+            plt.title(outpath)
+            plt.gca().set_aspect('equal')
+            plt.savefig(outpath, dpi=150)
+            plt.close()
+            print('wrote empty-mesh plot', outpath)
+        except Exception as e:
+            print('empty-mesh plot failed:', e)
 
-    ok, det = try_fill_first_boundary(editor, list(range(len(poly))))
+
+    # If requested, attempt to read holes from scenario JSON and pass them to the fill helper.
+    holes_to_pass = None
+    try:
+        with open(args.scenario, 'r') as f:
+            scenario = json.load(f)
+    except Exception:
+        scenario = {}
+    if args.use_holes:
+        # If the scenario provides a 'poly' key (combined outer + hole verts), rebuild editor
+        scen_poly = scenario.get('poly', None)
+        if scen_poly is not None:
+            try:
+                poly = np.asarray(scen_poly, dtype=float)
+                editor = build_mesh_from_polygon(poly, extra_seed_pts=0)
+                # boundary indices for the outer ring may be supplied explicitly
+                if 'boundary' in scenario:
+                    fill_cycle = [int(x) for x in scenario.get('boundary')]
+                else:
+                    fill_cycle = list(range(len(poly)))
+            except Exception as e:
+                log.debug('Failed to load scenario poly: %s', e)
+        raw_holes = scenario.get('holes', None)
+        if raw_holes:
+            holes_to_pass = []
+            # raw_holes may be a list of index-lists or coordinate-lists.
+            for h in raw_holes:
+                # detect if the hole entries are coordinates (list of [x,y])
+                if h and isinstance(h[0], (list, tuple, np.ndarray)):
+                    # map coordinates to nearest indices in the editor
+                    try:
+                        mapped = map_coords_to_indices(editor, np.asarray(h, dtype=float))
+                        holes_to_pass.append([int(x) for x in mapped])
+                    except Exception as e:
+                        log.debug('Failed to map hole coordinates to indices: %s', e)
+                        holes_to_pass = None
+                        break
+                else:
+                    # assume it's already an index list
+                    try:
+                        holes_to_pass.append([int(x) for x in h])
+                    except Exception:
+                        holes_to_pass = None
+                        break
+    # Plot empty mesh showing holes if available
+    try:
+        if holes_to_pass and 'poly' in scenario:
+            shell_coords = np.asarray([editor.points[int(i)] for i in fill_cycle], dtype=float)
+            holes_coords_list = [np.asarray([editor.points[int(j)] for j in h], dtype=float) for h in holes_to_pass]
+            _plot_empty_with_holes(shell_coords, holes_coords_list, out_empty)
+        else:
+            plot_mesh(editor, out_empty)
+            print('wrote empty-mesh plot', out_empty)
+    except Exception as e:
+        print('empty-mesh plot failed:', e)
+
+    ok, det = try_fill_first_boundary(editor, fill_cycle, boundary_holes=holes_to_pass)
     print('pocket_fill result:', ok, det)
 
     # Diagnostics: print triangle areas and warn about near-zero area triangles
@@ -820,7 +953,19 @@ def main():
             except Exception:
                 pass
         refine_to_target_h(editor, auto_cfg)
+        editor.move_vertices_to_barycenter()
+        refine_to_target_h(editor, auto_cfg)
+        editor.move_vertices_to_barycenter()
+        refine_to_target_h(editor, auto_cfg)
+        editor.move_vertices_to_barycenter()
+        refine_to_target_h(editor, auto_cfg)
     editor.compact_triangle_indices()
+    # Always apply a post-pass smoothing to improve quality
+    bary_passes = max(1, int(auto_cfg.get('barycenter_passes', 1)))
+    total_moves_post = 0
+    for _ in range(bary_passes):
+        total_moves_post += editor.move_vertices_to_barycenter()
+    log.info('auto: post barycenter moves applied=%d (passes=%d)', total_moves_post, bary_passes)
     if not args.no_plot:
         plot_mesh(editor, outname=out_after)
         log.info('Wrote %s', out_after)

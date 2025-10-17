@@ -23,6 +23,77 @@ __all__ = [
     'fill_pocket_quad', 'fill_pocket_steiner', 'fill_pocket_earclip'
 ]
 
+def triangulate_polygon_with_holes(shell, holes, points=None, prefer_earcut=True):
+    """Triangulate a polygon with holes without adding new dependencies.
+
+    Uses mapbox_earcut if present and preferred; otherwise falls back to:
+      - triangulate outer shell with ear-clipping
+      - remove triangles whose centroids lie inside any hole
+
+    Returns list of triangles as (x,y) coordinate triplets.
+    """
+    shell_coords = [tuple(p) for p in shell]
+    hole_list = [[tuple(p) for p in h] for h in holes] if holes else []
+    # try earcut if available
+    if prefer_earcut:
+        try:
+            import mapbox_earcut as earcut  # type: ignore
+        except Exception:
+            earcut = None
+        if earcut is not None:
+            verts = []
+            dims = 2
+            hole_indices = []
+            for v in shell_coords:
+                verts.extend([float(v[0]), float(v[1])])
+            for h in hole_list:
+                hole_indices.append(len(verts)//dims)
+                for v in h:
+                    verts.extend([float(v[0]), float(v[1])])
+            tri_func = getattr(earcut, 'triangulate_float32', None) or getattr(earcut, 'triangulate')
+            idxs = tri_func(verts, hole_indices, dims)
+            coord_list = list(shell_coords)
+            for h in hole_list:
+                coord_list.extend(h)
+            tris = []
+            for i in range(0, len(idxs), 3):
+                a,b,c = int(idxs[i]), int(idxs[i+1]), int(idxs[i+2])
+                tris.append((coord_list[a], coord_list[b], coord_list[c]))
+            return tris
+
+    # Fallback: perform Delaunay on all boundary vertices (shell + holes) then keep triangles
+    # whose centroid lies inside the shell and outside all holes. This avoids complex bridge logic.
+    try:
+        pts_list = list(shell_coords)
+        for h in hole_list:
+            pts_list.extend(h)
+        coords = np.asarray(pts_list, dtype=float)
+        if coords.shape[0] < 3:
+            raise RuntimeError("not enough points for triangulation")
+        tri = Delaunay(coords)
+        tris_coords = []
+        for s in tri.simplices:
+            a = coords[int(s[0])]; b = coords[int(s[1])]; c = coords[int(s[2])]
+            area = abs(triangle_area(a, b, c))
+            if area < EPS_AREA:
+                continue
+            centroid = np.mean(np.vstack((a, b, c)), axis=0)
+            if not _point_in_polygon(centroid[0], centroid[1], shell_coords):
+                continue
+            inside_hole = False
+            for h in hole_list:
+                if _point_in_polygon(centroid[0], centroid[1], h):
+                    inside_hole = True; break
+            if inside_hole:
+                continue
+            tris_coords.append((tuple(a), tuple(b), tuple(c)))
+        if not tris_coords:
+            raise RuntimeError("Delaunay produced no usable triangles for polygon with holes")
+        return tris_coords
+    except Exception as e:
+        raise RuntimeError(f"Failed to triangulate polygon with holes fallback: {e}")
+
+
 def optimal_star_triangulation(points, boundary_indices, debug: bool=False):
     """Try all star triangulations of a simple polygon boundary selecting minimal total area.
     Returns list of triangle index triplets or None if no valid star.

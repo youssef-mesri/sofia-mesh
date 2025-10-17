@@ -1,0 +1,19 @@
+{
+  "plot": {
+    "out_empty": "demo_empty.png",
+    "out_before": "demo_before.png",
+    "out_after": "demo_after.png"
+  },
+  "description": "Sample scenario showing hole format.\nNote: the script maps hole coordinates to existing editor vertices; to actually use holes these coordinates must match vertices present in the editor (or you must supply a poly-file that includes those points).",
+  "holes": [
+    [
+      [0.1, 0.0],
+      [0.0, 0.1],
+      [-0.1, 0.0]
+    ]
+  ],
+  "auto": {
+    "barycenter_passes": 1,
+    "include_boundary_edges": false
+  }
+}
