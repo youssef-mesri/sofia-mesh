@@ -48,18 +48,19 @@ def optimal_star_triangulation(points, boundary_indices, debug: bool=False):
             if a < eps_area:
                 degenerate = True
                 if debug:
-                    print(f"Skipping star from {v0} due to near-zero area {tri} {a:.3e}")
+                    logging.getLogger('sofia.triangulation').debug("Skipping star from %s due to near-zero area %s %.3e", v0, tri, a)
                 break
             tris.append(tri)
         if degenerate:
             continue
         area = total_area(tris)
         if debug:
-            print(f"Star from {v0}: area={area:.6f} tris={tris}")
+            logging.getLogger('sofia.triangulation').debug("Star from %s: area=%.6f tris=%s", v0, area, tris)
         if area < min_area:
-            min_area = area; best_tris = tris
+            min_area = area
+            best_tris = tris
     if debug:
-        print(f"Chosen star: {best_tris} area={min_area:.6f}")
+        logging.getLogger('sofia.triangulation').debug("Chosen star: %s area=%.6f", best_tris, min_area)
     return best_tris
 
 def best_star_triangulation_by_min_angle(points, boundary_indices, debug: bool=False):
@@ -101,12 +102,12 @@ def best_star_triangulation_by_min_angle(points, boundary_indices, debug: bool=F
             continue
         quality = local_worst
         if debug:
-            print(f"Star(anchor={v0}) worst_angle={quality:.4f} tris={tris}")
-    if quality > best_quality + EPS_IMPROVEMENT:
+            logging.getLogger('sofia.triangulation').debug("Star(anchor=%s) worst_angle=%.4f tris=%s", v0, quality, tris)
+        if quality > best_quality + EPS_IMPROVEMENT:
             best_quality = quality
             best = tris
     if debug and best is not None:
-        print(f"Chosen quality star worst_angle={best_quality:.4f} tris={best}")
+        logging.getLogger('sofia.triangulation').debug("Chosen quality star worst_angle=%.4f tris=%s", best_quality, best)
     return best
 
 def best_star_triangulation_area_preserving(points, boundary_indices, area_tol_rel: float = EPS_TINY, area_tol_abs: float = EPS_AREA*4, debug: bool=False):
@@ -157,9 +158,9 @@ def best_star_triangulation_area_preserving(points, boundary_indices, area_tol_r
                 best_quality = worst_angle
                 best = tris
                 if debug:
-                    print(f"Area-preserving star (anchor={v0}) worst_angle={worst_angle:.4f} area_sum={area_sum:.6e} poly_area={poly_area:.6e}")
+                    logging.getLogger('sofia.triangulation').debug("Area-preserving star (anchor=%s) worst_angle=%.4f area_sum=%.6e poly_area=%.6e", v0, worst_angle, area_sum, poly_area)
     if debug and best is not None:
-        print(f"Chosen area-preserving star worst_angle={best_quality:.4f} tris={best}")
+        logging.getLogger('sofia.triangulation').debug("Chosen area-preserving star worst_angle=%.4f tris=%s", best_quality, best)
     return best
 
 def retriangulate_star(boundary_indices):

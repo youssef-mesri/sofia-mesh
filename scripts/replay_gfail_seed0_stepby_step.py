@@ -8,6 +8,9 @@ import sys
 # ensure project root is on sys.path so imports like `mesh_modifier2` resolve when running from scripts/
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, check_mesh_conformity
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.scripts.replay_gfail_seed0_stepby_step')
 
 def main():
     p = 'diagnostics/trace_seed0.npz'
@@ -17,13 +20,13 @@ def main():
     pts = initial['pts_c']
     tris = initial['tris_c']
     editor = PatchBasedMeshEditor(pts, tris)
-    print('Starting replay with', len(trace), 'ops')
+    logger.info('Starting replay with %d ops', len(trace))
     out_dir = 'diagnostics/replay_step_debug'
     os.makedirs(out_dir, exist_ok=True)
     for i, entry in enumerate(trace):
         action = entry['action']
         kind = action[0]
-        print(f"Step {i:03d}: {action}")
+        logger.info('Step %03d: %s', i, action)
         committed = False
         reason = None
         try:
@@ -31,11 +34,7 @@ def main():
                 # action format: ('add', tri_idx, success_bool, msg)
                 _, tri_idx, ok, msg = action
                 if ok:
-                    res = editor.add_node(editor.points[0]*0 + 0, tri_idx=tri_idx)  # placeholder to get signature
-                    # but trace's add entries include tri_idx only; use recorded 'before'/'after' snapshots instead
-                    # safer: compare before/after and apply differential? For now re-run using recorded 'after' snapshot by
-                    # applying node insertion by locating which vertex was added in 'after' snapshot.
-                    # We'll use the trace's 'after' mesh snapshot for the subsequent state instead of calling editor.add_node.
+                    # placeholder - use recorded snapshots instead of replaying low-level op
                     pass
             elif kind == 'split':
                 _, edge, ok, msg = action
@@ -46,9 +45,6 @@ def main():
             elif kind == 'remove':
                 _, tri_idx, ok, msg = action
                 if ok:
-                    # remove_node_with_patch expects a vertex index; trace remove action used tri_idx (triangle center?)
-                    # The trace's action used 'remove' with an integer likely being vertex index in that trace.
-                    # We'll attempt to call editor.remove_node_with_patch with that index.
                     succeeded, m, details = editor.remove_node_with_patch(tri_idx)
                     committed = succeeded
                     reason = m
@@ -69,9 +65,9 @@ def main():
                     committed = succeeded
                     reason = m
             else:
-                print('Unknown action kind:', kind)
+                logger.warning('Unknown action kind: %s', kind)
         except Exception as e:
-            print('Exception while applying op:', e)
+            logger.exception('Exception while applying op: %s', e)
 
         # After commit, if the trace recorded success, sync editor to the trace's saved 'after_issues' snapshot
         # (this contains the compacted points/triangles for the state after the operation) and check conformity.
@@ -92,11 +88,11 @@ def main():
                 try:
                     editor.compact_triangle_indices()
                 except Exception as e:
-                    print('compact failed', e)
+                    logger.exception('compact failed: %s', e)
             # now check compacted conformity (strict)
             ok_conf, msgs = check_mesh_conformity(editor.points, editor.triangles, verbose=False, allow_marked=False)
             if not ok_conf:
-                print('Conformity failed after step', i, 'action=', action)
+                logger.warning('Conformity failed after step %d action=%s', i, action)
                 fn = os.path.join(out_dir, f'first_offending_step_{i}_action_{kind}.npz')
                 np.savez_compressed(fn,
                                      step=i,
@@ -104,9 +100,9 @@ def main():
                                      msgs=msgs,
                                      pts=editor.points,
                                      tris=editor.triangles)
-                print('Wrote', fn)
+                logger.info('Wrote %s', fn)
                 return 1
-    print('Replay completed, no compacted conformity failure detected')
+    logger.info('Replay completed, no compacted conformity failure detected')
     return 0
 
 if __name__ == '__main__':

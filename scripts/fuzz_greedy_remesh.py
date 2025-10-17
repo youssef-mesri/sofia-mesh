@@ -8,6 +8,9 @@ import os
 import numpy as np
 from mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, check_mesh_conformity
 from sofia.sofia.remesh_driver import greedy_remesh, compact_copy
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.scripts.fuzz_greedy_remesh')
 
 
 OUTDIR = os.path.join(os.getcwd(), 'diagnostics')
@@ -39,7 +42,7 @@ def run_fuzz(max_seeds=1000, max_failures=20, npts=60, vertex_passes=2, edge_pas
         fail_condition = (not ok_allow) or (not ok_strict)
         if fail_condition:
             fname = os.path.join(OUTDIR, f'gfail_seed_{seed}.npz')
-            print(f'[FOUND] seed={seed} ok_before={ok_before} ok_allow={ok_allow} ok_strict={ok_strict} -> dumping {fname}')
+            logger.warning('[FOUND] seed=%d ok_before=%s ok_allow=%s ok_strict=%s -> dumping %s', seed, ok_before, ok_allow, ok_strict, fname)
             np.savez(fname,
                      seed=seed,
                      pts_before=pts_before,
@@ -51,13 +54,14 @@ def run_fuzz(max_seeds=1000, max_failures=20, npts=60, vertex_passes=2, edge_pas
                      msgs_strict=np.array(msgs_strict, dtype=object))
             found += 1
             if found >= max_failures:
-                print(f'Reached max_failures={max_failures}; stopping fuzz.')
+                logger.info('Reached max_failures=%d; stopping fuzz.', max_failures)
+                break
                 break
         # small progress indicator
         if seed % 100 == 0 and seed > 0:
-            print(f'Checked {seed} seeds, found {found} failures so far...')
+            logger.info('Checked %d seeds, found %d failures so far...', seed, found)
 
-    print(f'Fuzz finished: checked up to seed {seed} (max_seeds={max_seeds}), failures={found}')
+    logger.info('Fuzz finished: checked up to seed %d (max_seeds=%d), failures=%d', seed, max_seeds, found)
 
 
 if __name__ == '__main__':

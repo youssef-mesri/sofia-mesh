@@ -2,6 +2,9 @@
 import numpy as np
 from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, point_in_polygon, triangle_area
 from sofia.sofia.patch_batching import build_patches_from_metrics_strict
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.utilities.patch_fill_check')
 
 def main():  # pragma: no cover
     pts, tris = build_random_delaunay(npts=40, seed=7)
@@ -13,7 +16,7 @@ def main():  # pragma: no cover
         tris = sorted(list(p['tris']))
         b = p.get('boundary')
         if not b:
-            print('patch', pid, 'no boundary')
+            logger.info('patch %s no boundary', pid)
             suspicious.append((pid, 'no_boundary'))
             continue
         poly = b[0]
@@ -27,11 +30,11 @@ def main():  # pragma: no cover
             inside = point_in_polygon(centroid[0], centroid[1], poly_coords)
             if inside:
                 cent_in += 1
-            areas_sum += abs(triangle_area(coords[0], coords[1], coords[2]))
-        print(f'patch {pid}: ntris={len(tris)} centroids_inside={cent_in} total_tri_area={areas_sum:.6f} poly_vertices={len(poly)}')
-        if cent_in == 0:
-            suspicious.append((pid, 'no_tri_centroid_inside'))
-    print('\nSuspicious patches:', suspicious)
+                areas_sum += abs(triangle_area(coords[0], coords[1], coords[2]))
+            logger.info('patch %s: ntris=%d centroids_inside=%d total_tri_area=%0.6f poly_vertices=%d', pid, len(tris), cent_in, areas_sum, len(poly))
+            if cent_in == 0:
+                suspicious.append((pid, 'no_tri_centroid_inside'))
+    logger.info('\nSuspicious patches: %s', suspicious)
     return 0
 
 if __name__ == '__main__':  # pragma: no cover

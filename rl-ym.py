@@ -7,6 +7,9 @@ import numpy as np
 from scipy.spatial import Delaunay
 import math
 import matplotlib.pyplot as plt
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.rl_ym')
 
 # ---------- Utilities ----------
 def triangle_angles(p0, p1, p2):
@@ -130,7 +133,7 @@ def build_random_delaunay(npts=60, seed=0):
 if __name__ == "__main__":
     pts, tris = build_random_delaunay(50, seed=123)
     editor = PatchBasedMeshEditor(pts, tris)
-    print("Initial min angle:", editor.global_min_angle())
+    logger.info('Initial min angle: %s', editor.global_min_angle())
     # show initial mesh
     plt.figure(figsize=(5,5))
     plt.triplot(editor.points[:,0], editor.points[:,1], editor.triangles, linewidth=0.6)
@@ -149,8 +152,8 @@ if __name__ == "__main__":
             ok, e = editor.apply_flip_on_triangle_smallest_angle(tri_idx)
             if ok: succ += 1
 
-    print(f"After {n_steps} random attempts, successful flips = {succ}")
-    print("Final min angle:", editor.global_min_angle())
+    logger.info('After %d random attempts, successful flips = %d', n_steps, succ)
+    logger.info('Final min angle: %s', editor.global_min_angle())
 
     plt.figure(figsize=(5,5))
     plt.triplot(editor.points[:,0], editor.points[:,1], editor.triangles, linewidth=0.6)
@@ -158,4 +161,4 @@ if __name__ == "__main__":
     plt.gca().set_aspect('equal')
     plt.title("After random attempts")
     plt.savefig("mesh_after.png", dpi=150)
-    print("Saved images mesh_before.png and mesh_after.png in current directory.")
+    logger.info('Saved images mesh_before.png and mesh_after.png in current directory.')

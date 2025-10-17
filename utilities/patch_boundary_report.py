@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
 from sofia.sofia.patch_batching import build_patches_from_metrics_strict
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.utilities.patch_boundary_report')
 
 def main():  # pragma: no cover
     pts, tris = build_random_delaunay(npts=40, seed=7)
@@ -20,9 +23,9 @@ def main():  # pragma: no cover
         nloops = len(b) if b is not None else 0
         loop_lens = [len(loop) for loop in (b or [])]
         rows.append((pid, ptype, seed, ntris, nloops, loop_lens))
-    print(f"Found {len(patches)} patches")
+    logger.info('Found %d patches', len(patches))
     for r in rows:
-        print(f"patch id={r[0]} type={r[1]} seed={r[2]} ntris={r[3]} nloops={r[4]} loop_lens={r[5]}")
+        logger.info('patch id=%s type=%s seed=%s ntris=%s nloops=%s loop_lens=%s', r[0], r[1], r[2], r[3], r[4], r[5])
     with open('patch_boundary_report.csv', 'w', newline='') as f:
         w = csv.writer(f)
         w.writerow(['id','type','seed','ntris','nloops','loop_lens'])
@@ -57,7 +60,7 @@ def main():  # pragma: no cover
     plt.title('Explicit patch boundary edges (red) and vertices (white)')
     plt.savefig('patch_boundaries_explicit.png', dpi=180)
     plt.savefig('patch_boundaries_colored.png', dpi=180)
-    print('Wrote patch_boundary_report.csv, patch_boundaries_explicit.png and patch_boundaries_colored.png')
+    logger.info('Wrote patch_boundary_report.csv, patch_boundaries_explicit.png and patch_boundaries_colored.png')
     return 0
 
 if __name__ == '__main__':  # pragma: no cover

@@ -17,7 +17,8 @@ def run_inspect_patch0_nodes(npts=40, seed=7, node_top_k=12):  # pragma: no cove
         if p.get('id') == 0:
             p0 = p; break
     if p0 is None:
-        print('patch 0 not found'); return None
+        logger.warning('patch 0 not found')
+        return None
     tris = sorted(list(p0['tris']))
     boundary = p0.get('boundary', [])
     poly = boundary[0] if boundary else None
@@ -27,7 +28,7 @@ def run_inspect_patch0_nodes(npts=40, seed=7, node_top_k=12):  # pragma: no cove
     poly_coords = [tuple(editor.points[int(x)]) for x in poly] if poly else []
     logger.info('poly coords: %s', poly_coords)
     patch_nodes = patch_nodes_for_triangles(editor.triangles, tris)
-    print('patch_nodes:', patch_nodes)
+    logger.info('patch_nodes: %s', patch_nodes)
     inside = []
     for v in patch_nodes:
         if poly:
@@ -36,7 +37,7 @@ def run_inspect_patch0_nodes(npts=40, seed=7, node_top_k=12):  # pragma: no cove
             inside_flag = False
         inside.append((v, inside_flag))
         status = 'on boundary' if poly and v in poly else ('inside' if inside_flag else 'outside')
-    logger.info('vertex %s: coord=%s status=%s', v, tuple(editor.points[int(v)]), status)
+        logger.info('vertex %s: coord=%s status=%s', v, tuple(editor.points[int(v)]), status)
     logger.info('Summary interior tests:')
     logger.info('any strictly inside? %s', any(flag for (_,flag) in inside))
     logger.info('inside list: %s', [v for v,flag in inside if flag])

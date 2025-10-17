@@ -2,6 +2,9 @@
 import numpy as np
 from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, point_in_polygon
 from sofia.sofia.patch_batching import build_patches_from_metrics_strict
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.utilities.check_patch_centering')
 
 def main():  # pragma: no cover
     pts, tris = build_random_delaunay(npts=40, seed=7)
@@ -32,12 +35,12 @@ def main():  # pragma: no cover
                 centroids.append(np.mean(pts_tri, axis=0))
             cent = np.mean(np.vstack(centroids), axis=0)
             dist_centroid = np.linalg.norm(editor.points[seed] - cent)
-        print(f'patch {pid} seed={seed} in_verts={in_verts} in_tri={in_tri} in_poly={in_poly} dist_centroid={dist_centroid}')
+        logger.info('patch %s seed=%s in_verts=%s in_tri=%s in_poly=%s dist_centroid=%s', pid, seed, in_verts, in_tri, in_poly, dist_centroid)
         if not (in_verts and in_tri and in_poly):
             bad.append((pid, seed, in_verts, in_tri, in_poly, dist_centroid))
-    print('\nSummary: patches failing centering checks:', len(bad))
+    logger.info('\nSummary: patches failing centering checks: %d', len(bad))
     for b in bad:
-        print(b)
+        logger.info('%s', b)
     return 0
 
 if __name__ == '__main__':  # pragma: no cover

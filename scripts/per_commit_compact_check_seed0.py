@@ -9,6 +9,9 @@ import time
 from sofia.sofia.remesh_driver import compact_copy, check_mesh_conformity, find_inverted_triangles, count_boundary_loops, MIN_TRI_AREA, greedy_remesh
 from sofia.sofia.diagnostics import compact_from_arrays
 from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.scripts.per_commit_compact_check_seed0')
 
 NPZ_IN = 'diagnostics/gfail_seed_0.npz'
 OUT_PREFIX = 'diagnostics/per_commit_failure'
@@ -22,15 +25,16 @@ def save_failure(editor, op_name, op_param, extra_msgs=None):
     fn = f"{OUT_PREFIX}_{op_name}_{ts}.npz"
     try:
         np.savez(fn, pts=pts_comp, tris=tris_comp, op=op_name, param=op_param, msgs=msgs_comp, inv=inv_comp)
-        print('Wrote', fn)
+        logger.info('Wrote %s', fn)
     except Exception as e:
-        print('Failed to write failure file:', e)
+        logger.exception('Failed to write failure file: %s', e)
     return fn
 
 
 def main():
     if not os.path.exists(NPZ_IN):
-        print('Input NPZ not found:', NPZ_IN); sys.exit(1)
+        logger.error('Input NPZ not found: %s', NPZ_IN)
+        sys.exit(1)
     data = np.load(NPZ_IN, allow_pickle=True)
     if 'pts_before' in data:
         pts = data['pts_before']
@@ -39,10 +43,11 @@ def main():
         pts = data['points']
         tris = data['tris']
     else:
-        print('Could not find pts_before/tris_before keys in', NPZ_IN); sys.exit(1)
+        logger.error('Could not find pts_before/tris_before keys in %s', NPZ_IN)
+        sys.exit(1)
 
     editor = PatchBasedMeshEditor(pts.copy(), tris.copy())
-    print('Loaded editor: npts=', len(editor.points), 'ntris=', len(editor.triangles))
+    logger.info('Loaded editor: npts=%d ntris=%d', len(editor.points), len(editor.triangles))
 
     # helper check
     def check_and_dump(op_name, op_param):
@@ -57,7 +62,7 @@ def main():
         # use simple condition: not ok_comp or inv_comp
         if (not ok_comp) or inv_comp:
             fn = save_failure(editor, op_name, op_param, extra_msgs=msgs_comp)
-            print('Detected compacted failure after op', op_name, op_param)
+            logger.warning('Detected compacted failure after op %s %s', op_name, op_param)
             sys.exit(0)
 
     # We'll monkeypatch bound methods on the editor instance to run a compact+check after any successful mutation
@@ -71,8 +76,8 @@ def main():
         try:
             res = orig(*args, **kwargs)
         except Exception as e:
-            # Let exception propagate after printing
-            print(f"Exception in {name}: {e}")
+            # Let exception propagate after logging
+            logger.exception('Exception in %s: %s', name, e)
             raise
         ok = False
         if isinstance(res, tuple):
@@ -87,7 +92,7 @@ def main():
             inv_comp = find_inverted_triangles(pts_comp, tris_comp, eps=MIN_TRI_AREA)
             if (not ok_comp) or inv_comp:
                 fn = save_failure(editor, name, {'args': args, 'kwargs': kwargs, 'res': res})
-                print('Compacted failure detected after', name, 'args=', args, 'kwargs=', kwargs)
+                logger.warning('Compacted failure detected after %s args=%s kwargs=%s', name, args, kwargs)
                 sys.exit(0)
         return res
 
@@ -100,14 +105,14 @@ def main():
 
     # Now run greedy_remesh with multiple passes; eventually the wrapper will exit on failure
     try:
-        print('Starting greedy_remesh with per-commit compact checks...')
+        logger.info('Starting greedy_remesh with per-commit compact checks...')
         greedy_remesh(editor, max_vertex_passes=10, max_edge_passes=10, verbose=True)
-        print('greedy_remesh finished; no compacted failure detected during run')
+        logger.info('greedy_remesh finished; no compacted failure detected during run')
     except SystemExit:
         # already handled in wrapper
         pass
     except Exception as e:
-        print('greedy_remesh raised exception:', e)
+        logger.exception('greedy_remesh raised exception: %s', e)
 
 if __name__ == '__main__':
     main()

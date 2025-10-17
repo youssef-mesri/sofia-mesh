@@ -1,0 +1,17 @@
+{
+  "auto": {
+    "target_h_factor": 0.5,
+    "h_metric": "avg_equilateral_h",
+    "include_boundary_edges": true,
+    "annotate_debug": true,
+    "annotate_dir": "generate_debug",
+    "annotate_stride": 1,
+    "max_h_iters": 10,
+    "max_h_splits_per_iter": 100,
+    "h_tolerance": 1e-06,
+    "enforce_split_quality": false,
+    "move_to_barycenter": true,
+    "barycenter_passes": 5
+  },
+  "plot": { "out_before": "generate_before.png", "out_after": "generate_after.png" }
+}

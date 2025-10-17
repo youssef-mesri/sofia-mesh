@@ -5,6 +5,9 @@ from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEdit
 from sofia.sofia.helpers import patch_nodes_for_triangles
 from sofia.sofia.geometry import point_in_polygon
 from sofia.sofia.patch_batching import build_patches_from_metrics_strict
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.utilities.highlight_patch0')
 
 def main():  # pragma: no cover
     pts, tris = build_random_delaunay(npts=40, seed=7)
@@ -69,7 +72,7 @@ def main():  # pragma: no cover
     plt.gca().set_aspect('equal')
     plt.title('Patch 0 inspection: boundary(black/red), interior(green), boundary nodes(white), seed(*)')
     plt.savefig('patch0_highlight.png', dpi=200)
-    print('Wrote patch0_highlight.png')
+    logger.info('Wrote patch0_highlight.png')
     return 0
 
 if __name__ == '__main__':  # pragma: no cover

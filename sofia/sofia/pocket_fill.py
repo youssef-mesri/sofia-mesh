@@ -205,6 +205,15 @@ def fill_pocket_earclip(editor, verts, min_tri_area, reject_min_angle_deg):
     if not tris_out:
         details['failure_reasons'].append('earclip produced no triangles')
         return False, details
+    # Area-preserving check: sum of triangle areas must match polygon area within tolerance
+    poly_coords = np.asarray([editor.points[int(v)] for v in poly])
+    x = poly_coords[:, 0]; y = poly_coords[:, 1]
+    poly_area = 0.5 * (np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1)))
+    tri_areas = [abs(triangle_area(editor.points[int(t[0])], editor.points[int(t[1])], editor.points[int(t[2])])) for t in tris_out]
+    sum_tri_area = sum(tri_areas)
+    if abs(sum_tri_area - abs(poly_area)) > 1e-8:
+        details['failure_reasons'].append(f'earclip area mismatch: poly={poly_area}, tris={sum_tri_area}')
+        return False, details
     active_tris = [tuple(t) for t in editor.triangles if not np.all(np.array(t) == -1)]
     try:
         tmp_tri_full = active_tris.copy(); tmp_tri_full.extend([tuple(t) for t in tris_out])

@@ -52,7 +52,15 @@ def plot_mesh(
     active_tris = tris[active_mask]
     if active_tris.size == 0:
         plt.figure(figsize=(6, 6))
-        plt.title('empty mesh')
+        pts = np.array(editor.points)
+        if pts.shape[0] >= 2:
+            # Draw the polygon as a closed polyline
+            xs = list(pts[:, 0]) + [pts[0, 0]]
+            ys = list(pts[:, 1]) + [pts[0, 1]]
+            plt.plot(xs, ys, color=(0.85, 0.2, 0.2), linewidth=1.8)
+            plt.scatter(pts[:, 0], pts[:, 1], s=12, color='black')
+        plt.title('empty mesh (polygon only)')
+        plt.gca().set_aspect('equal')
         plt.savefig(outname, dpi=150)
         plt.close()
         return

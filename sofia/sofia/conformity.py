@@ -296,7 +296,10 @@ def filter_crossing_candidate_edges(points, kept_edges, cand_edges, kept_grid=No
 			except Exception:
 				pass
 			try:
-				print(f"[conformity] grid_ms={1000.0*(t1-t0):.3f} pairs={len(test_a)} vec_ms={1000.0*(t_vec1-t_vec0):.3f} assign_ms={1000.0*(t2-t_vec1):.3f}")
+				from .logging_utils import get_logger
+				logger = get_logger('sofia.conformity')
+				logger.info("grid_ms=%.3f pairs=%d vec_ms=%.3f assign_ms=%.3f",
+						1000.0*(t1 - t0), len(test_a), 1000.0*(t_vec1 - t_vec0), 1000.0*(t2 - t_vec1))
 			except Exception:
 				pass
 			return crosses
@@ -309,7 +312,9 @@ def filter_crossing_candidate_edges(points, kept_edges, cand_edges, kept_grid=No
 			except Exception:
 				pass
 			try:
-				print(f"[conformity] grid_ms={1000.0*(t1-t0):.3f} pairs=0")
+				from .logging_utils import get_logger
+				logger = get_logger('sofia.conformity')
+				logger.info("grid_ms=%.3f pairs=0", 1000.0*(t1 - t0))
 			except Exception:
 				pass
 			return np.zeros((M,), dtype=bool)
@@ -358,11 +363,14 @@ def filter_crossing_candidate_edges(points, kept_edges, cand_edges, kept_grid=No
 						1000.0*(t1 - t0), len(test_a), 1000.0*(t_vec1 - t_vec0), 1000.0*(t2 - t_vec1))
 		except Exception:
 			pass
-		# also print to stdout for immediate diagnosis
-		try:
-			print(f"[conformity] grid_ms={1000.0*(t1-t0):.3f} pairs={len(test_a)} vec_ms={1000.0*(t_vec1-t_vec0):.3f} assign_ms={1000.0*(t2-t_vec1):.3f}")
-		except Exception:
-			pass
+			# also log for immediate diagnosis
+			try:
+				from .logging_utils import get_logger
+				logger = get_logger('sofia.conformity')
+				logger.info("grid_ms=%.3f pairs=%d vec_ms=%.3f assign_ms=%.3f",
+						1000.0*(t1 - t0), len(test_a), 1000.0*(t_vec1 - t_vec0), 1000.0*(t2 - t_vec1))
+			except Exception:
+				pass
 	else:
 		t1 = time.perf_counter()
 		try:
@@ -371,10 +379,12 @@ def filter_crossing_candidate_edges(points, kept_edges, cand_edges, kept_grid=No
 			logger.info("filter_crossing_candidate_edges: grid_build_ms=%.3f pair_count=0", 1000.0*(t1 - t0))
 		except Exception:
 			pass
-		try:
-			print(f"[conformity] grid_ms={1000.0*(t1-t0):.3f} pairs=0")
-		except Exception:
-			pass
+			try:
+				from .logging_utils import get_logger
+				logger = get_logger('sofia.conformity')
+				logger.info("grid_ms=%.3f pairs=0", 1000.0*(t1 - t0))
+			except Exception:
+				pass
 	return crosses
 
 def build_edge_to_tri_map(triangles):

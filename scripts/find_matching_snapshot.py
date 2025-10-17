@@ -4,6 +4,9 @@ Matching is attempted by exact (indices) equality first, then by geometric trian
 """
 import numpy as np
 import os
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.scripts.find_matching_snapshot')
 
 GFAIL = 'diagnostics/gfail_seed_0.npz'
 GTRACE = 'diagnostics/gtrace_seed_0.npz'
@@ -20,9 +23,9 @@ def tri_geom_set(pts, tris, ndigits=9):
 
 def main():
     if not os.path.exists(GFAIL):
-        print('Missing', GFAIL); return 2
+        logger.error('Missing %s', GFAIL); return 2
     if not os.path.exists(GTRACE):
-        print('Missing', GTRACE); return 2
+        logger.error('Missing %s', GTRACE); return 2
     g = np.load(GFAIL, allow_pickle=True)
     pts_after = g['pts_after']
     tris_after = g['tris_after']
@@ -33,7 +36,7 @@ def main():
     tris_arr = trace['tris_comp']
     actions = trace.get('actions', None)
 
-    print('gfail pts_after', pts_after.shape, 'tris_after', tris_after.shape)
+    logger.info('gfail pts_after %s tris_after %s', pts_after.shape, tris_after.shape)
     target_geom = tri_geom_set(pts_after, tris_after)
 
     for i, step in enumerate(steps):
@@ -44,9 +47,9 @@ def main():
         # exact index-level compare (fast)
         try:
             if pts.shape == pts_after.shape and tris.shape == tris_after.shape and np.array_equal(pts, pts_after) and np.array_equal(tris, tris_after):
-                print('Exact equal match at step', int(step))
+                logger.info('Exact equal match at step %d', int(step))
                 if actions is not None:
-                    print('action:', actions[i])
+                    logger.info('action: %s', actions[i])
                 return 0
         except Exception:
             pass
@@ -54,14 +57,14 @@ def main():
         try:
             geom = tri_geom_set(pts, tris)
             if geom == target_geom:
-                print('Geometric match at step', int(step), 'index', i)
+                logger.info('Geometric match at step %d index %d', int(step), i)
                 if actions is not None:
-                    print('action:', actions[i])
+                    logger.info('action: %s', actions[i])
                 return 0
         except Exception as e:
-            print('compare error at step', int(step), e)
+            logger.exception('compare error at step %d: %s', int(step), e)
             continue
-    print('No matching per-op snapshot found')
+    logger.info('No matching per-op snapshot found')
     return 1
 
 if __name__ == '__main__':

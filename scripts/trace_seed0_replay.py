@@ -12,6 +12,9 @@ from collections import defaultdict, Counter
 from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, check_mesh_conformity
 import sofia.sofia.remesh_driver as debug_check
 from sofia.sofia.remesh_driver import compact_copy, apply_patch_operation, build_patches_from_metrics_strict, partition_batches
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.scripts.trace_seed0_replay')
 
 OUT = 'diagnostics'
 os.makedirs(OUT, exist_ok=True)
@@ -51,7 +54,7 @@ def snapshot_state(editor):
 
 
 def run_replay(seed=0, allow_flips=True, max_iters=50, batch_attempts=2, patch_radius=1, top_k=80):
-    print(f"Running replay seed={seed} allow_flips={allow_flips}")
+    logger.info('Running replay seed=%d allow_flips=%s', seed, allow_flips)
     pts, tris = build_random_delaunay(npts=60, seed=seed)
     editor = PatchBasedMeshEditor(pts.copy(), tris.copy())
     debug_check.ALLOW_FLIPS = allow_flips
@@ -62,11 +65,11 @@ def run_replay(seed=0, allow_flips=True, max_iters=50, batch_attempts=2, patch_r
         # build patches
         patches = build_patches_from_metrics_strict(editor, node_top_k=top_k, edge_top_k=0, radius=patch_radius, disjoint_on='tri', allow_overlap=False)
         if not patches:
-            print('No patches built; stopping')
+            logger.info('No patches built; stopping')
             break
         pid_to_patch = {p['id']: p for p in patches}
         batches = partition_batches(patches)
-        print(f'Iter {iter_no}: built {len(patches)} patches in {len(batches)} batches')
+        logger.info('Iter %d: built %d patches in %d batches', iter_no, len(patches), len(batches))
 
         for b_idx, batch in enumerate(batches):
             blocked_pids = set()
@@ -103,11 +106,11 @@ def run_replay(seed=0, allow_flips=True, max_iters=50, batch_attempts=2, patch_r
                         blocked_pids.update(nbrs)
                         # stop on first violating issues
                         if issues['dup_count'] > 0 or issues['nm_edge_count'] > 0 or not issues['conform_ok']:
-                            print('Issue after op', rec['op'], 'on patch', pid, 'iter', iter_no, 'batch', b_idx, 'attempt', attempt)
-                            print('issues:', issues['dup_count'], 'dup examples', issues['dup_examples'], 'nm_edges', issues['nm_edge_count'], issues['nm_edge_examples'])
+                            logger.warning('Issue after op %s on patch %s iter %d batch %d attempt %d', rec['op'], pid, iter_no, b_idx, attempt)
+                            logger.warning('issues: %d dup examples=%s nm_edges=%d %s', issues['dup_count'], issues['dup_examples'], issues['nm_edge_count'], issues['nm_edge_examples'])
                             fname = os.path.join(OUT, f'trace_seed{seed}_replay_flips_{"on" if allow_flips else "off"}.npz')
                             np.savez(fname, trace=trace)
-                            print('Wrote trace to', fname)
+                            logger.info('Wrote trace to %s', fname)
                             return trace
                         # if accepted but no issues, break to next patch
                         break
@@ -119,7 +122,7 @@ def run_replay(seed=0, allow_flips=True, max_iters=50, batch_attempts=2, patch_r
     # no issues found in max_iters
     fname = os.path.join(OUT, f'trace_seed{seed}_replay_flips_{"on" if allow_flips else "off"}_noissue.npz')
     np.savez(fname, trace=trace)
-    print('No issue detected in replay; wrote trace to', fname)
+    logger.info('No issue detected in replay; wrote trace to %s', fname)
     return trace
 
 

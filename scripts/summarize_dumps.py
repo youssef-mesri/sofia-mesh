@@ -2,6 +2,9 @@
 import os
 import glob
 import numpy as np
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.scripts.summarize_dumps')
 from collections import Counter, defaultdict
 
 root = os.path.abspath(os.path.dirname(__file__) + '/..')
@@ -133,17 +136,17 @@ for fn in reject_files:
 summary['reject_files_details'] = reject_details
 
 # Print concise summary
-print('SUMMARY')
-print('Root:', root)
-print('Pocket dump files:', summary['n_pocket_files'])
-print('Reject-min-angle dump files:', summary['n_reject_files'])
-print('Empty pocket files (inside_pts empty or not present):', summary['empty_pocket_files'])
-print('Unique pocket vertex-tuples seen:', summary['unique_pockets_seen'])
-print('Most common pockets (up to 10):')
+logger.info('SUMMARY')
+logger.info('Root: %s', root)
+logger.info('Pocket dump files: %d', summary['n_pocket_files'])
+logger.info('Reject-min-angle dump files: %d', summary['n_reject_files'])
+logger.info('Empty pocket files (inside_pts empty or not present): %d', summary['empty_pocket_files'])
+logger.info('Unique pocket vertex-tuples seen: %d', summary['unique_pockets_seen'])
+logger.info('Most common pockets (up to 10):')
 for k,v in summary['most_common_pockets']:
-    print(' ', k, 'count=', v)
-print('\nReject dump samples (file -> pre/post boundary-edge counts):')
+    logger.info('  %s count=%d', k, v)
+logger.info('\nReject dump samples (file -> pre/post boundary-edge counts):')
 for fn, info in reject_details[:10]:
-    print(' ', os.path.basename(fn), '->', info)
+    logger.info('  %s -> %s', os.path.basename(fn), info)
 
 # Exit code 0

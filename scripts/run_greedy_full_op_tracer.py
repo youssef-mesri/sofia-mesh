@@ -8,6 +8,9 @@ import numpy as np
 import random
 import sofia.sofia.remesh_driver as debug_check
 from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, check_mesh_conformity
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.scripts.run_greedy_full_op_tracer')
 from sofia.sofia.remesh_driver import compact_copy
 
 OUTDIR = os.path.join(os.getcwd(), 'diagnostics')
@@ -19,7 +22,7 @@ def run_seed(seed=0, max_vertex_passes=2, max_edge_passes=2, outname=None):
         pts_before = data['pts_before']
         tris_before = data['tris_before']
     else:
-        print('No gfail file for seed', seed)
+        logger.info('No gfail file for seed %d', seed)
         return 2
     editor = PatchBasedMeshEditor(pts_before.copy(), tris_before.copy())
     random.seed(seed)
@@ -60,10 +63,10 @@ def run_seed(seed=0, max_vertex_passes=2, max_edge_passes=2, outname=None):
         return res
 
     debug_check.apply_patch_operation = wrapped_apply
-    print('Running greedy_remesh for seed', seed)
+    logger.info('Running greedy_remesh for seed %d', seed)
     try:
         ok = debug_check.greedy_remesh(editor, max_vertex_passes=max_vertex_passes, max_edge_passes=max_edge_passes, verbose=False)
-        print('greedy_remesh finished, ok=', ok)
+        logger.info('greedy_remesh finished, ok=%s', ok)
     finally:
         debug_check.apply_patch_operation = orig_apply
     # save records
@@ -77,7 +80,7 @@ def run_seed(seed=0, max_vertex_passes=2, max_edge_passes=2, outname=None):
     msgs_strict = np.array([r['msgs_strict'] for r in records], dtype=object)
     pts_comp = np.array([r['pts_comp'] for r in records], dtype=object)
     tris_comp = np.array([r['tris_comp'] for r in records], dtype=object)
-    print('Saving recorded ops to', out)
+    logger.info('Saving recorded ops to %s', out)
     np.savez_compressed(out, steps=steps, actions=actions, params=params, oks=oks, msgs_allow=msgs_allow, msgs_strict=msgs_strict, pts_comp=pts_comp, tris_comp=tris_comp)
     return 0
 

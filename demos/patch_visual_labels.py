@@ -5,6 +5,9 @@ import numpy as np
 from matplotlib.patches import Polygon
 from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
 from sofia.sofia.patch_batching import build_patches_from_metrics_strict
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.demos.patch_visual_labels')
 
 def run_patch_visual_labels(npts=40, seed=7, node_top_k=12):  # pragma: no cover
     pts, tris = build_random_delaunay(npts=npts, seed=seed)
@@ -45,7 +48,7 @@ def run_patch_visual_labels(npts=40, seed=7, node_top_k=12):  # pragma: no cover
     plt.gca().set_aspect('equal')
     plt.title('Patches (labeled by id)')
     plt.savefig('patch_boundaries_labeled.png', dpi=200)
-    print('Wrote patch_boundaries_labeled.png')
+    logger.info('Wrote patch_boundaries_labeled.png')
     # per-patch zooms
     for p in patches:
         pid = p.get('id'); tris_idx = sorted(p.get('tris', []))
@@ -67,7 +70,8 @@ def run_patch_visual_labels(npts=40, seed=7, node_top_k=12):  # pragma: no cover
                 plt.gca().add_patch(poly)
             plt.xlim(xmin - padx, xmax + padx); plt.ylim(ymin - pady, ymax + pady)
             plt.gca().set_aspect('equal'); plt.title(f'Patch {pid} zoom')
-            fname = f'patch_zoom_{pid}.png'; plt.savefig(fname, dpi=200); print('Wrote', fname)
+            fname = f'patch_zoom_{pid}.png'; plt.savefig(fname, dpi=200)
+            logger.info('Wrote %s', fname)
         else:
             seed_v = int(p.get('seed'))
             sxy = editor.points[seed_v]
@@ -75,7 +79,8 @@ def run_patch_visual_labels(npts=40, seed=7, node_top_k=12):  # pragma: no cover
             plt.triplot(editor.points[:,0], editor.points[:,1], editor.triangles, color='lightgray', lw=0.6)
             plt.xlim(sxy[0]-0.05, sxy[0]+0.05); plt.ylim(sxy[1]-0.05, sxy[1]+0.05)
             plt.gca().set_aspect('equal')
-            fname = f'patch_zoom_{pid}.png'; plt.savefig(fname, dpi=200); print('Wrote', fname)
+            fname = f'patch_zoom_{pid}.png'; plt.savefig(fname, dpi=200)
+            logger.info('Wrote %s', fname)
     return patches
 
 if __name__ == '__main__':  # pragma: no cover

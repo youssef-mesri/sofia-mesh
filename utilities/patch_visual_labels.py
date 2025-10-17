@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
 from sofia.sofia.patch_batching import build_patches_from_metrics_strict
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.utilities.patch_visual_labels')
 
 def main():  # pragma: no cover
     pts, tris = build_random_delaunay(npts=40, seed=7)
@@ -44,7 +47,7 @@ def main():  # pragma: no cover
     plt.gca().set_aspect('equal')
     plt.title('Patches (labeled by id)')
     plt.savefig('patch_boundaries_labeled.png', dpi=200)
-    print('Wrote patch_boundaries_labeled.png')
+    logger.info('Wrote patch_boundaries_labeled.png')
     # Per-patch zooms
     for p in patches:
         pid = p.get('id')
@@ -74,7 +77,7 @@ def main():  # pragma: no cover
             plt.title(f'Patch {pid} zoom')
             fname = f'patch_zoom_{pid}.png'
             plt.savefig(fname, dpi=200)
-            print('Wrote', fname)
+            logger.info('Wrote %s', fname)
         else:
             seed = int(p.get('seed'))
             sxy = editor.points[seed]
@@ -85,7 +88,7 @@ def main():  # pragma: no cover
             plt.gca().set_aspect('equal')
             fname = f'patch_zoom_{pid}.png'
             plt.savefig(fname, dpi=200)
-            print('Wrote', fname)
+            logger.info('Wrote %s', fname)
     return 0
 
 if __name__ == '__main__':  # pragma: no cover

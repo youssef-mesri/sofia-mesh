@@ -8,6 +8,9 @@ import numpy as np
 from collections import defaultdict, Counter
 
 from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, check_mesh_conformity
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.scripts.trace_seed0')
 import sofia.sofia.remesh_driver as debug_check
 # disable flips for this trace run to observe behavior without flips
 debug_check.ALLOW_FLIPS = False
@@ -58,7 +61,7 @@ def run_trace():
 
     # initial check
     init_issues = detect_issues(editor)
-    print('Initial conform_ok=', init_issues['conform_ok'], 'dup_count=', init_issues['dup_count'], 'nm_edges=', init_issues['nm_edge_count'])
+    logger.info('Initial conform_ok=%s dup_count=%d nm_edges=%d', init_issues['conform_ok'], init_issues['dup_count'], init_issues['nm_edge_count'])
 
     trace = []
 
@@ -94,7 +97,7 @@ def run_trace():
                 issues = detect_issues(editor)
                 trace.append({'action': action, 'before': before, 'after_issues': issues})
                 if issues['dup_count'] > 0 or issues['nm_edge_count'] > 0 or not issues['conform_ok']:
-                    print('Issue after remove at v', v, 'issues=', issues['dup_count'], issues['nm_edge_count'])
+                    logger.warning('Issue after remove at v %s issues=%d %d', v, issues['dup_count'], issues['nm_edge_count'])
                     np.savez(os.path.join(OUT, 'trace_seed0.npz'), trace=trace)
                     return
                 continue
@@ -114,7 +117,7 @@ def run_trace():
                 issues = detect_issues(editor)
                 trace[-1]['after_issues'] = issues
                 if issues['dup_count'] > 0 or issues['nm_edge_count'] > 0 or not issues['conform_ok']:
-                    print('Issue after add at tri', worst_tri, 'issues=', issues['dup_count'], issues['nm_edge_count'])
+                    logger.warning('Issue after add at tri %s issues=%d %d', worst_tri, issues['dup_count'], issues['nm_edge_count'])
                     np.savez(os.path.join(OUT, 'trace_seed0.npz'), trace=trace)
                     return
                 continue
@@ -164,7 +167,7 @@ def run_trace():
                 issues = detect_issues(editor)
                 trace[-1]['after_issues'] = issues
                 if issues['dup_count'] > 0 or issues['nm_edge_count'] > 0 or not issues['conform_ok']:
-                    print('Issue after split on edge', e, 'issues=', issues['dup_count'], issues['nm_edge_count'])
+                    logger.warning('Issue after split on edge %s issues=%d %d', e, issues['dup_count'], issues['nm_edge_count'])
                     np.savez(os.path.join(OUT, 'trace_seed0.npz'), trace=trace)
                     return
                 continue
@@ -181,7 +184,7 @@ def run_trace():
                 issues = detect_issues(editor)
                 trace[-1]['after_issues'] = issues
                 if issues['dup_count'] > 0 or issues['nm_edge_count'] > 0 or not issues['conform_ok']:
-                    print('Issue after flip on edge', e, 'issues=', issues['dup_count'], issues['nm_edge_count'])
+                    logger.warning('Issue after flip on edge %s issues=%d %d', e, issues['dup_count'], issues['nm_edge_count'])
                     np.savez(os.path.join(OUT, 'trace_seed0.npz'), trace=trace)
                     return
             else:
@@ -192,7 +195,7 @@ def run_trace():
             trace.append({'action': action, 'before': before, 'after_issues': detect_issues(editor)})
 
     # if reached here no issue found in these single passes
-    print('No issue detected in this single-pass trace')
+    logger.info('No issue detected in this single-pass trace')
     np.savez(os.path.join(OUT, 'trace_seed0.npz'), trace=trace)
 
 

@@ -10,6 +10,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import random
 import sofia.sofia.remesh_driver as debug_check
 from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, check_mesh_conformity
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.scripts.reproduce_gfail_seed0_from_fuzz')
 from sofia.sofia.remesh_driver import compact_copy
 
 OUTDIR = os.path.join(os.getcwd(), 'diagnostics')
@@ -20,7 +23,7 @@ def main():
     seed = int(data['seed'].tolist()) if 'seed' in data else 0
     pts_before = data['pts_before']
     tris_before = data['tris_before']
-    print('Loaded gfail_seed_0: seed=', seed, 'pts_before.shape=', pts_before.shape, 'tris_before.shape=', tris_before.shape)
+    logger.info('Loaded gfail_seed_0: seed=%d pts_before.shape=%s tris_before.shape=%s', seed, pts_before.shape, tris_before.shape)
     editor = PatchBasedMeshEditor(pts_before.copy(), tris_before.copy())
 
     # Prepare RNGs used by debug_check
@@ -46,14 +49,14 @@ def main():
                 # compacted copy
                 pts_c, tris_c, mapping, active_idx = compact_copy(editor_arg)
             except Exception as e:
-                print('compact_copy failed at step', step['count'], 'error', e)
+                logger.exception('compact_copy failed at step %d error: %s', step['count'], e)
                 pts_c = None; tris_c = None
             if pts_c is not None:
                 ok_allow, msgs_allow = check_mesh_conformity(editor_arg.points, editor_arg.triangles, allow_marked=True)
                 ok_strict, msgs_strict = check_mesh_conformity(pts_c, tris_c, allow_marked=False)
                 if (not ok_allow) or (not ok_strict):
                     out = os.path.join(OUTDIR, f'repro_first_offending_seed0_step{step["count"]}.npz')
-                    print('Detected compacted failure at step', step['count'], 'op=', op, 'param=', param)
+                    logger.warning('Detected compacted failure at step %d op=%s param=%s', step['count'], op, param)
                     np.savez_compressed(out,
                                          step=step['count'],
                                          op=op,
@@ -64,24 +67,24 @@ def main():
                                          tris_comp=tris_c,
                                          pts_full=editor_arg.points,
                                          tris_full=editor_arg.triangles)
-                    print('Wrote', out)
+                    logger.info('Wrote %s', out)
                     # exit process with non-zero to signal detection
                     sys.exit(0)
         return res
 
     # monkeypatch
     debug_check.apply_patch_operation = wrapped_apply
-    print('Starting greedy_remesh with seed', seed)
+    logger.info('Starting greedy_remesh with seed %d', seed)
     try:
         ok = debug_check.greedy_remesh(editor, max_vertex_passes=2, max_edge_passes=2, verbose=True)
-        print('greedy_remesh finished, ok=', ok)
+        logger.info('greedy_remesh finished, ok=%s', ok)
     except SystemExit:
-        print('Stopped due to detected offending op (saved NPZ).')
+        logger.info('Stopped due to detected offending op (saved NPZ).')
         return 0
     finally:
         # restore
         debug_check.apply_patch_operation = orig_apply
-    print('No offending commit detected during greedy_remesh run')
+    logger.info('No offending commit detected during greedy_remesh run')
     return 0
 
 if __name__ == '__main__':

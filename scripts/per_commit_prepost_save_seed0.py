@@ -8,6 +8,9 @@ import time
 
 from sofia.sofia.remesh_driver import compact_copy, check_mesh_conformity, find_inverted_triangles, MIN_TRI_AREA, greedy_remesh
 from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.sofia.logging_utils import get_logger
+
+logger = get_logger('sofia.scripts.per_commit_prepost_save_seed0')
 
 NPZ_IN = 'diagnostics/gfail_seed_0.npz'
 OUT_PREFIX = 'diagnostics/per_commit_prepost_failure'
@@ -23,15 +26,15 @@ def save_prepost(editor, op_name, op_param, pre_comp, pre_raw_pts, pre_raw_tris,
                  raw_pre_pts=pre_raw_pts, raw_pre_tris=pre_raw_tris,
                  raw_post_pts=post_raw_pts, raw_post_tris=post_raw_tris,
                  op=op_name, param=op_param, msgs=msgs_comp, inv=inv_comp)
-        print('Wrote', fn)
+        logger.info('Wrote %s', fn)
     except Exception as e:
-        print('Failed to write failure file:', e)
+        logger.exception('Failed to write failure file: %s', e)
     return fn
 
 
 def main():
     if not os.path.exists(NPZ_IN):
-        print('Input NPZ not found:', NPZ_IN); sys.exit(1)
+        logger.error('Input NPZ not found: %s', NPZ_IN); sys.exit(1)
     data = np.load(NPZ_IN, allow_pickle=True)
     if 'pts_before' in data:
         pts = data['pts_before']
@@ -40,10 +43,10 @@ def main():
         pts = data['points']
         tris = data['tris']
     else:
-        print('Could not find pts_before/tris_before keys in', NPZ_IN); sys.exit(1)
+    logger.error('Could not find pts_before/tris_before keys in %s', NPZ_IN); sys.exit(1)
 
     editor = PatchBasedMeshEditor(pts.copy(), tris.copy())
-    print('Loaded editor: npts=', len(editor.points), 'ntris=', len(editor.triangles))
+    logger.info('Loaded editor: npts=%d ntris=%d', len(editor.points), len(editor.triangles))
 
     # Use unbound class methods to avoid double-binding issues when wrapping
     orig_add = PatchBasedMeshEditor.add_node
@@ -75,7 +78,7 @@ def main():
                 if (not ok_comp) or inv_comp:
                     # save both pre and post
                     fn = save_prepost(editor, orig_name, {'args': args, 'kwargs': kwargs}, pre_comp, pre_raw_pts, pre_raw_tris, post_comp, post_raw_pts, post_raw_tris, msgs_comp, inv_comp)
-                    print('Detected compacted failure after', orig_name, '-> saved', fn)
+                    logger.info('Detected compacted failure after %s -> saved %s', orig_name, fn)
                     sys.exit(0)
             return res
         return types.MethodType(wrapped, editor)
@@ -86,13 +89,13 @@ def main():
     editor.flip_edge = wrap('flip_edge', orig_flip)
 
     try:
-        print('Starting greedy_remesh with pre/post per-commit checks...')
+        logger.info('Starting greedy_remesh with pre/post per-commit checks...')
         greedy_remesh(editor, max_vertex_passes=10, max_edge_passes=10, verbose=True)
-        print('greedy_remesh finished; no compacted failure detected during run')
+        logger.info('greedy_remesh finished; no compacted failure detected during run')
     except SystemExit:
         pass
     except Exception as e:
-        print('greedy_remesh raised exception:', e)
+        logger.exception('greedy_remesh raised exception: %s', e)
 
 if __name__ == '__main__':
     main()
