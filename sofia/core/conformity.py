@@ -103,30 +103,13 @@ def _build_grid_cells_vectorized(minx, maxx, miny, maxy, gx0, gy0, cell, N):
 	return cells
 
 
-@njit(parallel=True, fastmath=True)
-def _bbox_overlap_batch_numba(minx1, maxx1, miny1, maxy1, minx2, maxx2, miny2, maxy2):
-	"""Vectorized bounding box overlap test using Numba.
+def _bbox_overlap_batch(minx1, maxx1, miny1, maxy1, minx2, maxx2, miny2, maxy2):
+	"""Vectorized bounding box overlap test.
 	
+	NumPy's vectorized operations are already optimal for this - faster than Numba!
 	Returns boolean array indicating which pairs overlap.
 	"""
-	n = len(minx1)
-	result = np.empty(n, dtype=np.bool_)
-	for i in prange(n):
-		result[i] = not ((maxx1[i] < minx2[i]) or (maxx2[i] < minx1[i]) or 
-						 (maxy1[i] < miny2[i]) or (maxy2[i] < miny1[i]))
-	return result
-
-
-def _bbox_overlap_batch(minx1, maxx1, miny1, maxy1, minx2, maxx2, miny2, maxy2):
-	"""Vectorized bounding box overlap test with Numba acceleration."""
-	if HAS_NUMBA and len(minx1) > 50:
-		try:
-			return _bbox_overlap_batch_numba(minx1, maxx1, miny1, maxy1, 
-											  minx2, maxx2, miny2, maxy2)
-		except Exception:
-			pass
-	
-	# NumPy fallback
+	# NumPy vectorized version (already optimal)
 	return ~((maxx1 < minx2) | (maxx2 < minx1) | (maxy1 < miny2) | (maxy2 < miny1))
 
 # ============================================================================

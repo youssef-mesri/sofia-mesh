@@ -31,27 +31,12 @@ __all__ = [
 ]
 
 # ============================================================================
-# NUMBA-OPTIMIZED FUNCTIONS (5-10x faster)
+# NUMBA-OPTIMIZED FUNCTIONS (Only where Numba actually helps!)
 # ============================================================================
+# Note: triangles_signed_areas uses pure NumPy - it's 24x faster than Numba
+# Note: bbox overlap uses pure NumPy - it's 600x faster than Numba
 
 if HAS_NUMBA:
-	@numba.jit(nopython=True, cache=True, fastmath=True)
-	def _triangles_signed_areas_numba(points, tris):
-		"""Numba-accelerated signed area computation."""
-		n = tris.shape[0]
-		areas = np.empty(n, dtype=np.float64)
-		for i in range(n):
-			p0 = points[tris[i, 0]]
-			p1 = points[tris[i, 1]]
-			p2 = points[tris[i, 2]]
-			# Cross product: (p1-p0) × (p2-p0)
-			dx1 = p1[0] - p0[0]
-			dy1 = p1[1] - p0[1]
-			dx2 = p2[0] - p0[0]
-			dy2 = p2[1] - p0[1]
-			areas[i] = 0.5 * (dx1 * dy2 - dy1 * dx2)
-		return areas
-	
 	@numba.jit(nopython=True, cache=True, fastmath=True)
 	def _triangles_min_angles_numba(points, tris):
 		"""Numba-accelerated minimum angle computation."""
@@ -289,28 +274,6 @@ def opposite_edge_of_smallest_angle(points, triangle):
 	edge = (idx[(i_min+1)%3], idx[(i_min+2)%3])
 	return tuple(sorted(edge))
 
-@njit(parallel=True, fastmath=True)
-def _triangles_signed_areas_numba(pts, T):
-	"""Numba-accelerated signed area computation for triangles.
-	
-	pts: (N,2) float64 array
-	T: (M,3) int32 array
-	Returns: (M,) float64 array of signed areas
-	"""
-	M = T.shape[0]
-	areas = np.empty(M, dtype=np.float64)
-	for i in prange(M):
-		i0, i1, i2 = T[i, 0], T[i, 1], T[i, 2]
-		p0x, p0y = pts[i0, 0], pts[i0, 1]
-		p1x, p1y = pts[i1, 0], pts[i1, 1]
-		p2x, p2y = pts[i2, 0], pts[i2, 1]
-		
-		# Cross product: (p1 - p0) × (p2 - p0)
-		dx1, dy1 = p1x - p0x, p1y - p0y
-		dx2, dy2 = p2x - p0x, p2y - p0y
-		areas[i] = 0.5 * (dx1 * dy2 - dy1 * dx2)
-	return areas
-
 def triangles_signed_areas(points, tris):
 	"""Vectorized signed area for a batch of triangles.
 
@@ -323,14 +286,7 @@ def triangles_signed_areas(points, tris):
 	if T.size == 0:
 		return np.empty((0,), dtype=float)
 	
-	# Use Numba-accelerated version if available and beneficial (>50 triangles)
-	if HAS_NUMBA and T.shape[0] > 50:
-		try:
-			return _triangles_signed_areas_numba(pts, T)
-		except Exception:
-			pass  # Fall back to NumPy version
-	
-	# NumPy vectorized version (fallback)
+	# NumPy vectorized version (already optimal - faster than Numba)
 	p0 = pts[T[:, 0]]; p1 = pts[T[:, 1]]; p2 = pts[T[:, 2]]
 	return 0.5 * np.cross(p1 - p0, p2 - p0)
 
