@@ -20,7 +20,15 @@ __all__ = [
     'polygon_has_self_intersections',
     'simplify_polygon_cycle',
     # pocket fill strategies
-    'fill_pocket_quad', 'fill_pocket_steiner', 'fill_pocket_earclip'
+    'fill_pocket_quad', 'fill_pocket_steiner', 'fill_pocket_earclip',
+    # removal triangulation strategies (new)
+    'RemovalTriangulationStrategy',
+    'OptimalStarStrategy',
+    'QualityStarStrategy',
+    'AreaPreservingStarStrategy',
+    'EarClipStrategy',
+    'SimplifyAndRetryStrategy',
+    'ChainedStrategy',
 ]
 
 def triangulate_polygon_with_holes(shell, holes, points=None, prefer_earcut=True):
@@ -793,3 +801,188 @@ def fill_pocket_earclip(editor, verts, min_tri_area, reject_min_angle_deg):
     details['method'] = 'earclip'
     details['triangles'] = [tuple(t) for t in oriented]
     return True, details
+
+
+# ============================================================================
+# Strategy Pattern for Removal Triangulation
+# ============================================================================
+
+class RemovalTriangulationStrategy:
+    """Base class for triangulation strategies when removing a vertex.
+    
+    This provides a unified interface for different triangulation approaches
+    used in vertex removal operations. Each strategy wraps existing triangulation
+    functions and provides consistent error handling.
+    """
+    
+    def try_triangulate(self, points, boundary_cycle, config=None):
+        """Try to triangulate a boundary cycle.
+        
+        Args:
+            points: (N, 2) array of all mesh points
+            boundary_cycle: List of vertex indices forming the boundary
+            config: Optional configuration (BoundaryRemoveConfig)
+            
+        Returns:
+            tuple: (success: bool, triangles: list or None, error: str)
+                - success: True if triangulation succeeded
+                - triangles: List of triangle index triplets, or None on failure
+                - error: Error message string (empty on success)
+        """
+        raise NotImplementedError("Subclasses must implement try_triangulate")
+
+
+class OptimalStarStrategy(RemovalTriangulationStrategy):
+    """Triangulation strategy using optimal star (minimum total area).
+    
+    This strategy creates a star triangulation by choosing the boundary vertex
+    that minimizes the total area of the resulting triangulation.
+    """
+    
+    def try_triangulate(self, points, boundary_cycle, config=None):
+        """Try optimal star triangulation."""
+        try:
+            triangles = optimal_star_triangulation(points, boundary_cycle, debug=False)
+            if triangles is None:
+                return (False, None, "optimal_star_triangulation returned None")
+            return (True, triangles, "")
+        except ValueError as e:
+            return (False, None, f"optimal_star_triangulation raised ValueError: {e}")
+        except Exception as e:
+            return (False, None, f"optimal_star_triangulation raised exception: {e}")
+
+
+class QualityStarStrategy(RemovalTriangulationStrategy):
+    """Triangulation strategy maximizing the minimum angle (quality-oriented).
+    
+    This strategy enumerates star triangulations anchored at each boundary vertex
+    and selects the one that maximizes the worst (minimum) triangle angle.
+    """
+    
+    def try_triangulate(self, points, boundary_cycle, config=None):
+        """Try quality star triangulation."""
+        try:
+            triangles = best_star_triangulation_by_min_angle(points, boundary_cycle, debug=False)
+            if triangles is None:
+                return (False, None, "best_star_triangulation_by_min_angle returned None")
+            return (True, triangles, "")
+        except ValueError as e:
+            return (False, None, f"best_star_triangulation_by_min_angle raised ValueError: {e}")
+        except Exception as e:
+            return (False, None, f"best_star_triangulation_by_min_angle raised exception: {e}")
+
+
+class AreaPreservingStarStrategy(RemovalTriangulationStrategy):
+    """Triangulation strategy that preserves area within tolerance.
+    
+    This strategy finds a star triangulation whose total area matches the
+    original polygon area within specified tolerances. Among valid candidates,
+    it prefers the one with the best minimum angle.
+    """
+    
+    def try_triangulate(self, points, boundary_cycle, config=None):
+        """Try area-preserving star triangulation."""
+        try:
+            # Extract tolerances from config if provided
+            if config and hasattr(config, 'area_tol_rel'):
+                from .constants import EPS_AREA
+                area_tol_rel = config.area_tol_rel
+                area_tol_abs = float(getattr(config, 'area_tol_abs_factor', 4.0)) * EPS_AREA
+                triangles = best_star_triangulation_area_preserving(
+                    points, boundary_cycle,
+                    area_tol_rel=area_tol_rel,
+                    area_tol_abs=area_tol_abs,
+                    debug=False
+                )
+            else:
+                triangles = best_star_triangulation_area_preserving(
+                    points, boundary_cycle, debug=False
+                )
+            
+            if triangles is None:
+                return (False, None, "best_star_triangulation_area_preserving returned None")
+            return (True, triangles, "")
+        except ValueError as e:
+            return (False, None, f"best_star_triangulation_area_preserving raised ValueError: {e}")
+        except Exception as e:
+            return (False, None, f"best_star_triangulation_area_preserving raised exception: {e}")
+
+
+class EarClipStrategy(RemovalTriangulationStrategy):
+    """Triangulation strategy using ear clipping algorithm.
+    
+    This is a robust fallback strategy that uses ear clipping to triangulate
+    arbitrary simple polygons.
+    """
+    
+    def try_triangulate(self, points, boundary_cycle, config=None):
+        """Try ear clipping triangulation."""
+        try:
+            triangles = ear_clip_triangulation(points, boundary_cycle)
+            if not triangles:
+                return (False, None, "ear_clip_triangulation returned empty list")
+            return (True, triangles, "")
+        except ValueError as e:
+            return (False, None, f"ear_clip_triangulation raised ValueError: {e}")
+        except Exception as e:
+            return (False, None, f"ear_clip_triangulation raised exception: {e}")
+
+
+class SimplifyAndRetryStrategy(RemovalTriangulationStrategy):
+    """Meta-strategy that simplifies the boundary cycle and retries with another strategy.
+    
+    This strategy first simplifies the boundary cycle by removing nearly-collinear
+    vertices, then attempts triangulation with a wrapped strategy.
+    """
+    
+    def __init__(self, wrapped_strategy):
+        """Initialize with a wrapped strategy to apply after simplification.
+        
+        Args:
+            wrapped_strategy: RemovalTriangulationStrategy to use after simplification
+        """
+        self.wrapped_strategy = wrapped_strategy
+    
+    def try_triangulate(self, points, boundary_cycle, config=None):
+        """Try triangulation after simplifying the boundary cycle."""
+        try:
+            simplified = simplify_polygon_cycle(points, boundary_cycle)
+            if not simplified or len(simplified) < 3:
+                return (False, None, "simplify_polygon_cycle produced invalid result")
+            
+            # Try wrapped strategy on simplified cycle
+            return self.wrapped_strategy.try_triangulate(points, simplified, config)
+        except ValueError as e:
+            return (False, None, f"simplify_polygon_cycle raised ValueError: {e}")
+        except Exception as e:
+            return (False, None, f"simplification raised exception: {e}")
+
+
+class ChainedStrategy(RemovalTriangulationStrategy):
+    """Meta-strategy that tries multiple strategies in sequence until one succeeds.
+    
+    This allows building a fallback chain of strategies, where each is tried
+    in order until one produces a valid triangulation.
+    """
+    
+    def __init__(self, strategies):
+        """Initialize with a list of strategies to try in order.
+        
+        Args:
+            strategies: List of RemovalTriangulationStrategy instances
+        """
+        self.strategies = strategies
+    
+    def try_triangulate(self, points, boundary_cycle, config=None):
+        """Try each strategy in order until one succeeds."""
+        errors = []
+        for i, strategy in enumerate(self.strategies):
+            success, triangles, error = strategy.try_triangulate(points, boundary_cycle, config)
+            if success:
+                return (True, triangles, "")
+            errors.append(f"Strategy {i} ({strategy.__class__.__name__}): {error}")
+        
+        # All strategies failed
+        combined_error = "; ".join(errors)
+        return (False, None, f"All strategies failed: {combined_error}")
+
