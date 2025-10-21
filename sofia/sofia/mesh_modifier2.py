@@ -7,6 +7,7 @@ import shutil
 from collections import defaultdict
 
 import numpy as np
+from typing import Optional
 import os as _os
 import matplotlib as _mpl
 # Ensure a non-interactive backend in headless environments before importing pyplot
@@ -74,7 +75,8 @@ class PatchBasedMeshEditor:
                  enforce_split_quality: bool = True,
                  enforce_remove_quality: bool = True,
                  boundary_remove_config=None,
-                 enable_remove_quad_fastpath: bool = False):
+                 enable_remove_quad_fastpath: bool = False,
+                 collapse_h_metric: Optional[str] = None):
         """Primary mesh editor.
 
         Parameters
@@ -135,6 +137,8 @@ class PatchBasedMeshEditor:
         self.enforce_remove_quality = bool(enforce_remove_quality)
         # Optional: enable fast path for 4-vertex cavity removal
         self.enable_remove_quad_fastpath = bool(enable_remove_quad_fastpath)
+        # Optional: use an h-metric acceptance for edge collapses (e.g., 'avg_equilateral_h')
+        self.collapse_h_metric = str(collapse_h_metric) if collapse_h_metric else None
         # Boundary removal strategy preferences
         try:
             from .config import BoundaryRemoveConfig
@@ -673,26 +677,42 @@ class PatchBasedMeshEditor:
                 continue
             # Build coordinates for loop vertices (indices)
             pts_idx = [int(v) for v in loop]
+            # Save original loop coordinates BEFORE projection to avoid moving target problem
+            original_loop_coords = _np.asarray([self.points[int(v)].copy() for v in pts_idx], dtype=float)
+            
             # For each vertex in loop, compute projection
             for local_i, vid in enumerate(pts_idx):
                 p = _np.asarray(self.points[int(vid)], dtype=float)
                 if projection_fn is not None:
                     try:
+                        # Build coords array for the loop indices for convenience of custom projection.
+                        coords = _np.asarray(self.points[pts_idx], dtype=float)
                         newp = _np.asarray(projection_fn(int(vid), p.copy(), pts_idx, coords.copy()), dtype=float)
                     except Exception:
                         # on failure, skip this vertex
                         continue
                 else:
-                    # find nearest point on any segment of the closed polyline built without vid
-                    other_idx = [ii for ii in pts_idx if ii != int(vid)]
-                    if len(other_idx) < 2:
+                    # find nearest point on any segment of the closed boundary loop polyline
+                    # using the ORIGINAL loop coordinates (saved before projection started)
+                    # EXCLUDING segments that have the vertex being projected as an endpoint
+                    if len(pts_idx) < 3:
+                        # Need at least 3 vertices to have segments that don't include the current vertex
                         continue
-                    other_coords = _np.asarray(self.points[other_idx], dtype=float)
-                    closed_other = _np.vstack([other_coords, other_coords[0]])
+                    loop_coords = original_loop_coords
+                    # Build a closed polyline
+                    closed = _np.vstack([loop_coords, loop_coords[0]])
                     best = None
                     best_dist2 = float('inf')
-                    for si in range(closed_other.shape[0] - 1):
-                        a = closed_other[si]; b = closed_other[si+1]
+                    nseg = closed.shape[0] - 1
+                    for si in range(nseg):
+                        # Skip segments where the current vertex is an endpoint
+                        # Segment si goes from loop vertex si to loop vertex (si+1) % len(pts_idx)
+                        vertex_idx_a = pts_idx[si]
+                        vertex_idx_b = pts_idx[(si + 1) % len(pts_idx)]
+                        if vertex_idx_a == vid or vertex_idx_b == vid:
+                            continue
+                        
+                        a = closed[si]; b = closed[si+1]
                         ab = b - a
                         ab2 = float(ab[0]*ab[0] + ab[1]*ab[1])
                         if ab2 <= 0.0:
@@ -835,42 +855,7 @@ class PatchBasedMeshEditor:
         t0 = time.perf_counter()
         try:
             self._assert_canonical()
-            # Early default area-preservation guard for boundary removals
-            try:
-                if bool(getattr(self, 'virtual_boundary_mode', False)):
-                    cfg = getattr(self, 'boundary_remove_config', None)
-                    require_area = bool(getattr(cfg, 'require_area_preservation', False)) if cfg is not None else False
-                    if require_area:
-                        # Compute cavity (incident triangles) area
-                        tri_idx = sorted(set(self.v_map.get(int(v_idx), [])))
-                        if tri_idx:
-                            from .geometry import triangle_area as _tarea
-                            removed_area = 0.0
-                            for ti in tri_idx:
-                                t = self.triangles[int(ti)]
-                                a,b,c = int(t[0]), int(t[1]), int(t[2])
-                                p0,p1,p2 = self.points[a], self.points[b], self.points[c]
-                                removed_area += abs(_tarea(p0,p1,p2))
-                            # Build sanitized boundary polygon and compare areas
-                            from .helpers import boundary_polygons_from_patch, select_outer_polygon
-                            from .triangulation import polygon_signed_area as _poly_area
-                            polys = boundary_polygons_from_patch(self.triangles, tri_idx)
-                            cyc = select_outer_polygon(self.points, polys)
-                            if cyc:
-                                filtered = [int(v) for v in cyc if int(v) != int(v_idx)]
-                                if len(filtered) >= 2 and filtered[0] == filtered[-1]:
-                                    filtered = filtered[:-1]
-                                if len(filtered) >= 3:
-                                    poly_area = abs(_poly_area([self.points[int(v)] for v in filtered]))
-                                    from .constants import EPS_TINY, EPS_AREA
-                                    tol_rel = float(getattr(cfg, 'area_tol_rel', EPS_TINY)) if cfg is not None else EPS_TINY
-                                    tol_abs = float(getattr(cfg, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
-                                    if abs(poly_area - removed_area) > max(tol_abs, tol_rel*max(1.0, removed_area)):
-                                        return False, (
-                                            f"cavity area changed: poly={poly_area:.6e} cavity={removed_area:.6e}"
-                                        ), None
-            except Exception:
-                pass
+            # Delegate area-preservation logic to operations implementation for consistency
             return op_remove_node_with_patch(self, v_idx, force_strict=force_strict)
         finally:
             self._record_time('remove_node', time.perf_counter() - t0)

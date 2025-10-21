@@ -160,20 +160,31 @@ def perform_local_flips_Delaunay(y_vertices, connectivity):
             return _np.asarray(y_vertices[int(v)], dtype=float)
 
     def in_circumcircle(pa, pb, pc, pd):
-        # determinant of 4x4 lifted matrix
+        # Robust-ish incircle using 3x3 determinant form with orientation sign
+        # Translate to reduce magnitude
+        ax, ay = pa[0] - pd[0], pa[1] - pd[1]
+        bx, by = pb[0] - pd[0], pb[1] - pd[1]
+        cx, cy = pc[0] - pd[0], pc[1] - pd[1]
+        a2 = ax*ax + ay*ay
+        b2 = bx*bx + by*by
+        c2 = cx*cx + cy*cy
         mat = _np.array([
-            [pa[0], pa[1], pa[0]*pa[0] + pa[1]*pa[1], 1.0],
-            [pb[0], pb[1], pb[0]*pb[0] + pb[1]*pb[1], 1.0],
-            [pc[0], pc[1], pc[0]*pc[0] + pc[1]*pc[1], 1.0],
-            [pd[0], pd[1], pd[0]*pd[0] + pd[1]*pd[1], 1.0]
+            [ax, ay, a2],
+            [bx, by, b2],
+            [cx, cy, c2]
         ], dtype=float)
         det = float(_np.linalg.det(mat))
-        # adjust sign according to orientation of triangle (pa,pb,pc)
-        a_signed = triangle_area(pa, pb, pc)
-        # If triangle area is zero or near-zero, be conservative: treat as not violating
-        if abs(a_signed) <= 1e-20:
+        orient = triangle_area(pa, pb, pc)
+        if abs(orient) <= 1e-20:
             return False
-        return (det * (1.0 if a_signed > 0.0 else -1.0)) > 1e-14
+        # For CCW (positive area), det > 0 means pd inside circle.
+        # Use STRICT inequality to avoid infinite loops on cocircular configurations
+        # (cocircular points should not trigger flips)
+        tol = 1e-16
+        if orient > 0.0:
+            return det > tol
+        else:
+            return det < -tol
 
     T = _np.asarray(connectivity, dtype=_np.int32)
     flips = 0
@@ -207,15 +218,18 @@ def perform_local_flips_Delaunay(y_vertices, connectivity):
             c1 = int((verts1 - {int(u), int(v)}).pop())
             c2 = int((verts2 - {int(u), int(v)}).pop())
             pa, pb, pc1, pc2 = _y(u), _y(v), _y(c1), _y(c2)
-            # if c2 in circumcircle of triangle (u,v,c1) then flip
-            if in_circumcircle(pa, pb, pc1, pc2):
+            # If either opposite vertex is inside the other's circumcircle, flip
+            if in_circumcircle(pa, pb, pc1, pc2) or in_circumcircle(pa, pb, pc2, pc1):
                 # perform flip: replace triangles t1,t2 with (c1,c2,u) and (c2,c1,v)
                 new1 = [c1, c2, int(u)]
                 new2 = [c2, c1, int(v)]
-                # ensure positive orientation
-                if triangle_area(_np.asarray(new1, dtype=float), _np.asarray(new1, dtype=float), _np.asarray(new1, dtype=float)):
-                    pass
-                # assign and re-orient to positive area if needed
+                # ensure positive orientation using actual coordinates
+                p1 = [_y(int(vv)) for vv in new1]
+                if triangle_area(p1[0], p1[1], p1[2]) <= 0:
+                    new1[1], new1[2] = new1[2], new1[1]
+                p2 = [_y(int(vv)) for vv in new2]
+                if triangle_area(p2[0], p2[1], p2[2]) <= 0:
+                    new2[1], new2[2] = new2[2], new2[1]
                 T[int(t1)] = _np.array(new1, dtype=_np.int32)
                 T[int(t2)] = _np.array(new2, dtype=_np.int32)
                 # fix orientation using geometric area test
@@ -553,13 +567,56 @@ def _patch_vertices_from_tri_indices(editor: PatchBasedMeshEditor, tri_indices: 
     return sorted(vs)
 
 
+def debug_plot_patch_around_vertices(editor: PatchBasedMeshEditor,
+                                     verts: Iterable[int],
+                                     outname: str = 'patch_debug.png',
+                                     highlight_boundary_loops: bool = True,
+                                     annotate_vertices: bool = True):
+    """Debug utility: collect the patch of triangles around `verts` and plot it.
+
+    This uses `_collect_patch_triangles_around_vertices` to form the triangle set, then
+    leverages `visualization.plot_mesh_by_tri_groups` to render those triangles filled.
+
+    Parameters
+    ----------
+    editor : PatchBasedMeshEditor
+        Mesh editor with current `points` and `triangles`.
+    verts : iterable of int
+        Vertex indices around which to collect the patch.
+    outname : str
+        Output image filename.
+    highlight_boundary_loops : bool
+        If True, overlay boundary loops in the rendered figure.
+    """
+    try:
+        tri_patch = _collect_patch_triangles_around_vertices(editor, verts)
+        from .visualization import plot_mesh_by_tri_groups
+        tri_groups = {'patch': sorted(int(t) for t in tri_patch)}
+        plot_mesh_by_tri_groups(
+            editor,
+            tri_groups,
+            outname=outname,
+            highlight_boundary_loops=bool(highlight_boundary_loops),
+            annotate_vertices=(list(verts) if annotate_vertices else None),
+            annotate_color=(0.85, 0.2, 0.2),
+            annotate_size=28.0,
+            annotate_labels=True,
+        )
+        log.info("[debug] saved patch plot around verts=%s to %s (ntri=%d)",
+                 list(verts), outname, len(tri_patch))
+    except Exception as e:
+        log.warning("[debug] failed to plot patch: %s", e)
+
+
 def anisotropic_local_remesh(editor: PatchBasedMeshEditor,
                              metric_fn: Callable[[np.ndarray], np.ndarray],
                              alpha_split: float = 1.5,
                              beta_collapse: float = 0.5,
                              tol: float = 0.05,
                              max_iter: int = 6,
-                             verbose: bool = False):
+                             verbose: bool = False,
+                             do_global_smoothing: bool = True,
+                             do_cleanup: bool = True):
     """Perform anisotropic local remeshing on `editor` guided by `metric_fn`.
 
     Parameters
@@ -570,6 +627,8 @@ def anisotropic_local_remesh(editor: PatchBasedMeshEditor,
     - tol: convergence tolerance on metric edge length error (|lM - 1|)
     - max_iter: maximum outer iterations
     - verbose: log additional info
+    - do_global_smoothing: if True, perform step 6 global metric-space smoothing
+    - do_cleanup: if True, perform step 7 cleanup & validation (degenerate removal, boundary projection)
 
     Notes
     - This is a pragmatic, local implementation: it uses the editor's split/collapse/flip
@@ -626,9 +685,20 @@ def anisotropic_local_remesh(editor: PatchBasedMeshEditor,
             logv('split edge %s -> %s (%s)', e, ok, msg)
             if ok:
                 splits += 1
-                # record new vertex if info returned (some editor APIs return new idx)
-                if info and isinstance(info, dict) and 'new_vertex' in info:
-                    modified_vertices.add(int(info['new_vertex']))
+                # Determine the new vertex index appended by split_edge.
+                # Our editor's split_edge returns info with 'npts' (post-op count),
+                # and appends exactly one new vertex at the end. Prefer direct length.
+                try:
+                    new_idx = int(np.asarray(editor.points).shape[0] - 1)
+                except Exception:
+                    new_idx = None
+                if (new_idx is None or new_idx < 0) and info and isinstance(info, dict) and ('npts' in info):
+                    try:
+                        new_idx = int(info['npts']) - 1
+                    except Exception:
+                        new_idx = None
+                if new_idx is not None and new_idx >= 0:
+                    modified_vertices.add(new_idx)
                 # endpoints are also part of modified region
                 modified_vertices.add(int(e[0])); modified_vertices.add(int(e[1]))
 
@@ -651,6 +721,19 @@ def anisotropic_local_remesh(editor: PatchBasedMeshEditor,
         if modified_vertices:
             tri_patch = _collect_patch_triangles_around_vertices(editor, modified_vertices)
             patch_vs = _patch_vertices_from_tri_indices(editor, tri_patch)
+            # Optional: visualize the current patch vertices for debugging
+            if verbose and patch_vs:
+                try:
+                    debug_plot_patch_around_vertices(
+                        editor,
+                        patch_vs,
+                        outname=f'patch_vs_iter{iter_no}.png',
+                        highlight_boundary_loops=True,
+                        annotate_vertices=True,
+                    )
+                except Exception:
+                    # plotting is best-effort; ignore any failures in non-interactive contexts
+                    pass
             if patch_vs:
                 # average metric over patch
                 Ms = [metric_fn(np.asarray(editor.points[int(v)], dtype=float)) for v in patch_vs]
@@ -724,59 +807,79 @@ def anisotropic_local_remesh(editor: PatchBasedMeshEditor,
                     ys = [y_coords.get(int(w), T @ np.asarray(editor.points[int(w)], dtype=float)) for w in nbrs]
                     y_new = sum(ys) / float(len(ys))
                     x_new = Tinv @ y_new
-                    editor.points[int(v)] = np.asarray(x_new)
+                    #editor.points[int(v)] = np.asarray(x_new)
                     modified_vertices.add(int(v))
 
         # 6) global smoothing: optimize vertices toward metric-equilateral configuration
         # Here we perform one pass of metric-space barycentric smoothing for interior vertices
-        moved = 0
-        for v in list(editor.v_map.keys()):
-            v = int(v)
-            # skip boundary
-            try:
-                from .refinement import list_boundary_edges_only
-                b_edges = list_boundary_edges_only(editor)
-                boundary_vs_glob = set([int(u) for e in b_edges for u in e])
-            except Exception:
-                boundary_vs_glob = set()
-            if v in boundary_vs_glob:
-                continue
-            p = np.asarray(editor.points[v], dtype=float)
-            Mv = metric_fn(p)
-            T = _metric_half(Mv)
-            Tinv = np.linalg.inv(T)
-            yv = T @ p
-            nbrs = set()
-            for ti in editor.v_map.get(v, []):
-                t = editor.triangles[int(ti)]
-                for vv in t:
-                    vv = int(vv)
-                    if vv != v:
-                        nbrs.add(vv)
-            if not nbrs:
-                continue
-            ys = [T @ np.asarray(editor.points[int(w)], dtype=float) for w in nbrs]
-            y_new = sum(ys) / float(len(ys))
-            x_new = Tinv @ y_new
-            editor.points[v] = np.asarray(x_new)
-            moved += 1
-        logv('metric-smoothing moved=%d vertices', moved)
+        if do_global_smoothing:
+            moved = 0
+            for v in list(editor.v_map.keys()):
+                v = int(v)
+                # skip boundary
+                try:
+                    from .refinement import list_boundary_edges_only
+                    b_edges = list_boundary_edges_only(editor)
+                    boundary_vs_glob = set([int(u) for e in b_edges for u in e])
+                except Exception:
+                    boundary_vs_glob = set()
+                if v in boundary_vs_glob:
+                    continue
+                p = np.asarray(editor.points[v], dtype=float)
+                Mv = metric_fn(p)
+                T = _metric_half(Mv)
+                Tinv = np.linalg.inv(T)
+                yv = T @ p
+                nbrs = set()
+                for ti in editor.v_map.get(v, []):
+                    t = editor.triangles[int(ti)]
+                    for vv in t:
+                        vv = int(vv)
+                        if vv != v:
+                            nbrs.add(vv)
+                if not nbrs:
+                    continue
+                ys = [T @ np.asarray(editor.points[int(w)], dtype=float) for w in nbrs]
+                y_new = sum(ys) / float(len(ys))
+                x_new = Tinv @ y_new
+                editor.points[v] = np.asarray(x_new)
+                moved += 1
+            logv('metric-smoothing moved=%d vertices', moved)
+        else:
+            logv('skipping global metric smoothing (do_global_smoothing=False)')
 
         # 7) cleanup & validation
-        try:
+        #try:
             # remove degenerate triangles and project boundary vertices if helper exists
-            if hasattr(editor, 'remove_degenerate_triangles'):
-                try:
-                    editor.remove_degenerate_triangles()
-                except Exception:
-                    pass
-            if hasattr(editor, 'project_boundary_vertices'):
-                try:
-                    editor.project_boundary_vertices()
-                except Exception:
-                    pass
-        except Exception:
-            pass
+        #    if hasattr(editor, 'remove_degenerate_triangles'):
+        #        try:
+        #            editor.remove_degenerate_triangles()
+        #        except Exception:
+        #            pass
+        #    if hasattr(editor, 'project_boundary_vertices'):
+        #        try:
+        #            editor.project_boundary_vertices()
+        #        except Exception:
+        #            pass
+        #except Exception:
+        #    pass
+        if do_cleanup:
+            try:
+                # remove degenerate triangles and project boundary vertices if helper exists
+                if hasattr(editor, 'remove_degenerate_triangles'):
+                    try:
+                        editor.remove_degenerate_triangles()
+                    except Exception:
+                        pass
+                if hasattr(editor, 'project_boundary_vertices'):
+                    try:
+                        editor.project_boundary_vertices()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+        else:
+            logv('skipping cleanup & validation (do_cleanup=False)')
 
         # recompute lM and check convergence
         lM_new = []

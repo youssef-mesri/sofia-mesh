@@ -24,6 +24,9 @@ def square_mesh():
 def test_remove_node_on_boundary_virtual_mode():
     pts, tris = square_mesh()
     editor = PatchBasedMeshEditor(pts.copy(), tris.copy(), virtual_boundary_mode=True)
+    # Boundary removal in virtual mode may change cavity area - disable strict area preservation
+    from sofia.sofia.config import BoundaryRemoveConfig
+    editor.boundary_remove_config = BoundaryRemoveConfig(require_area_preservation=False)
 
     # Pick boundary vertex with degree 2 (corner)
     v = 1  # vertex 1 is on boundary
