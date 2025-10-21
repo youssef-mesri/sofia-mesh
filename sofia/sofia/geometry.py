@@ -11,7 +11,8 @@ from .constants import EPS_AREA, EPS_MIN_ANGLE_DEG, EPS_IMPROVEMENT
 
 __all__ = [
 	'triangle_area','triangle_angles','ensure_positive_orientation','point_in_polygon',
-	'triangles_min_angles','triangles_signed_areas','opposite_edge_of_smallest_angle'
+	'triangles_min_angles','triangles_signed_areas','opposite_edge_of_smallest_angle',
+	'compute_triangulation_area','normalize_edge'
 ]
 
 def bbox_overlap(minx1, maxx1, miny1, maxy1, minx2, maxx2, miny2, maxy2):
@@ -52,8 +53,10 @@ def vectorized_seg_intersect(a_pts, b_pts, c_pts, d_pts):
 	# exclude shared endpoints: compare coordinates exactly (points are float arrays but originate from same array)
 	shared = np.all(a == c, axis=1) | np.all(a == d, axis=1) | np.all(b == c, axis=1) | np.all(b == d, axis=1)
 	colinear = (o1 == 0) & (o2 == 0) & (o3 == 0) & (o4 == 0)
-	crosses = (o1*o2 < 0) & (o3*o4 < 0) & (~colinear) & (~shared)
-	return crosses
+	# Colinear overlapping segments are treated as non-intersecting in our mesh semantics
+	# Proper crossings (non-colinear) only; exclude T-intersection where one orientation is zero
+	proper_cross = (o1*o2 < 0) & (o3*o4 < 0)
+	return proper_cross & (~shared) & (~colinear)
 
 def orient(a, b, c):
 	"""2D orientation (signed area * 2) for points a,b,c.
@@ -210,4 +213,46 @@ def point_in_polygon(x, y, poly):
 			if x < xint:
 				inside = not inside
 	return inside
+
+
+def compute_triangulation_area(points, triangles, indices):
+	"""
+	Compute the total area of a set of triangles.
+	
+	Args:
+		points: (N, 2) array of point coordinates
+		triangles: (M, 3) array of triangle vertex indices
+		indices: List or array of triangle indices to sum over
+		
+	Returns:
+		float: Total area (sum of absolute areas)
+	"""
+	if len(indices) == 0:
+		return 0.0
+	
+	total_area = 0.0
+	for idx in indices:
+		tri = triangles[idx]
+		p0, p1, p2 = points[tri[0]], points[tri[1]], points[tri[2]]
+		area = triangle_area(p0, p1, p2)
+		total_area += abs(area)
+	
+	return total_area
+
+
+def normalize_edge(u, v):
+	"""
+	Return a normalized edge representation as (min, max).
+	
+	This ensures that edges (u, v) and (v, u) are represented
+	the same way, useful for edge-based data structures.
+	
+	Args:
+		u: First vertex index
+		v: Second vertex index
+		
+	Returns:
+		tuple: (min(u, v), max(u, v))
+	"""
+	return (min(u, v), max(u, v))
 
