@@ -850,13 +850,13 @@ class PatchBasedMeshEditor:
 
 
     def remove_node_with_patch(self, v_idx, force_strict=False):
-        from .operations import op_remove_node_with_patch
+        from .operations import op_remove_node_with_patch2
         import time
         t0 = time.perf_counter()
         try:
             self._assert_canonical()
             # Delegate area-preservation logic to operations implementation for consistency
-            return op_remove_node_with_patch(self, v_idx, force_strict=force_strict)
+            return op_remove_node_with_patch2(self, v_idx, force_strict=force_strict)
         finally:
             self._record_time('remove_node', time.perf_counter() - t0)
     

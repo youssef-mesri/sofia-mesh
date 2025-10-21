@@ -1086,11 +1086,11 @@ def op_remove_node_with_patch2(editor, v_idx, force_strict=False):
         strategies.append(SimplifyAndRetryStrategy(OptimalStarStrategy()))
     
     # Try area-preserving star if configured
-    if config.prefer_area_preserving_star:
+    if getattr(config, 'prefer_area_preserving_star', False):
         strategies.append(AreaPreservingStarStrategy())
     
     # Try quality star if configured
-    if config.prefer_worst_angle_star:
+    if getattr(config, 'prefer_worst_angle_star', False):
         strategies.append(QualityStarStrategy())
     
     # Ear clip as last resort
