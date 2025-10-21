@@ -812,6 +812,161 @@ def try_remove_node_strategically(editor, v_idx, config=None):
         return False, f"failed to commit changes: {e}", None
 
 
+def _handle_virtual_boundary_mode(editor, v_idx, cavity_info, stats=None):
+    """Handle special virtual boundary mode logic.
+    
+    In virtual_boundary_mode, boundary vertices can be removed. This function:
+    1. Attempts alternate cavity extraction if standard extraction fails for boundary vertices
+    2. Sanitizes the cycle by removing v_idx from it
+    3. Handles degenerate boundary corners (< 3 neighbors) with deletion-only
+    
+    Args:
+        editor: PatchBasedMeshEditor instance
+        v_idx: Vertex index to remove
+        cavity_info: CavityInfo from extract_removal_cavity()
+        stats: Optional stats object for tracking
+    
+    Returns:
+        tuple: (ok, cavity_info_or_none, error_message)
+            - If ok=True: Returns (True, updated_cavity_info, "")
+            - If ok=False: Returns (False, None, error_message)
+            - If deletion_only: Returns (True, None, "deletion_only") with committed changes
+    """
+    from .helpers import CavityInfo, boundary_polygons_from_patch, select_outer_polygon, filter_cycle_vertex
+    from .geometry import triangle_area
+    from .triangulation import polygon_signed_area
+    from .conformity import check_mesh_conformity
+    
+    # If cavity extraction failed but we're in virtual_boundary_mode, try alternate approach
+    if not cavity_info.ok and "boundary" in cavity_info.error.lower():
+        # For boundary vertices in virtual mode, manually build the cavity
+        editor.logger.debug("[DEBUG] virtual-boundary: standard extraction failed, using alternate approach")
+        
+        cavity_tri_indices = sorted(set(editor.v_map.get(int(v_idx), [])))
+        if not cavity_tri_indices:
+            if stats:
+                stats.remove_early_rejects += 1
+            return False, None, "vertex isolated"
+        
+        # Try to build boundary polygon from patch
+        try:
+            polys = boundary_polygons_from_patch(editor.triangles, cavity_tri_indices)
+            cycle = select_outer_polygon(editor.points, polys)
+            
+            if not cycle or len(cycle) < 3:
+                # Fallback: construct neighbor cycle manually
+                neighbors = []
+                for t in cavity_tri_indices:
+                    tri = [int(x) for x in editor.triangles[int(t)] if int(x) != int(v_idx) and int(x) >= 0]
+                    for nv in tri:
+                        if nv not in neighbors:
+                            neighbors.append(nv)
+                
+                if len(neighbors) < 2:
+                    if stats:
+                        stats.remove_early_rejects += 1
+                        stats.remove_early_boundary += 1
+                    return False, None, "cannot determine cavity boundary"
+                
+                # Order neighbors angularly
+                pts_neighbors = editor.points[neighbors]
+                centroid = pts_neighbors.mean(axis=0)
+                angles = np.arctan2(pts_neighbors[:,1]-centroid[1], pts_neighbors[:,0]-centroid[0])
+                cycle = [nbr for _, nbr in sorted(zip(angles, neighbors))]
+            
+            # Compute removed area
+            removed_area = 0.0
+            for ti in cavity_tri_indices:
+                tri = editor.triangles[int(ti)]
+                p0, p1, p2 = editor.points[tri[0]], editor.points[tri[1]], editor.points[tri[2]]
+                removed_area += abs(triangle_area(p0, p1, p2))
+            
+            # Build synthetic CavityInfo
+            cavity_info = CavityInfo(
+                ok=True,
+                cavity_indices=cavity_tri_indices,
+                cycle=cycle,
+                removed_area=removed_area,
+                error=""
+            )
+            editor.logger.debug("[DEBUG] virtual-boundary: alternate extraction succeeded, cycle size=%d", len(cycle))
+        
+        except Exception as e:
+            editor.logger.debug("virtual-boundary alternate approach failed: %s", e)
+            if stats:
+                stats.remove_early_rejects += 1
+                stats.remove_early_exception += 1
+                stats.remove_early_boundary += 1
+            return False, None, f"boundary extraction failed: {e}"
+    
+    # Standard failure path
+    if not cavity_info.ok:
+        return False, None, cavity_info.error
+    
+    # In virtual boundary mode, remove v_idx from the cycle and treat it as a closed polygon
+    editor.logger.debug("[DEBUG] virtual-boundary mode: sanitizing cycle")
+    
+    # Filter out the removed vertex from cycle
+    cycle = filter_cycle_vertex(cavity_info.cycle, v_idx)
+    
+    if len(cycle) < 3:
+        # Degenerate case: boundary corner with < 3 neighbors after filtering
+        editor.logger.debug("[DEBUG] virtual-boundary: degenerate corner (cycle size %d). Deletion only.", len(cycle))
+        
+        # Validate conformity with just deletions (no new triangles)
+        try:
+            tmp_tri_full = [
+                tuple(t) for i, t in enumerate(editor.triangles) 
+                if i not in cavity_info.cavity_indices and not np.all(np.array(t) == -1)
+            ]
+            tmp_tri_full = np.array(tmp_tri_full, dtype=int) if tmp_tri_full else np.empty((0, 3), dtype=int)
+            ok_sub, msgs = check_mesh_conformity(editor.points, tmp_tri_full, allow_marked=False)
+        except Exception as e:
+            if stats:
+                stats.remove_early_rejects += 1
+            return False, None, f"conformity validation error: {e}"
+        
+        if not ok_sub:
+            if stats:
+                stats.remove_early_rejects += 1
+            return False, None, f"deletion-only failed conformity: {msgs}"
+        
+        # Commit deletion-only
+        for idx in cavity_info.cavity_indices:
+            editor._remove_triangle_from_maps(idx)
+            editor.triangles[idx] = [-1, -1, -1]
+        
+        if hasattr(editor, '_on_op_committed'):
+            try:
+                editor._on_op_committed(tombstoned=len(cavity_info.cavity_indices), appended=0)
+            except Exception:
+                pass
+        
+        if stats:
+            stats.success += 1
+        
+        # Return special marker indicating deletion-only was committed
+        return True, None, "deletion_only"
+    
+    # Update cavity_info with sanitized cycle
+    cavity_info = CavityInfo(
+        ok=True,
+        cavity_indices=cavity_info.cavity_indices,
+        cycle=cycle,
+        removed_area=cavity_info.removed_area,
+        error=""
+    )
+    
+    # Compute polygon area for logging/diagnostics
+    try:
+        poly_target_area = abs(polygon_signed_area([editor.points[int(v)] for v in cycle]))
+        editor.logger.debug("[DEBUG] virtual-boundary: sanitized polygon area=%.6e", poly_target_area)
+    except Exception:
+        pass
+    
+    return True, cavity_info, ""
+
+
 def op_remove_node_with_patch2(editor, v_idx, force_strict=False):
     """Remove an interior node using refactored components with virtual_boundary_mode support.
     
@@ -863,134 +1018,22 @@ def op_remove_node_with_patch2(editor, v_idx, force_strict=False):
     # Phase 1: Extract cavity info
     cavity_info = extract_removal_cavity(editor, v_idx)
     
-    # If cavity extraction failed but we're in virtual_boundary_mode, try alternate approach
-    if not cavity_info.ok and virtual_boundary_mode and "boundary" in cavity_info.error.lower():
-        # For boundary vertices in virtual mode, manually build the cavity
-        editor.logger.debug("[DEBUG] virtual-boundary: standard extraction failed, using alternate approach")
+    # Phase 2: Handle virtual boundary mode if enabled
+    if virtual_boundary_mode:
+        vb_ok, vb_cavity_info, vb_error = _handle_virtual_boundary_mode(editor, v_idx, cavity_info, stats)
         
-        cavity_tri_indices = sorted(set(editor.v_map.get(int(v_idx), [])))
-        if not cavity_tri_indices:
+        if not vb_ok:
+            # Virtual boundary handling failed
             if stats:
                 stats.remove_early_rejects += 1
-            return False, "vertex isolated", None
+                if "isolated" in vb_error.lower():
+                    pass  # No specific counter for isolated
+                elif "boundary" in vb_error.lower():
+                    stats.remove_early_boundary += 1
+            return False, vb_error, None
         
-        # Try to build boundary polygon from patch
-        try:
-            polys = boundary_polygons_from_patch(editor.triangles, cavity_tri_indices)
-            cycle = select_outer_polygon(editor.points, polys)
-            
-            if not cycle or len(cycle) < 3:
-                # Fallback: construct neighbor cycle manually
-                neighbors = []
-                for t in cavity_tri_indices:
-                    tri = [int(x) for x in editor.triangles[int(t)] if int(x) != int(v_idx) and int(x) >= 0]
-                    for nv in tri:
-                        if nv not in neighbors:
-                            neighbors.append(nv)
-                
-                if len(neighbors) < 2:
-                    if stats:
-                        stats.remove_early_rejects += 1
-                        stats.remove_early_boundary += 1
-                    return False, "cannot determine cavity boundary", None
-                
-                # Order neighbors angularly
-                pts_neighbors = editor.points[neighbors]
-                centroid = pts_neighbors.mean(axis=0)
-                angles = np.arctan2(pts_neighbors[:,1]-centroid[1], pts_neighbors[:,0]-centroid[0])
-                cycle = [nbr for _, nbr in sorted(zip(angles, neighbors))]
-            
-            # Compute removed area
-            removed_area = 0.0
-            for ti in cavity_tri_indices:
-                tri = editor.triangles[int(ti)]
-                p0, p1, p2 = editor.points[tri[0]], editor.points[tri[1]], editor.points[tri[2]]
-                from .geometry import triangle_area
-                removed_area += abs(triangle_area(p0, p1, p2))
-            
-            # Build synthetic CavityInfo
-            from .helpers import CavityInfo
-            cavity_info = CavityInfo(
-                ok=True,
-                cavity_indices=cavity_tri_indices,
-                cycle=cycle,
-                removed_area=removed_area,
-                error=""
-            )
-            editor.logger.debug("[DEBUG] virtual-boundary: alternate extraction succeeded, cycle size=%d", len(cycle))
-        
-        except Exception as e:
-            editor.logger.debug("virtual-boundary alternate approach failed: %s", e)
-            if stats:
-                stats.remove_early_rejects += 1
-                stats.remove_early_exception += 1
-                stats.remove_early_boundary += 1
-            return False, f"boundary extraction failed: {e}", None
-    
-    # Standard failure path
-    if not cavity_info.ok:
-        if stats:
-            stats.remove_early_rejects += 1
-            if "isolated" in cavity_info.error.lower():
-                pass  # No specific counter for isolated
-            elif "boundary" in cavity_info.error.lower():
-                stats.remove_early_boundary += 1
-        return False, cavity_info.error, None
-    
-    if stats:
-        stats.attempts += 1
-    
-    # Extract cycle
-    cycle = cavity_info.cycle
-    removed_area = cavity_info.removed_area
-    
-    editor.logger.debug("[DEBUG] Cavity extraction: %d triangles, cycle size %d", 
-                       len(cavity_info.cavity_indices), len(cycle) if cycle else 0)
-    
-    # Virtual boundary mode handling (virtual_boundary_mode was already retrieved earlier)
-    if virtual_boundary_mode and cycle:
-        # In virtual boundary mode, we remove v_idx from the cycle and treat it as a closed polygon
-        editor.logger.debug("[DEBUG] virtual-boundary mode: sanitizing cycle")
-        
-        # Filter out the removed vertex from cycle
-        cycle = filter_cycle_vertex(cycle, v_idx)
-        
-        if len(cycle) < 3:
-            # Degenerate case: boundary corner with < 3 neighbors after filtering
-            editor.logger.debug("[DEBUG] virtual-boundary: degenerate corner (cycle size %d). Deletion only.", len(cycle))
-            
-            # Validate conformity with just deletions (no new triangles)
-            try:
-                tmp_tri_full = [
-                    tuple(t) for i, t in enumerate(editor.triangles) 
-                    if i not in cavity_info.cavity_indices and not np.all(np.array(t) == -1)
-                ]
-                tmp_tri_full = np.array(tmp_tri_full, dtype=int) if tmp_tri_full else np.empty((0, 3), dtype=int)
-                ok_sub, msgs = check_mesh_conformity(editor.points, tmp_tri_full, allow_marked=False)
-            except Exception as e:
-                if stats:
-                    stats.remove_early_rejects += 1
-                return False, f"conformity validation error: {e}", None
-            
-            if not ok_sub:
-                if stats:
-                    stats.remove_early_rejects += 1
-                return False, f"deletion-only failed conformity: {msgs}", None
-            
-            # Commit deletion-only
-            for idx in cavity_info.cavity_indices:
-                editor._remove_triangle_from_maps(idx)
-                editor.triangles[idx] = [-1, -1, -1]
-            
-            if hasattr(editor, '_on_op_committed'):
-                try:
-                    editor._on_op_committed(tombstoned=len(cavity_info.cavity_indices), appended=0)
-                except Exception:
-                    pass
-            
-            if stats:
-                stats.success += 1
-            
+        if vb_error == "deletion_only":
+            # Deletion-only case was handled and committed inside the helper
             return True, "remove successful (deletion-only boundary corner)", {
                 'npts': len(editor.points),
                 'ntri': len(editor.triangles),
@@ -999,12 +1042,28 @@ def op_remove_node_with_patch2(editor, v_idx, force_strict=False):
                 'new_triangles': 0
             }
         
-        # Compute polygon area for logging/diagnostics
-        try:
-            poly_target_area = abs(polygon_signed_area([editor.points[int(v)] for v in cycle]))
-            editor.logger.debug("[DEBUG] virtual-boundary: sanitized polygon area=%.6e", poly_target_area)
-        except Exception:
-            poly_target_area = None
+        # Use updated cavity_info from virtual boundary handling
+        cavity_info = vb_cavity_info
+    else:
+        # Standard non-virtual mode: check cavity extraction
+        if not cavity_info.ok:
+            if stats:
+                stats.remove_early_rejects += 1
+                if "isolated" in cavity_info.error.lower():
+                    pass  # No specific counter for isolated
+                elif "boundary" in cavity_info.error.lower():
+                    stats.remove_early_boundary += 1
+            return False, cavity_info.error, None
+    
+    if stats:
+        stats.attempts += 1
+    
+    # Extract cycle and area
+    cycle = cavity_info.cycle
+    removed_area = cavity_info.removed_area
+    
+    editor.logger.debug("[DEBUG] Cavity extraction: %d triangles, cycle size %d", 
+                       len(cavity_info.cavity_indices), len(cycle) if cycle else 0)
     
     # Check if cycle is valid
     if cycle is None or len(cycle) < 3:
