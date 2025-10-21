@@ -1,8 +1,118 @@
 """Shared mesh helper utilities extracted from legacy monolith to reduce cyclic imports."""
 from __future__ import annotations
 from typing import List, Sequence, Optional
+from dataclasses import dataclass
 import numpy as np
 from .geometry import point_in_polygon
+
+
+# -----------------------
+# Cavity extraction for vertex removal
+# -----------------------
+
+@dataclass
+class CavityInfo:
+    """Information about a removal cavity."""
+    ok: bool
+    cavity_indices: Optional[List[int]]
+    cycle: Optional[List[int]]
+    removed_area: Optional[float]
+    error: Optional[str]
+
+
+def extract_removal_cavity(editor, v_idx):
+    """Extract cavity and boundary for vertex removal.
+    
+    Args:
+        editor: PatchBasedMeshEditor
+        v_idx: Vertex index to remove
+        
+    Returns:
+        CavityInfo with cavity details or error
+    """
+    from .geometry import triangle_area
+    
+    # Get incident triangles
+    cavity_indices = sorted(set(editor.v_map.get(int(v_idx), [])))
+    
+    if not cavity_indices:
+        return CavityInfo(
+            ok=False,
+            cavity_indices=None,
+            cycle=None,
+            removed_area=None,
+            error="vertex isolated"
+        )
+    
+    # Extract boundary cycle
+    cycle = boundary_cycle_from_incident_tris(
+        editor.triangles,
+        cavity_indices,
+        v_idx
+    )
+    
+    if cycle is None:
+        return CavityInfo(
+            ok=False,
+            cavity_indices=cavity_indices,
+            cycle=None,
+            removed_area=None,
+            error="boundary cycle extraction failed"
+        )
+    
+    # Compute removed area
+    removed_area = 0.0
+    try:
+        for ti in cavity_indices:
+            tri = editor.triangles[int(ti)]
+            a, b, c = int(tri[0]), int(tri[1]), int(tri[2])
+            p0, p1, p2 = editor.points[a], editor.points[b], editor.points[c]
+            removed_area += abs(triangle_area(p0, p1, p2))
+    except Exception:
+        removed_area = None
+    
+    return CavityInfo(
+        ok=True,
+        cavity_indices=cavity_indices,
+        cycle=cycle,
+        removed_area=removed_area,
+        error=None
+    )
+
+
+def filter_cycle_vertex(cycle, v_idx):
+    """Remove vertex from cycle and clean up duplicates.
+    
+    Args:
+        cycle: List of vertex indices
+        v_idx: Vertex to remove
+        
+    Returns:
+        list: Filtered cycle without v_idx or duplicates
+    """
+    if not cycle:
+        return []
+    
+    # Remove the target vertex
+    filtered = [c for c in cycle if int(c) != int(v_idx)]
+    
+    if not filtered:
+        return []
+    
+    # Remove consecutive duplicates
+    if len(filtered) >= 2:
+        unique = [filtered[0]]
+        for v in filtered[1:]:
+            if v != unique[-1]:
+                unique.append(v)
+        filtered = unique
+    
+    # Remove closing duplicate if present
+    if len(filtered) >= 2 and filtered[0] == filtered[-1]:
+        filtered = filtered[:-1]
+    
+    return filtered
+
 
 def boundary_cycle_from_incident_tris(triangles, incident_tris: Sequence[int], v_idx: int) -> Optional[List[int]]:
     """Reconstruct ordered neighbor cycle around v_idx from its incident triangle indices.
@@ -49,6 +159,9 @@ def boundary_cycle_from_incident_tris(triangles, incident_tris: Sequence[int], v
     return cycle
 
 __all__ = [
+    'CavityInfo',
+    'extract_removal_cavity',
+    'filter_cycle_vertex',
     'boundary_cycle_from_incident_tris',
     'patch_nodes_for_triangles',
     'boundary_polygons_from_patch',
