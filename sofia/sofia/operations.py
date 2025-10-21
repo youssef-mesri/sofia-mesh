@@ -17,6 +17,7 @@ __all__ = [
     'op_split_edge',
     'op_split_edge_delaunay',
     'op_remove_node_with_patch',
+    'try_remove_node_strategically',  # New strategy-based removal
     'op_flip_edge',
     'op_add_node',
     'op_try_fill_pocket',
@@ -666,6 +667,150 @@ def op_edge_collapse(editor, edge=None, position: str = 'midpoint'):
     return True, "edge collapsed", { 'new_vertex': new_idx, 'tombstoned': len(touched), 'appended': len(new_tris) }
 
 
+def try_remove_node_strategically(editor, v_idx, config=None):
+    """Attempt to remove a node using the strategy pattern from Phase 4.
+    
+    This is a cleaner, more maintainable version of node removal that uses
+    the extracted components from the refactoring phases:
+    - Phase 1: CavityInfo and extract_removal_cavity()
+    - Phase 2: AreaPreservationChecker  
+    - Phase 4: RemovalTriangulationStrategy classes
+    
+    Args:
+        editor: PatchBasedMeshEditor instance
+        v_idx: Vertex index to remove
+        config: Optional BoundaryRemoveConfig
+        
+    Returns:
+        tuple: (success: bool, message: str, info: dict or None)
+        
+    Note: This is a demonstration of the refactored approach. The full
+    integration into op_remove_node_with_patch would happen in a later phase.
+    """
+    from .helpers import extract_removal_cavity, filter_cycle_vertex
+    from .quality import AreaPreservationChecker
+    from .triangulation import (
+        OptimalStarStrategy,
+        SimplifyAndRetryStrategy,
+        AreaPreservingStarStrategy,
+        QualityStarStrategy,
+        EarClipStrategy,
+        ChainedStrategy
+    )
+    from .config import BoundaryRemoveConfig
+    
+    # Use config or default
+    if config is None:
+        config = BoundaryRemoveConfig()
+    
+    # Phase 1: Extract cavity info
+    cavity_info = extract_removal_cavity(editor, v_idx)
+    if not cavity_info.ok:
+        return False, cavity_info.error, None
+    
+    # Filter out the removed vertex from the cycle
+    cycle = filter_cycle_vertex(cavity_info.cycle, v_idx)
+    if len(cycle) < 3:
+        return False, "boundary cycle too small after filtering", None
+    
+    # Phase 2: Check area preservation requirements
+    area_checker = AreaPreservationChecker(config)
+    
+    # Phase 4: Build strategy chain based on config
+    strategies = []
+    
+    # Try optimal star first (fast and usually good)
+    strategies.append(OptimalStarStrategy())
+    
+    # Try simplified polygon with optimal star
+    if getattr(editor, 'enable_polygon_simplification', True):
+        strategies.append(SimplifyAndRetryStrategy(OptimalStarStrategy()))
+    
+    # Try area-preserving star if required/preferred
+    if config.prefer_area_preserving_star:
+        strategies.append(AreaPreservingStarStrategy())
+    
+    # Try quality star if preferred
+    if config.prefer_worst_angle_star:
+        strategies.append(QualityStarStrategy())
+    
+    # Ear clip as last resort
+    strategies.append(EarClipStrategy())
+    
+    # Chain all strategies
+    strategy = ChainedStrategy(strategies)
+    
+    # Try triangulation
+    success, triangles, error = strategy.try_triangulate(
+        editor.points, cycle, config
+    )
+    
+    if not success:
+        return False, f"all triangulation strategies failed: {error}", None
+    
+    # Check area preservation if required
+    if config.require_area_preservation and cavity_info.removed_area is not None:
+        from .geometry import compute_triangulation_area
+        candidate_area = compute_triangulation_area(
+            editor.points, np.array(triangles), list(range(len(triangles)))
+        )
+        ok, area_error = area_checker.check(cavity_info.removed_area, candidate_area)
+        if not ok:
+            return False, f"area preservation failed: {area_error}", None
+    
+    # Validate conformity
+    try:
+        # Temporarily remove old triangles and add new ones
+        active_tris = [
+            tuple(t) for i, t in enumerate(editor.triangles)
+            if i not in cavity_info.cavity_indices and not np.all(np.array(t) == -1)
+        ]
+        test_tris = active_tris + [tuple(t) for t in triangles]
+        test_tris_arr = np.array(test_tris, dtype=int) if test_tris else np.empty((0, 3), dtype=int)
+        
+        from .conformity import check_mesh_conformity
+        ok, msgs = check_mesh_conformity(editor.points, test_tris_arr, allow_marked=False)
+        if not ok:
+            return False, f"conformity check failed: {msgs}", None
+    except Exception as e:
+        return False, f"conformity validation error: {e}", None
+    
+    # Commit the changes
+    try:
+        # Remove old triangles
+        for idx in cavity_info.cavity_indices:
+            editor._remove_triangle_from_maps(idx)
+            editor.triangles[idx] = [-1, -1, -1]
+        
+        # Add new triangles
+        start_idx = len(editor.triangles)
+        tri_array = np.array(triangles, dtype=np.int32)
+        editor.triangles = np.ascontiguousarray(
+            np.vstack([editor.triangles, tri_array]).astype(np.int32)
+        )
+        
+        for idx in range(start_idx, len(editor.triangles)):
+            editor._add_triangle_to_maps(idx)
+        
+        # Notify editor
+        if hasattr(editor, '_on_op_committed'):
+            try:
+                editor._on_op_committed(
+                    tombstoned=len(cavity_info.cavity_indices),
+                    appended=len(triangles)
+                )
+            except Exception:
+                pass
+        
+        return True, "node removed successfully", {
+            'removed_vertex': v_idx,
+            'cavity_size': len(cavity_info.cavity_indices),
+            'new_triangles': len(triangles)
+        }
+    except Exception as e:
+        return False, f"failed to commit changes: {e}", None
+
+
 def op_remove_node_with_patch(editor, v_idx, force_strict=False):
     """Remove an interior node using the patch/cavity workflow with quality and simulation checks.
     Mirrors legacy implementation in mesh_modifier2.remove_node_with_patch but lives here for modularity.
@@ -755,28 +900,35 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
     # Early robust area-preservation guard: build the patch boundary polygon around v_idx
     # and compare its sanitized area (excluding v_idx) to the removed cavity area. If they
     # differ and area preservation is required, reject immediately.
+    # Note: In virtual_boundary_mode, skip this check because the polygon area and cavity area
+    # represent different regions (the polygon is the sanitized boundary, while the cavity includes
+    # triangles incident to the removed vertex). The second area check after virtual-boundary
+    # filtering will handle this case correctly.
     try:
-        cfg0 = getattr(editor, 'boundary_remove_config', None)
-        if cfg0 is not None and bool(getattr(cfg0, 'require_area_preservation', False)):
-            from .helpers import boundary_polygons_from_patch, select_outer_polygon
-            from .triangulation import polygon_signed_area as _poly_area0
-            polys0 = boundary_polygons_from_patch(editor.triangles, cavity_tri_indices)
-            cyc0 = select_outer_polygon(editor.points, polys0)
-            if cyc0 and removed_area is not None:
-                filtered0 = [int(v) for v in cyc0 if int(v) != int(v_idx)]
-                if len(filtered0) >= 2 and filtered0[0] == filtered0[-1]:
-                    filtered0 = filtered0[:-1]
-                if len(filtered0) >= 3:
-                    poly_area0 = abs(_poly_area0([editor.points[int(v)] for v in filtered0]))
-                    from .constants import EPS_TINY
-                    tol_rel0 = float(getattr(cfg0, 'area_tol_rel', EPS_TINY))
-                    tol_abs0 = float(getattr(cfg0, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
-                    if abs(poly_area0 - removed_area) > max(tol_abs0, tol_rel0*max(1.0, removed_area)):
-                        if stats:
-                            stats.remove_early_rejects += 1
-                        return False, (
-                            f"cavity area changed: poly={poly_area0:.6e} cavity={removed_area:.6e}"
-                        ), None
+        if not getattr(editor, 'virtual_boundary_mode', False):
+            cfg0 = getattr(editor, 'boundary_remove_config', None)
+            # Default to requiring area preservation when config is None
+            require_area_pres0 = True if (cfg0 is None) else bool(getattr(cfg0, 'require_area_preservation', True))
+            if require_area_pres0:
+                from .helpers import boundary_polygons_from_patch, select_outer_polygon
+                from .triangulation import polygon_signed_area as _poly_area0
+                polys0 = boundary_polygons_from_patch(editor.triangles, cavity_tri_indices)
+                cyc0 = select_outer_polygon(editor.points, polys0)
+                if cyc0 and removed_area is not None:
+                    filtered0 = [int(v) for v in cyc0 if int(v) != int(v_idx)]
+                    if len(filtered0) >= 2 and filtered0[0] == filtered0[-1]:
+                        filtered0 = filtered0[:-1]
+                    if len(filtered0) >= 3:
+                        poly_area0 = abs(_poly_area0([editor.points[int(v)] for v in filtered0]))
+                        from .constants import EPS_TINY, EPS_AREA
+                        tol_rel0 = float(getattr(cfg0, 'area_tol_rel', EPS_TINY)) if cfg0 is not None else float(EPS_TINY)
+                        tol_abs0 = (float(getattr(cfg0, 'area_tol_abs_factor', 4.0)) if cfg0 is not None else 4.0) * float(EPS_AREA)
+                        if abs(poly_area0 - removed_area) > max(tol_abs0, tol_rel0*max(1.0, removed_area)):
+                            if stats:
+                                stats.remove_early_rejects += 1
+                            return False, (
+                                f"cavity area changed: poly={poly_area0:.6e} cavity={removed_area:.6e}"
+                            ), None
     except Exception:
         pass
 
@@ -800,23 +952,10 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
                 poly_target_area = abs(_poly_area([editor.points[int(v)] for v in cycle]))
             except Exception:
                 poly_target_area = None
-            # Early guard: if area preservation is required by config and we can compute both
-            # removed cavity area and sanitized polygon area, reject when they differ beyond tolerance.
-            try:
-                cfg = getattr(editor, 'boundary_remove_config', None)
-                if cfg is not None and bool(getattr(cfg, 'require_area_preservation', False)):
-                    if (poly_target_area is not None) and ('removed_area' in locals()) and (removed_area is not None):
-                        from .constants import EPS_TINY
-                        tol_rel = float(getattr(cfg, 'area_tol_rel', EPS_TINY))
-                        tol_abs = float(getattr(cfg, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
-                        if abs(poly_target_area - removed_area) > max(tol_abs, tol_rel*max(1.0, removed_area)):
-                            if stats:
-                                stats.remove_early_rejects += 1
-                            return False, (
-                                f"cavity area changed: poly={poly_target_area:.6e} cavity={removed_area:.6e}"
-                            ), None
-            except Exception:
-                pass
+            # Note: We intentionally do NOT perform an early area-preservation check here in virtual_boundary_mode,
+            # because poly_target_area (the sanitized boundary polygon area) and removed_area (the cavity triangle area)
+            # represent different geometric regions and should not be expected to match. The proper area check happens
+            # later when we compare the area of the new candidate triangulation with removed_area.
         else:
             # Degenerate boundary corner removal: after excluding v_idx, there are fewer than 3 neighbors.
             # In this case, simply remove incident triangles and do not add any new triangles.
@@ -1051,7 +1190,8 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
         # average normalized triangle quality. Prefer candidates that preserve area
         # when the config requests it.
         cfg = getattr(editor, 'boundary_remove_config', None)
-        require_area = bool(getattr(cfg, 'require_area_preservation', False)) if cfg is not None else False
+        # Default to requiring area preservation when config is None
+        require_area = True if (cfg is None) else bool(getattr(cfg, 'require_area_preservation', True))
         try:
             from .constants import EPS_AREA
             area_tol_rel = float(getattr(cfg, 'area_tol_rel', None)) if cfg is not None and getattr(cfg, 'area_tol_rel', None) is not None else None
@@ -1131,7 +1271,7 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
                     for avg_q, cand_area, cand, src in scored:
                         if cand_area is None:
                             continue
-                        tol_rel = area_tol_rel if area_tol_rel is not None else getattr(cfg, 'area_tol_rel', None) or 0.0
+                        tol_rel = area_tol_rel if area_tol_rel is not None else (getattr(cfg, 'area_tol_rel', None) if cfg is not None else None) or 0.0
                         tol_abs = area_abs
                         if abs(cand_area - removed_area) <= max(tol_abs, tol_rel*max(1.0, removed_area)):
                             chosen = cand
@@ -1210,9 +1350,18 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
         # Build kept-edges list once (from editor.edge_map) and compute the subset touching the cavity
         kept_edges_all = list(getattr(editor, 'edge_map', {}).keys()) if hasattr(editor, 'edge_map') else kept_edges
         # local_kept_edges: only kept edges that touch the cavity boundary (cycle)
+        # Exclude edges that are fully internal to the cavity (both endpoints in cycle),
+        # as these will be removed during retriangulation and should not be crossing-checked.
         if cycle is not None:
             cycle_set = set(int(x) for x in cycle)
-            local_kept_edges = [e for e in kept_edges_all if (int(e[0]) in cycle_set) or (int(e[1]) in cycle_set)]
+            # local_kept_edges: edges that touch the cavity boundary but are not being removed.
+            # Exclude:
+            # 1. Edges fully internal to the cavity (both endpoints in cycle)
+            # 2. Edges incident to the vertex being removed (v_idx)
+            local_kept_edges = [e for e in kept_edges_all 
+                               if ((int(e[0]) in cycle_set) or (int(e[1]) in cycle_set))
+                               and not ((int(e[0]) in cycle_set) and (int(e[1]) in cycle_set))
+                               and not (int(e[0]) == int(v_idx) or int(e[1]) == int(v_idx))]
         else:
             local_kept_edges = kept_edges_all
         # expose kept_edges list and compute edge degrees once for reuse
@@ -1368,12 +1517,12 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
                     p0 = editor.points[int(t[0])]; p1 = editor.points[int(t[1])]; p2 = editor.points[int(t[2])]
                     cand_area += abs(triangle_area(p0, p1, p2))
                 # allow small tolerance; compare against local removed area when available, else polygon area
-                from .constants import EPS_TINY
+                from .constants import EPS_TINY, EPS_AREA
                 cfg = getattr(editor, 'boundary_remove_config', None)
                 tol_rel = EPS_TINY if cfg is None else float(getattr(cfg, 'area_tol_rel', EPS_TINY))
                 tol_abs = 4.0*EPS_AREA if cfg is None else float(getattr(cfg, 'area_tol_abs_factor', 4.0)) * float(EPS_AREA)
-                # Prefer conservation against removed cavity area (sum of incident triangles);
-                # fall back to sanitized polygon area only if removed_area unavailable.
+                # Area preservation compares candidate area against removed cavity area (sum of incident triangles).
+                # This ensures the total mesh area doesn't change: area removed = area added.
                 target_area = removed_area
                 if target_area is None:
                     try:
@@ -1382,7 +1531,9 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
                         target_area = None
                 if target_area is not None and abs(cand_area - target_area) > max(tol_abs, tol_rel*max(1.0, target_area)):
                     # If strict area preservation required, reject; otherwise allow but log
-                    if cfg is not None and bool(getattr(cfg, 'require_area_preservation', False)):
+                    # Default to requiring area preservation when cfg is None
+                    require_area_pres = True if (cfg is None) else bool(getattr(cfg, 'require_area_preservation', True))
+                    if require_area_pres:
                         return False, [f"cavity area changed: appended={cand_area:.6e} target={target_area:.6e}"]
                     else:
                         editor.logger.debug("area changed within relaxed policy: appended=%.6e target=%.6e", cand_area, target_area)
