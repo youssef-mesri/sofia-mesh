@@ -6,9 +6,9 @@ import numpy as np
 import os
 import time
 
-from sofia.sofia.remesh_driver import compact_copy, check_mesh_conformity, find_inverted_triangles, MIN_TRI_AREA, greedy_remesh
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.remesh_driver import compact_copy, check_mesh_conformity, find_inverted_triangles, MIN_TRI_AREA, greedy_remesh
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.scripts.per_commit_prepost_save_seed0')
 

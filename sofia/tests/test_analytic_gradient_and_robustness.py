@@ -1,8 +1,8 @@
 import numpy as np
 import math
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.anisotropic_remesh import compute_Mhalf, compute_Mminushalf, optimize_vertex_metric_equilateral
-from sofia.sofia.constants import EPS_TINY
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.anisotropic_remesh import compute_Mhalf, compute_Mminushalf, optimize_vertex_metric_equilateral
+from sofia.core.constants import EPS_TINY
 
 
 def analytic_grad_isotropic(x, neighbor_coords):
@@ -67,7 +67,7 @@ def test_near_singular_spd_and_optimizer():
     pts, tris = build_random_delaunay(npts=30, seed=11)
     editor = PatchBasedMeshEditor(pts.copy(), tris.copy())
     # pick an interior vertex
-    from sofia.sofia.conformity import is_boundary_vertex_from_maps
+    from sofia.core.conformity import is_boundary_vertex_from_maps
     v = next((i for i in range(len(editor.points)) if not is_boundary_vertex_from_maps(i, editor.edge_map)), None)
     assert v is not None
 
@@ -103,7 +103,7 @@ def test_anisotropic_analytic_gradient_vs_fd():
         L = np.diag([lam1(x), lam2(x)])
         return R @ L @ R.T
 
-    from sofia.sofia.anisotropic_remesh import average_metric
+    from sofia.core.anisotropic_remesh import average_metric
 
     # build neighbors around center
     center = np.array([0.12, -0.08])

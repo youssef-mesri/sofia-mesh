@@ -5,10 +5,10 @@ If a failure is detected, save the compacted offending snapshot and exit.
 import os, sys
 import numpy as np
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import sofia.sofia.remesh_driver as debug_check
-from sofia.sofia.run_context import set_context
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, check_mesh_conformity
-from sofia.sofia.logging_utils import get_logger
+import sofia.core.remesh_driver as debug_check
+from sofia.core.run_context import set_context
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor, check_mesh_conformity
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.scripts.compact_check_runner_seed0')
 

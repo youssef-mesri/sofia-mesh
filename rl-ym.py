@@ -7,7 +7,7 @@ import numpy as np
 from scipy.spatial import Delaunay
 import math
 import matplotlib.pyplot as plt
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.rl_ym')
 

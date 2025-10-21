@@ -1,8 +1,8 @@
 import numpy as np
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
-from sofia.sofia.conformity import check_mesh_conformity
-from sofia.sofia.remesh_driver import greedy_remesh
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
+from sofia.core.conformity import check_mesh_conformity
+from sofia.core.remesh_driver import greedy_remesh
 
 
 def assert_maps_valid(editor):

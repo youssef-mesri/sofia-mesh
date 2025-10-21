@@ -158,6 +158,10 @@ def plot_mesh_by_tri_groups(
     alpha: float = 0.35,
     palette=None,
     highlight_boundary_loops: bool = False,
+    annotate_vertices=None,
+    annotate_color=(0.85, 0.2, 0.2),
+    annotate_size: float = 24.0,
+    annotate_labels: bool = False,
 ):
     """Plot the mesh and fill specified triangle groups with distinct colors.
 
@@ -244,6 +248,21 @@ def plot_mesh_by_tri_groups(
                 xs = [new_points[int(v)][0] for v in loop] + [new_points[int(loop[0])][0]]
                 ys = [new_points[int(v)][1] for v in loop] + [new_points[int(loop[0])][1]]
                 plt.plot(xs, ys, color=loop_color, linewidth=1.0)
+
+    # Optional overlay of specific vertices (old/original indices)
+    if annotate_vertices is not None:
+        try:
+            to_annot = [int(v) for v in annotate_vertices]
+        except Exception:
+            to_annot = []
+        for v_old in to_annot:
+            if v_old in mapping:
+                v_local = mapping[int(v_old)]
+                p = new_points[int(v_local)]
+                plt.plot([p[0]],[p[1]], marker='o', markersize=max(2.0, annotate_size/3.0),
+                         markeredgecolor='k', markerfacecolor=annotate_color, linewidth=0.0)
+                if annotate_labels:
+                    plt.text(p[0], p[1], str(int(v_old)), fontsize=7, color=annotate_color)
 
     plt.gca().set_aspect('equal')
     plt.title(outname)

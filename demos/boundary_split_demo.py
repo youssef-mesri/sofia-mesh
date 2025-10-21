@@ -8,9 +8,9 @@ from __future__ import annotations
 import argparse
 import numpy as np
 
-from sofia.sofia.logging_utils import configure_logging
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia.visualization import plot_mesh
+from sofia.core.logging_utils import configure_logging
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.visualization import plot_mesh
 
 
 def square_with_center():

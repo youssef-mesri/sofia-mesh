@@ -2,8 +2,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, triangle_angles, is_active_triangle
-from sofia.sofia.patch_batching import build_patches_from_triangles, partition_batches, patch_boundary_loops
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, triangle_angles, is_active_triangle
+from sofia.core.patch_batching import build_patches_from_triangles, partition_batches, patch_boundary_loops
 
 
 def color_map_for_batches(n_batches):

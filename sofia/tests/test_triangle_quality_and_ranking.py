@@ -1,5 +1,5 @@
 import numpy as np
-from sofia.sofia import geometry
+from sofia.core import geometry
 
 
 # Local reimplementation of the normalized triangle quality used by operations._triangle_qualities_norm
@@ -94,7 +94,7 @@ def test_candidate_ranking_prefers_area_preserving(tmp_path):
         try:
             for t in cand:
                 p0 = pts[int(t[0])]; p1 = pts[int(t[1])]; p2 = pts[int(t[2])]
-                from sofia.sofia.geometry import triangle_area
+                from sofia.core.geometry import triangle_area
                 cand_area += abs(triangle_area(p0, p1, p2))
         except Exception:
             cand_area = None

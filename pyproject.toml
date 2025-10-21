@@ -35,7 +35,7 @@
  Issues = "https://github.com/youssef-mesri/sofia/issues"
 
  [project.scripts]
- sofia-remesh = "sofia.sofia.remesh_driver:main"
+ sofia-remesh = "sofia.core.remesh_driver:main"
 
  [tool.setuptools]
  include-package-data = true

@@ -47,7 +47,7 @@ pip install -r requirements.txt
 ## Quick start
 
 ```python
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
 
 pts, tris = build_random_delaunay(npts=200, seed=0)
 editor = PatchBasedMeshEditor(pts.copy(), tris.copy(), debug=False)
@@ -58,7 +58,7 @@ ok = editor.flip_edge(edge)
 print('flip ok:', ok)
 
 # Check quality
-from sofia.sofia.quality import mesh_min_angle
+from sofia.core.quality import mesh_min_angle
 print('min angle:', mesh_min_angle(editor.points, editor.triangles))
 ```
 
@@ -160,8 +160,8 @@ Two quick ways to profile and inspect hotspots:
 
 Additionally, the CLI supports profiling:
 
-- Greedy: `python -m sofia.sofia.remesh_driver greedy --profile --profile-out run-logs/greedy.pstats`
-- Patch:  `python -m sofia.sofia.remesh_driver patch  --profile --profile-out run-logs/patch.pstats`
+- Greedy: `python -m sofia.core.remesh_driver greedy --profile --profile-out run-logs/greedy.pstats`
+- Patch:  `python -m sofia.core.remesh_driver patch  --profile --profile-out run-logs/patch.pstats`
 
 You can open the .pstats files with tools like snakeviz or gprof2dot for deeper analysis.
 
@@ -233,7 +233,7 @@ sofia-remesh patch --npts 120 --threshold 20 --gif-out patch.gif
 
 Or directly via module (without installing console script):
 ```bash
-python -m sofia.sofia.remesh_driver greedy --npts 80
+python -m sofia.core.remesh_driver greedy --npts 80
 ```
 
 Python API example:
@@ -248,8 +248,8 @@ Greedy and patch drivers now share a unified configuration layer. Prefer constru
 
 ```python
 from sofia import greedy_remesh, PatchDriverConfig, RemeshConfig
-from sofia.sofia.config import GreedyConfig  # or import GreedyConfig from sofia.sofia.config directly
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.config import GreedyConfig  # or import GreedyConfig from sofia.core.config directly
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
 
 pts, tris = build_random_delaunay(npts=60, seed=0)
 editor = PatchBasedMeshEditor(pts, tris)
@@ -321,7 +321,7 @@ Deprecation Notice
 ------------------
 Calling `greedy_remesh` with positional / individual keyword parameters (without `config=`) now raises a `DeprecationWarning` and will be removed in a future minor release. Update code to:
 ```python
-from sofia.sofia.config import GreedyConfig
+from sofia.core.config import GreedyConfig
 greedy_remesh(editor, config=GreedyConfig(max_vertex_passes=2, max_edge_passes=2))
 ```
 
@@ -362,7 +362,7 @@ from sofia import greedy_remesh, triangle_area
 ```
 or for deep/internal APIs:
 ```python
-from sofia.sofia.remesh_driver import greedy_remesh
+from sofia.core.remesh_driver import greedy_remesh
 ```
 
 Testing
@@ -394,7 +394,7 @@ New options for boundary loops:
 
 Example usage:
 ```python
-from sofia.sofia.visualization import plot_mesh
+from sofia.core.visualization import plot_mesh
 plot_mesh(editor, outname="mesh_after.png", highlight_boundary_loops=True, loop_color_mode='uniform', loop_vertex_labels=True)
 ```
 

@@ -38,8 +38,8 @@ def main() -> int:
     # Import check
     def try_import() -> bool:
         try:
-            import sofia.sofia.remesh_driver  # noqa: F401
-            import sofia.sofia.mesh_modifier2  # noqa: F401
+            import sofia.core.remesh_driver  # noqa: F401
+            import sofia.core.mesh_modifier2  # noqa: F401
             return True
         except Exception:
             return False

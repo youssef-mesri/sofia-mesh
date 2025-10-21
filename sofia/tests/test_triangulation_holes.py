@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from sofia.sofia.triangulation import triangulate_polygon_with_holes, polygon_signed_area
-from sofia.sofia.geometry import triangle_area
+from sofia.core.triangulation import triangulate_polygon_with_holes, polygon_signed_area
+from sofia.core.geometry import triangle_area
 
 
 def _triangles_area_sum(tris):

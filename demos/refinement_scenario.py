@@ -27,11 +27,11 @@ from typing import Any, Dict, Tuple
 
 import numpy as np
 
-from sofia.sofia.logging_utils import configure_logging, get_logger
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
-from sofia.sofia.visualization import plot_mesh
-from sofia.sofia.geometry import triangle_area, triangle_angles, EPS_AREA
-from sofia.sofia.quality import compute_h
+from sofia.core.logging_utils import configure_logging, get_logger
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
+from sofia.core.visualization import plot_mesh
+from sofia.core.geometry import triangle_area, triangle_angles, EPS_AREA
+from sofia.core.quality import compute_h
 import os as _os
 import matplotlib as _mpl
 if not _os.environ.get('MPLBACKEND'):
@@ -323,7 +323,7 @@ def compute_avg_edge_length(editor: PatchBasedMeshEditor, include_boundary: bool
     return float(np.mean(lengths)) if lengths else 0.0
 
 
-## compute_h moved to sofia.sofia.quality
+## compute_h moved to sofia.core.quality
 
 
 def refine_to_target_h(editor: PatchBasedMeshEditor, auto_cfg: Dict[str, Any]):

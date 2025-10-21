@@ -2,9 +2,9 @@
 import numpy as np
 import pytest
 
-from sofia.sofia.operations import try_remove_node_strategically
-from sofia.sofia.config import BoundaryRemoveConfig
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.operations import try_remove_node_strategically
+from sofia.core.config import BoundaryRemoveConfig
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
 
 
 class TestStrategicNodeRemoval:
@@ -138,7 +138,7 @@ class TestStrategicNodeRemoval:
         assert success, f"Failed: {msg}"
         
         # Check conformity after removal
-        from sofia.sofia.conformity import check_mesh_conformity
+        from sofia.core.conformity import check_mesh_conformity
         ok, msgs = check_mesh_conformity(
             editor.points, editor.triangles, allow_marked=True
         )
@@ -206,7 +206,7 @@ class TestStrategicRemovalComparison:
         assert active1 == info1['new_triangles']
         
         # Verify we have a valid mesh
-        from sofia.sofia.conformity import check_mesh_conformity
+        from sofia.core.conformity import check_mesh_conformity
         ok, msgs = check_mesh_conformity(
             editor1.points, editor1.triangles, allow_marked=True
         )

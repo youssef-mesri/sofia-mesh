@@ -1,6 +1,6 @@
 import numpy as np
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.anisotropic_remesh import optimize_vertex_metric_equilateral
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.anisotropic_remesh import optimize_vertex_metric_equilateral
 
 
 def isotropic(x):
@@ -11,7 +11,7 @@ def test_optimize_reduces_energy():
     pts, tris = build_random_delaunay(npts=60, seed=7)
     editor = PatchBasedMeshEditor(pts.copy(), tris.copy())
     # pick an interior vertex
-    from sofia.sofia.conformity import is_boundary_vertex_from_maps
+    from sofia.core.conformity import is_boundary_vertex_from_maps
     v = next(i for i in range(len(editor.points)) if not is_boundary_vertex_from_maps(i, editor.edge_map))
     oldx = editor.points[v].copy()
     oldE = 0.0
@@ -38,7 +38,7 @@ def test_grad_mode_fd_and_analytic_full_fallback():
     # Build a small random mesh and run optimizer with different grad modes
     pts, tris = build_random_delaunay(npts=40, seed=3)
     editor = PatchBasedMeshEditor(pts.copy(), tris.copy())
-    from sofia.sofia.conformity import is_boundary_vertex_from_maps
+    from sofia.core.conformity import is_boundary_vertex_from_maps
     v = next(i for i in range(len(editor.points)) if not is_boundary_vertex_from_maps(i, editor.edge_map))
 
     # FD mode

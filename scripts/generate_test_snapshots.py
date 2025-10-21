@@ -19,9 +19,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
-from sofia.sofia.remesh_driver import greedy_remesh
-from sofia.sofia.visualization import plot_mesh
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
+from sofia.core.remesh_driver import greedy_remesh
+from sofia.core.visualization import plot_mesh
 
 
 def ensure_docs() -> Path:

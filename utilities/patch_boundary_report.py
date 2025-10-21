@@ -3,9 +3,9 @@
 import csv
 import matplotlib.pyplot as plt
 import numpy as np
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.patch_batching import build_patches_from_metrics_strict
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.patch_batching import build_patches_from_metrics_strict
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.utilities.patch_boundary_report')
 

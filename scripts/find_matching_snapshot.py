@@ -4,7 +4,7 @@ Matching is attempted by exact (indices) equality first, then by geometric trian
 """
 import numpy as np
 import os
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.scripts.find_matching_snapshot')
 

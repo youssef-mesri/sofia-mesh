@@ -3,9 +3,9 @@ from __future__ import annotations
 import csv
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
-from sofia.sofia.logging_utils import get_logger, configure_logging
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.patch_batching import build_patches_from_metrics_strict
+from sofia.core.logging_utils import get_logger, configure_logging
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.patch_batching import build_patches_from_metrics_strict
 
 logger = get_logger('sofia.demos.patch_boundary_report')
 

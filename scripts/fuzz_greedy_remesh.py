@@ -7,8 +7,8 @@ and the conformity messages. Limits number of saved failures to avoid excessive 
 import os
 import numpy as np
 from mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, check_mesh_conformity
-from sofia.sofia.remesh_driver import greedy_remesh, compact_copy
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.remesh_driver import greedy_remesh, compact_copy
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.scripts.fuzz_greedy_remesh')
 

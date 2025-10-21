@@ -1,5 +1,5 @@
 import numpy as np
-from sofia.sofia.anisotropic_remesh import compute_Mhalf, compute_Mminushalf
+from sofia.core.anisotropic_remesh import compute_Mhalf, compute_Mminushalf
 
 
 def random_spd(seed=0):

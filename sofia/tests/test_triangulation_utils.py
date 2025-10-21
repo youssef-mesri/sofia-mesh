@@ -1,6 +1,6 @@
 import numpy as np
 
-from sofia.sofia.triangulation import (
+from sofia.core.triangulation import (
     optimal_star_triangulation,
     best_star_triangulation_by_min_angle,
     ear_clip_triangulation,
@@ -9,7 +9,7 @@ from sofia.sofia.triangulation import (
     polygon_has_self_intersections,
     retriangulate_patch_strict
 )
-from sofia.sofia.geometry import triangle_area, triangle_angles
+from sofia.core.geometry import triangle_area, triangle_angles
 
 
 def _min_angle_for_star(points, tris):
@@ -121,7 +121,7 @@ def test_ear_clip_triangulation_degenerate_line_polygon():
     pts = np.array([[0.0,0.0],[1.0,0.0],[2.0,0.0]])
     poly = [0,1,2]
     # Area zero => no triangles
-    from sofia.sofia.triangulation import ear_clip_triangulation
+    from sofia.core.triangulation import ear_clip_triangulation
     tris = ear_clip_triangulation(pts, poly)
     assert tris == []
 
@@ -129,7 +129,7 @@ def test_ear_clip_triangulation_degenerate_line_polygon():
 def test_ear_clip_triangulation_duplicate_vertices():
     pts = np.array([[0.0,0.0],[1.0,0.0],[1.0,1.0]])
     poly = [0,1,1,2]
-    from sofia.sofia.triangulation import ear_clip_triangulation
+    from sofia.core.triangulation import ear_clip_triangulation
     import pytest
     with pytest.raises(ValueError):
         ear_clip_triangulation(pts, poly)

@@ -574,7 +574,7 @@ def op_move_vertices_to_barycenter(editor, only_interior: bool = True) -> int:
         affected_tris.update(tris)
     affected_tris = np.array(sorted(affected_tris), dtype=np.int32)
     # Compute areas for all affected triangles
-    from sofia.sofia.geometry import triangles_signed_areas
+    from sofia.core.geometry import triangles_signed_areas
     tris_arr = np.array([editor.triangles[int(ti)] for ti in affected_tris if not np.any(np.array(editor.triangles[int(ti)]) == -1)], dtype=np.int32)
     valid_mask = np.array([not np.any(tri == -1) for tri in tris_arr], dtype=bool)
     areas = triangles_signed_areas(editor.points, tris_arr)
@@ -1830,7 +1830,7 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
         kept_edge_arr = _np.array(local_kept_edges, dtype=_np.int32) if local_kept_edges else _np.empty((0,2), dtype=_np.int32)
         # Build a reusable spatial grid index for kept edges to avoid rebuilding per-validate
         try:
-            from sofia.sofia.conformity import build_kept_edge_grid
+            from sofia.core.conformity import build_kept_edge_grid
             kept_grid = build_kept_edge_grid(editor.points, kept_edge_arr) if kept_edge_arr.shape[0] else None
         except Exception:
             kept_grid = None
@@ -1867,7 +1867,7 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
         # Candidate triangles as array
         cand_arr = _np.array(new_triangles, dtype=_np.int32) if new_triangles else _np.empty((0,3), dtype=_np.int32)
         # Area and orientation check (vectorized)
-        from sofia.sofia.geometry import triangles_signed_areas
+        from sofia.core.geometry import triangles_signed_areas
         areas = triangles_signed_areas(editor.points, cand_arr)
         valid_mask = (areas > float(_EPS))
         cand_arr = cand_arr[valid_mask]
@@ -1926,7 +1926,7 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
                 cand_arr = cand_arr[tri_ok]
             # Edge crossing check: use helper in conformity.py
             if cand_arr.shape[0] and kept_edge_arr.shape[0]:
-                from sofia.sofia.conformity import filter_crossing_candidate_edges
+                from sofia.core.conformity import filter_crossing_candidate_edges
                 cand_edges = _np.sort(_np.stack([
                     cand_arr[:, [0,1]], cand_arr[:, [1,2]], cand_arr[:, [2,0]]
                 ], axis=1).reshape(-1,2), axis=1)

@@ -20,10 +20,10 @@ from typing import Tuple
 
 import numpy as np
 
-from sofia.sofia.logging_utils import configure_logging, get_logger
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.anisotropic_remesh import anisotropic_local_remesh
-from sofia.sofia.visualization import plot_mesh
+from sofia.core.logging_utils import configure_logging, get_logger
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.anisotropic_remesh import anisotropic_local_remesh
+from sofia.core.visualization import plot_mesh
 
 # Headless-friendly backend
 import matplotlib as _mpl

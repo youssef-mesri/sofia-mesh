@@ -1,12 +1,12 @@
 """Unit tests for cavity extraction in helpers.py"""
 import numpy as np
 import pytest
-from sofia.sofia.helpers import (
+from sofia.core.helpers import (
     CavityInfo,
     extract_removal_cavity,
     filter_cycle_vertex
 )
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
 
 
 def test_cavity_info_dataclass():

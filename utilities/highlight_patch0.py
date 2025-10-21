@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import matplotlib.pyplot as plt
 import numpy as np
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.helpers import patch_nodes_for_triangles
-from sofia.sofia.geometry import point_in_polygon
-from sofia.sofia.patch_batching import build_patches_from_metrics_strict
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.helpers import patch_nodes_for_triangles
+from sofia.core.geometry import point_in_polygon
+from sofia.core.patch_batching import build_patches_from_metrics_strict
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.utilities.highlight_patch0')
 

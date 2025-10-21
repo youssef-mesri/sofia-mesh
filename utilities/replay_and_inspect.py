@@ -8,7 +8,7 @@ import sys, csv, ast
 import numpy as np
 from geometry import EPS_AREA
 import matplotlib.pyplot as plt
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
 
 
 def parse_param(s):

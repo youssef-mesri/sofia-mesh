@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-from sofia.sofia.geometry import compute_triangulation_area, normalize_edge, triangle_area
+from sofia.core.geometry import compute_triangulation_area, normalize_edge, triangle_area
 
 
 class TestComputeTriangulationArea:

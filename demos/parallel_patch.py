@@ -4,7 +4,7 @@ Demo: Run patch driver in parallel safely using per-run context isolation.
 
 This script launches several independent remeshing runs concurrently using
 ThreadPoolExecutor. Each run has its own RNG seeds, logger, and per-run hook
-stored in contextvars (see sofia.sofia.run_context).
+stored in contextvars (see sofia.core.run_context).
 
 Usage (optional args):
   python demos/parallel_patch.py --runs 3 --workers 3 --npts 80 --iterations 5 --log-level INFO
@@ -24,12 +24,12 @@ from typing import Dict, Any, Tuple
 
 import numpy as np
 
-from sofia.sofia.constants import EPS_AREA
-from sofia.sofia.config import PatchDriverConfig, RemeshConfig
-from sofia.sofia.logging_utils import configure_logging, get_logger
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.patch_driver import run_patch_batch_driver
-from sofia.sofia.run_context import set_context
+from sofia.core.constants import EPS_AREA
+from sofia.core.config import PatchDriverConfig, RemeshConfig
+from sofia.core.logging_utils import configure_logging, get_logger
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.patch_driver import run_patch_batch_driver
+from sofia.core.run_context import set_context
 
 
 def _worker(run_id: int, seed: int, npts: int, max_iterations: int, angle_unit: str, threshold: float, log_prefix: str) -> Tuple[int, Dict[str, Any]]:

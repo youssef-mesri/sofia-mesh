@@ -7,8 +7,8 @@ import os
 import sys
 # ensure project root is on sys.path so imports like `mesh_modifier2` resolve when running from scripts/
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, check_mesh_conformity
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor, check_mesh_conformity
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.scripts.replay_gfail_seed0_stepby_step')
 

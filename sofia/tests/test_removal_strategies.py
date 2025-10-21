@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-from sofia.sofia.triangulation import (
+from sofia.core.triangulation import (
     RemovalTriangulationStrategy,
     OptimalStarStrategy,
     QualityStarStrategy,
@@ -11,7 +11,7 @@ from sofia.sofia.triangulation import (
     SimplifyAndRetryStrategy,
     ChainedStrategy,
 )
-from sofia.sofia.config import BoundaryRemoveConfig
+from sofia.core.config import BoundaryRemoveConfig
 
 
 class TestRemovalTriangulationStrategy:

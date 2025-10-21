@@ -18,10 +18,10 @@ from typing import Tuple
 
 import numpy as np
 
-from sofia.sofia.logging_utils import configure_logging, get_logger
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.visualization import plot_mesh
-from sofia.sofia.anisotropic_remesh import anisotropic_local_remesh
+from sofia.core.logging_utils import configure_logging, get_logger
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.visualization import plot_mesh
+from sofia.core.anisotropic_remesh import anisotropic_local_remesh
 
 # matplotlib headless backend if needed
 import matplotlib as _mpl
@@ -64,6 +64,8 @@ def main(argv=None):
     parser.add_argument('--beta', type=float, default=0.5, help='beta_collapse metric threshold')
     parser.add_argument('--tol', type=float, default=0.05, help='convergence tolerance')
     parser.add_argument('--show', action='store_true', help='Show the plot interactively (requires display)')
+    parser.add_argument('--no-global-smoothing', action='store_true', help='Disable step 6 global metric-space smoothing')
+    parser.add_argument('--no-cleanup', action='store_true', help='Disable step 7 cleanup & validation')
     args = parser.parse_args(argv)
 
     configure_logging(level=logging.INFO)
@@ -80,17 +82,27 @@ def main(argv=None):
                                             beta_collapse=args.beta,
                                             tol=args.tol,
                                             max_iter=args.iters,
-                                            verbose=True)
+                                            verbose=True,
+                                            do_global_smoothing=not args.no_global_smoothing,
+                                            do_cleanup=not args.no_cleanup)
 
     log.info('Remesh finished: %s', info)
 
     # Plot result
-    fig, ax = plt.subplots(figsize=(8, 8))
-    plot_mesh(editor.points, editor.triangles, ax=ax, show_vertices=False)
-    ax.set_aspect('equal')
-    ax.set_title('Anisotropic remesh result')
     out_path = args.out
-    fig.savefig(out_path, dpi=150)
+    # plot_mesh expects an editor-like object and an output filename
+    try:
+        plot_mesh(editor, outname=out_path)
+    except TypeError:
+        # fallback: simple wireframe if API differs
+        fig, ax = plt.subplots(figsize=(8, 8))
+        from sofia.core.visualization import plot_mesh_by_tri_groups
+        try:
+            plot_mesh_by_tri_groups(editor, {}, outname=out_path)
+        except Exception:
+            ax.triplot(editor.points[:, 0], editor.points[:, 1], editor.triangles, lw=0.6)
+            ax.set_aspect('equal')
+            fig.savefig(out_path, dpi=150)
     log.info('Saved image to %s', out_path)
     if args.show:
         plt.show()

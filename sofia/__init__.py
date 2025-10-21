@@ -1,7 +1,7 @@
 """Public package API for the Sofia mesh toolkit.
 
 This facade provides a stable, flatter import surface on top of the
-internal implementation package ``sofia.sofia`` while deferring heavy
+internal implementation package ``sofia.core`` while deferring heavy
 imports (drivers, pocket fill) until first use to avoid circular import
 issues and keep ``import sofia`` fast.
 
@@ -9,7 +9,7 @@ Example
 -------
     from sofia import greedy_remesh, PatchDriverConfig, triangle_area
 
-The deeper modules (``sofia.sofia.*``) are considered internal and may
+The deeper modules (``sofia.core.*``) are considered internal and may
 change; rely on this layer for public symbols. Root-level legacy shim
 modules emit ``DeprecationWarning`` and will be removed in a future
 release.
@@ -27,13 +27,13 @@ except Exception:  # pragma: no cover - editable / unknown state
 _logging.getLogger(__name__).addHandler(_logging.NullHandler())
 
 # Eager light-weight submodules
-_geom = _imp('sofia.sofia.geometry')
-_const = _imp('sofia.sofia.constants')
-_conf = _imp('sofia.sofia.conformity')
-_tri  = _imp('sofia.sofia.triangulation')
-_ops  = _imp('sofia.sofia.operations')
-_quality = _imp('sofia.sofia.quality')
-_stats = _imp('sofia.sofia.stats')
+_geom = _imp('sofia.core.geometry')
+_const = _imp('sofia.core.constants')
+_conf = _imp('sofia.core.conformity')
+_tri  = _imp('sofia.core.triangulation')
+_ops  = _imp('sofia.core.operations')
+_quality = _imp('sofia.core.quality')
+_stats = _imp('sofia.core.stats')
 
 def _lazy_module(mod_name):
     class _ModuleProxy:
@@ -50,22 +50,22 @@ def _lazy_module(mod_name):
     return _ModuleProxy()
 
 # Lazily loaded heavy / dependency-rich modules
-pocket_fill = _lazy_module('sofia.sofia.pocket_fill')
+pocket_fill = _lazy_module('sofia.core.pocket_fill')
 
 def _lazy_driver_attr(name):
     def _wrapper(*args, **kwargs):
-        drv = _imp('sofia.sofia.remesh_driver')
+        drv = _imp('sofia.core.remesh_driver')
         return getattr(drv, name)(*args, **kwargs)
     return _wrapper
 
 def _lazy_driver_type(name):
     class _DriverProxy:
         def __call__(self, *args, **kwargs):
-            drv = _imp('sofia.sofia.remesh_driver')
+            drv = _imp('sofia.core.remesh_driver')
             cls = getattr(drv, name)
             return cls(*args, **kwargs)
         def __getattr__(self, item):
-            drv = _imp('sofia.sofia.remesh_driver')
+            drv = _imp('sofia.core.remesh_driver')
             return getattr(getattr(drv, name), item)
     return _DriverProxy()
 
@@ -94,7 +94,7 @@ constants = _const
 
 # Editor main class (imported lazily via internal path; prefers internal over root shim)
 try:  # pragma: no cover - defensive
-    from .sofia.mesh_modifier2 import PatchBasedMeshEditor  # type: ignore
+    from .core.mesh_modifier2 import PatchBasedMeshEditor  # type: ignore
 except Exception:  # pragma: no cover
     try:
         PatchBasedMeshEditor = _imp('mesh_modifier2').PatchBasedMeshEditor  # fallback to shim

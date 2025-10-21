@@ -13,10 +13,10 @@ import io
 import time
 import numpy as np
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
-from sofia.sofia.remesh_driver import greedy_remesh
-from sofia.sofia.config import GreedyConfig
-from sofia.sofia.stats import print_stats as print_op_stats
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
+from sofia.core.remesh_driver import greedy_remesh
+from sofia.core.config import GreedyConfig
+from sofia.core.stats import print_stats as print_op_stats
 
 
 def run_once(npts: int, seed: int, vertex_passes: int, edge_passes: int, strict: bool,

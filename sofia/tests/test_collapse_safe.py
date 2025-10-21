@@ -1,6 +1,6 @@
 import numpy as np
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.conformity import is_boundary_vertex_from_maps
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.conformity import is_boundary_vertex_from_maps
 
 
 def test_collapse_safe_basic():

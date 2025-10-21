@@ -1,8 +1,8 @@
 import numpy as np
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia.remesh_driver import greedy_remesh
-from sofia.sofia.conformity import check_mesh_conformity
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.remesh_driver import greedy_remesh
+from sofia.core.conformity import check_mesh_conformity
 
 
 def build_crossing_prone_mesh():
@@ -39,7 +39,7 @@ def test_greedy_strict_rejects_crossing_flip():
         annotate_failures=True,
     )
     # After strict greedy, ensure no crossing edges reported by conformity simulate routine.
-    from sofia.sofia.conformity import simulate_compaction_and_check
+    from sofia.core.conformity import simulate_compaction_and_check
     ok_sim, msgs, inv = simulate_compaction_and_check(editor.points, editor.triangles, reject_crossing_edges=True)
     # Accept outcome if: either fully ok OR no crossing messages present (even if inversion flagged separately).
     crossing_msgs = [m for m in msgs if 'crossing edges detected' in m]
@@ -76,6 +76,6 @@ def test_greedy_non_strict_pocket_fill():
     active = [t for t in editor.triangles if not np.all(np.array(t) == -1)]
     assert len(active) >= 1
     # Conformity (loose) should still pass.
-    from sofia.sofia.conformity import check_mesh_conformity as cmc
+    from sofia.core.conformity import check_mesh_conformity as cmc
     ok_conf, _ = cmc(editor.points, np.array(active), allow_marked=False)
     assert ok_conf

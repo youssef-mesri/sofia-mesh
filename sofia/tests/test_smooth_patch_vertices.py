@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.spatial import Delaunay
-from sofia.sofia.anisotropic_remesh import smooth_patch_vertices
+from sofia.core.anisotropic_remesh import smooth_patch_vertices
 
 
 def test_smooth_changes_interior():
@@ -20,7 +20,7 @@ def test_smooth_preserves_boundary():
     T = tri.simplices.copy()
     out, moved = smooth_patch_vertices(pts, T, omega=0.5, iterations=1)
     # compute boundary from edges
-    from sofia.sofia.conformity import build_edge_to_tri_map
+    from sofia.core.conformity import build_edge_to_tri_map
     edge_map = build_edge_to_tri_map(T)
     boundary_vs = set([u for e, ts in edge_map.items() if len(ts) == 1 for u in e])
     # check boundary vertices unchanged (within tolerance)

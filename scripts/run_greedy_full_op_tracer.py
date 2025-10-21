@@ -6,12 +6,12 @@ import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import numpy as np
 import random
-import sofia.sofia.remesh_driver as debug_check
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, check_mesh_conformity
-from sofia.sofia.logging_utils import get_logger
+import sofia.core.remesh_driver as debug_check
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor, check_mesh_conformity
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.scripts.run_greedy_full_op_tracer')
-from sofia.sofia.remesh_driver import compact_copy
+from sofia.core.remesh_driver import compact_copy
 
 OUTDIR = os.path.join(os.getcwd(), 'diagnostics')
 

@@ -8,13 +8,13 @@ Outputs PNGs into demos/output/.
 import os
 from typing import Optional
 import numpy as np
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia.visualization import plot_mesh
-from sofia.sofia.constants import EPS_AREA
-from sofia.sofia.diagnostics import compact_copy, extract_boundary_loops
-from sofia.sofia.config import BoundaryRemoveConfig
-from sofia.sofia.helpers import boundary_polygons_from_patch, select_outer_polygon
-from sofia.sofia.triangulation import polygon_signed_area
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.visualization import plot_mesh
+from sofia.core.constants import EPS_AREA
+from sofia.core.diagnostics import compact_copy, extract_boundary_loops
+from sofia.core.config import BoundaryRemoveConfig
+from sofia.core.helpers import boundary_polygons_from_patch, select_outer_polygon
+from sofia.core.triangulation import polygon_signed_area
 
 
 OUTDIR = os.path.join(os.path.dirname(__file__), 'output')
@@ -198,7 +198,7 @@ def plot_corner_with_splits_case():
         print(f"[corner+splits] area check: appended={appended_area:.6e} poly={poly_area if poly_area is not None else float('nan'):.6e} ({'OK' if ok_poly else 'X'}) cavity={cavity_area:.6e} ({'OK' if ok_cavity else 'VIOLATION'})")
         # If cavity area is violated, annotate and save a violation image instead of normal 'after'
         if not ok_cavity:
-            from sofia.sofia.visualization import plot_mesh as _plot
+            from sofia.core.visualization import plot_mesh as _plot
             out_violation = os.path.join(OUTDIR, 'boundary_corner_splits_after_VIOLATION.png')
             _plot(editor, outname=out_violation)
             return

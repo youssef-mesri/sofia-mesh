@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.spatial import Delaunay
-from sofia.sofia.anisotropic_remesh import perform_local_flips_Delaunay
+from sofia.core.anisotropic_remesh import perform_local_flips_Delaunay
 
 
 def test_flips_on_delaunay():

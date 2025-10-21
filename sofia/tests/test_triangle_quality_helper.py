@@ -1,5 +1,5 @@
 import numpy as np
-from sofia.sofia.operations import _triangle_qualities_norm
+from sofia.core.operations import _triangle_qualities_norm
 
 
 def test_triangle_qualities_norm_values():

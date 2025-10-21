@@ -1,9 +1,9 @@
 import numpy as np
 import types
 import importlib
-from sofia.sofia.operations import _evaluate_quality_change
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-import sofia.sofia.operations as ops_module
+from sofia.core.operations import _evaluate_quality_change
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+import sofia.core.operations as ops_module
 
 
 def make_simple_triangle_mesh():
@@ -32,7 +32,7 @@ def test_evaluate_quality_change_accepts_when_quality_not_worse():
         q = np.zeros(tris_a.shape[0], dtype=float); q[safe] = a[safe]/denom[safe]
         q = q * (12.0 / (np.sqrt(3.0)))
         return np.clip(q, 0.0, 1.0)
-    import sofia.sofia.operations as ops_module
+    import sofia.core.operations as ops_module
     import pytest
     pytest.MonkeyPatch().setattr(ops_module, '_triangle_qualities_norm', tri_q, raising=False)
     ok, msg = _evaluate_quality_change(editor, old_tris, new_tris, stats=None, op_label='test')
@@ -60,7 +60,7 @@ def test_evaluate_quality_change_rejects_when_quality_degrades():
         q = np.zeros(tris_a.shape[0], dtype=float); q[safe] = a[safe]/denom[safe]
         q = q * (12.0 / (np.sqrt(3.0)))
         return np.clip(q, 0.0, 1.0)
-    import sofia.sofia.operations as ops_module
+    import sofia.core.operations as ops_module
     import pytest
     pytest.MonkeyPatch().setattr(ops_module, '_triangle_qualities_norm', tri_q, raising=False)
     ok, msg = _evaluate_quality_change(editor, old_tris, new_tris, stats=None, op_label='test')

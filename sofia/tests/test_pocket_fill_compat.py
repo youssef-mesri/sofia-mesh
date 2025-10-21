@@ -1,7 +1,7 @@
 import numpy as np
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia import pocket_fill as pf_compat
-from sofia.sofia import triangulation as tri
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core import pocket_fill as pf_compat
+from sofia.core import triangulation as tri
 
 
 def make_editor(points, triangles):
@@ -43,7 +43,7 @@ def test_compat_fill_pocket_strategies_match():
     if ok_a:
         assert det_a.get('method') == det_b.get('method')
         # verify mesh conformity for both
-        from sofia.sofia.conformity import check_mesh_conformity
+        from sofia.core.conformity import check_mesh_conformity
         ok_conf_a, _ = check_mesh_conformity(ed_a.points, ed_a.triangles, allow_marked=False)
         ok_conf_b, _ = check_mesh_conformity(ed_b.points, ed_b.triangles, allow_marked=False)
         assert ok_conf_a and ok_conf_b

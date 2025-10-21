@@ -1,8 +1,8 @@
 import numpy as np
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia.conformity import check_mesh_conformity
-from sofia.sofia.visualization import plot_mesh
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.conformity import check_mesh_conformity
+from sofia.core.visualization import plot_mesh
 import matplotlib.pyplot as plt
 
 

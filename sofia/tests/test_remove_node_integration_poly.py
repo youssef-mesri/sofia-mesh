@@ -1,9 +1,9 @@
 import numpy as np
 from types import SimpleNamespace
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia.conformity import check_mesh_conformity
-from sofia.sofia.constants import EPS_AREA
-from sofia.sofia.geometry import triangle_area
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.conformity import check_mesh_conformity
+from sofia.core.constants import EPS_AREA
+from sofia.core.geometry import triangle_area
 
 
 def make_regular_polygon_star(n_vertices=5, radius=1.0):

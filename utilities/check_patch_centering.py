@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import numpy as np
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, point_in_polygon
-from sofia.sofia.patch_batching import build_patches_from_metrics_strict
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, point_in_polygon
+from sofia.core.patch_batching import build_patches_from_metrics_strict
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.utilities.check_patch_centering')
 

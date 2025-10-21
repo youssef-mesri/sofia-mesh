@@ -1,10 +1,10 @@
 import numpy as np
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia.conformity import check_mesh_conformity
-from sofia.sofia.config import BoundaryRemoveConfig
-from sofia.sofia.helpers import boundary_polygons_from_patch, select_outer_polygon
-from sofia.sofia.triangulation import polygon_signed_area
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.conformity import check_mesh_conformity
+from sofia.core.config import BoundaryRemoveConfig
+from sofia.core.helpers import boundary_polygons_from_patch, select_outer_polygon
+from sofia.core.triangulation import polygon_signed_area
 
 
 def square_with_center():

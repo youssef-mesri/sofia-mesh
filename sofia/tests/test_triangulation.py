@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
 
 
 def make_editor(points, triangles):

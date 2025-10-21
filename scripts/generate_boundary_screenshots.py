@@ -21,8 +21,8 @@ if str(ROOT) not in sys.path:
 import matplotlib
 matplotlib.use("Agg")
 
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.visualization import plot_mesh
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.visualization import plot_mesh
 
 
 def carve_circular_holes(editor: PatchBasedMeshEditor, centers_radii):

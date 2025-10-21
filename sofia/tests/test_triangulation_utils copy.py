@@ -1,6 +1,6 @@
 import json
 import numpy as np
-from sofia.sofia.triangulation_utils import constrained_delaunay_triangulate
+from sofia.core.triangulation_utils import constrained_delaunay_triangulate
 
 
 def test_square_triangulation():

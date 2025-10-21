@@ -1,7 +1,7 @@
 import numpy as np
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor  # canonical import
-from sofia.sofia.conformity import build_edge_to_tri_map, check_mesh_conformity
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor  # canonical import
+from sofia.core.conformity import build_edge_to_tri_map, check_mesh_conformity
 
 
 def test_compact_triangle_indices_remaps_vertices():

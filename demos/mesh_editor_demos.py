@@ -14,12 +14,12 @@ try:
 except Exception:  # pragma: no cover
     imageio = None
 
-from sofia.sofia.logging_utils import get_logger, configure_logging
-from sofia.sofia.constants import EPS_IMPROVEMENT
-from sofia.sofia.conformity import check_mesh_conformity, is_boundary_vertex_from_maps
-from sofia.sofia.helpers import boundary_cycle_from_incident_tris
-from sofia.sofia.triangulation import optimal_star_triangulation
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
+from sofia.core.logging_utils import get_logger, configure_logging
+from sofia.core.constants import EPS_IMPROVEMENT
+from sofia.core.conformity import check_mesh_conformity, is_boundary_vertex_from_maps
+from sofia.core.helpers import boundary_cycle_from_incident_tris
+from sofia.core.triangulation import optimal_star_triangulation
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
 
 logger = get_logger('sofia.demos.mesh_editor')
 

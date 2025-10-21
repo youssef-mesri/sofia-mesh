@@ -1,14 +1,14 @@
 import numpy as np
 from geometry import EPS_AREA
 from scipy.spatial import Delaunay
-from sofia.sofia.mesh_modifier2 import (
+from sofia.core.mesh_modifier2 import (
     PatchBasedMeshEditor,
     build_edge_to_tri_map,
     build_vertex_to_tri_map,
     retriangulate_patch_strict,
     remove_node_star,
 )
-from sofia.sofia.quality import mesh_min_angle
+from sofia.core.quality import mesh_min_angle
 
 # -----------------------
 # Action space

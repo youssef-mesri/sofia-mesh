@@ -1,9 +1,9 @@
 """Unit tests for AreaPreservationChecker in quality.py"""
 import numpy as np
 import pytest
-from sofia.sofia.quality import AreaPreservationChecker
-from sofia.sofia.config import BoundaryRemoveConfig
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.quality import AreaPreservationChecker
+from sofia.core.config import BoundaryRemoveConfig
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
 
 
 def test_area_preservation_checker_default():
@@ -200,7 +200,7 @@ def test_area_preservation_integration():
 
 def test_area_preservation_tolerances():
     """Test that tolerances work correctly."""
-    from sofia.sofia.constants import EPS_TINY, EPS_AREA
+    from sofia.core.constants import EPS_TINY, EPS_AREA
     
     checker = AreaPreservationChecker()
     

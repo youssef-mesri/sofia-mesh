@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import numpy as np
 import math
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.patch_batching import vertex_patch
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.patch_batching import vertex_patch
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.utilities.inspect_boundary_debug')
 

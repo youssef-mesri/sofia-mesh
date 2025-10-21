@@ -1,5 +1,5 @@
 import numpy as np
-from sofia.sofia import geometry, conformity
+from sofia.core import geometry, conformity
 
 
 def test_vectorized_seg_intersect_basic():

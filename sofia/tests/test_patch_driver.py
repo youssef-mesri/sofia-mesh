@@ -3,11 +3,11 @@ import random
 
 import numpy as np
 
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.conformity import check_mesh_conformity
-from sofia.sofia.diagnostics import compact_copy
-from sofia.sofia.remesh_driver import PatchDriverConfig, run_patch_batch_driver, greedy_remesh
-from sofia.sofia.patch_driver import apply_patch_operation
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.conformity import check_mesh_conformity
+from sofia.core.diagnostics import compact_copy
+from sofia.core.remesh_driver import PatchDriverConfig, run_patch_batch_driver, greedy_remesh
+from sofia.core.patch_driver import apply_patch_operation
 
 
 
@@ -17,7 +17,7 @@ def _run_basic(config_overrides, seed=1234):
     editor = PatchBasedMeshEditor(pts.copy(), tris.copy())
     cfg = PatchDriverConfig(**config_overrides)
     # Standardized test logger
-    from sofia.sofia.logging_utils import get_logger
+    from sofia.core.logging_utils import get_logger
     logger = get_logger('sofia.tests.patch_driver')
     # deterministic RNGs for reproducibility
     rng = random.Random(seed)
@@ -102,7 +102,7 @@ def test_single_patch_add_operation_succeeds_on_skinny_triangle():
     cfg = PatchDriverConfig(max_iterations=1)
     rng = random.Random(1)  # first random() ~0.134 < 0.6 -> choose 'add'
 
-    from sofia.sofia.logging_utils import get_logger as _get_logger
+    from sofia.core.logging_utils import get_logger as _get_logger
     ok, info, op, param, local_before, local_after, tri_count_before, tri_count_after, rejected = apply_patch_operation(
         editor, patch, rng, cfg, logger=_get_logger('sofia.tests.patch_driver'))
 

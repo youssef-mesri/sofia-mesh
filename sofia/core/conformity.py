@@ -324,6 +324,16 @@ def filter_crossing_candidate_edges(points, kept_edges, cand_edges, kept_grid=No
 
 	from .geometry import vectorized_seg_intersect
 
+	all_edges = []
+	for e in ke:
+		all_edges.append((int(e[0]), int(e[1])))
+	for e in ce:
+		all_edges.append((int(e[0]), int(e[1])))
+	# Candidate pairs are (kept_idx, cand_idx) in terms of all_edges indices
+	cand_pairs = []
+	for i in range(K):
+		for j in range(K, K+M):
+			cand_pairs.append((i, j))
 	crosses = np.zeros((M,), dtype=bool)
 	# Build arrays of segment endpoints to test in batch
 	test_a = [];

@@ -6,10 +6,10 @@ import numpy as np
 import os
 import time
 
-from sofia.sofia.remesh_driver import compact_copy, check_mesh_conformity, find_inverted_triangles, count_boundary_loops, MIN_TRI_AREA, greedy_remesh
-from sofia.sofia.diagnostics import compact_from_arrays
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.remesh_driver import compact_copy, check_mesh_conformity, find_inverted_triangles, count_boundary_loops, MIN_TRI_AREA, greedy_remesh
+from sofia.core.diagnostics import compact_from_arrays
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.scripts.per_commit_compact_check_seed0')
 

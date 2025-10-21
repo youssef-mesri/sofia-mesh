@@ -17,20 +17,20 @@ import numpy as np
 import json
 import csv
 
-from sofia.sofia.logging_utils import configure_logging, get_logger
+from sofia.core.logging_utils import configure_logging, get_logger
 
 
-from sofia.sofia.geometry import triangle_area, triangle_angles, EPS_AREA
+from sofia.core.geometry import triangle_area, triangle_angles, EPS_AREA
 
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
-from sofia.sofia.pocket_fill import fill_pocket_earclip, fill_pocket_steiner, fill_pocket_quad
-from sofia.sofia.visualization import plot_mesh
-from sofia.sofia.quality import compute_h
-from sofia.sofia.constants import EPS_COLINEAR
-from sofia.sofia.quality import _triangle_qualities_norm
-from sofia.sofia.refinement import refine_to_target_h
-from sofia.sofia.triangulation import triangulate_polygon_with_holes
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
+from sofia.core.pocket_fill import fill_pocket_earclip, fill_pocket_steiner, fill_pocket_quad
+from sofia.core.visualization import plot_mesh
+from sofia.core.quality import compute_h
+from sofia.core.constants import EPS_COLINEAR
+from sofia.core.quality import _triangle_qualities_norm
+from sofia.core.refinement import refine_to_target_h
+from sofia.core.triangulation import triangulate_polygon_with_holes
 
 import os as _os
 import matplotlib as _mpl
@@ -251,7 +251,7 @@ def try_fill_first_boundary(editor: PatchBasedMeshEditor, boundary_cycle: List[i
     import pprint
     # Constrained Delaunay fallback moved to helper module
     try:
-        from sofia.sofia.triangulation_utils import constrained_delaunay_triangulate
+        from sofia.core.triangulation_utils import constrained_delaunay_triangulate
     except Exception:
         constrained_delaunay_triangulate = None
     if not is_convex_polygon(boundary_cycle, pts):
@@ -645,7 +645,7 @@ def list_refinable_edges(editor: PatchBasedMeshEditor, include_boundary: bool = 
     edges = list({tuple(x) for x in edges})
     return edges
 
-# Use package-level `refine_to_target_h` imported from sofia.sofia.refinement
+# Use package-level `refine_to_target_h` imported from sofia.core.refinement
 
 def refine_to_target_h_local(editor: PatchBasedMeshEditor, target_h: float, include_boundary: bool = False,
                              max_splits: int = 1000, tol: float = 1e-8):

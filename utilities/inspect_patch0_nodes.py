@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-from sofia.sofia.logging_utils import get_logger, configure_logging
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.helpers import patch_nodes_for_triangles
-from sofia.sofia.geometry import point_in_polygon
-from sofia.sofia.patch_batching import build_patches_from_metrics_strict
+from sofia.core.logging_utils import get_logger, configure_logging
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.helpers import patch_nodes_for_triangles
+from sofia.core.geometry import point_in_polygon
+from sofia.core.patch_batching import build_patches_from_metrics_strict
 
 logger = get_logger('sofia.utilities.inspect_patch0_nodes')
 

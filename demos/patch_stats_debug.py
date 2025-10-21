@@ -1,8 +1,8 @@
 """Print size/metric summaries for generated patches (moved from debug_patch_stats.py)."""
 from __future__ import annotations
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.patch_batching import triangle_to_vertex_metric, vertex_to_edge_metric, build_patches_from_metrics_strict
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.patch_batching import triangle_to_vertex_metric, vertex_to_edge_metric, build_patches_from_metrics_strict
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.demos.patch_stats_debug')
 

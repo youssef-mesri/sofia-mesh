@@ -7,14 +7,14 @@ import os
 import numpy as np
 from collections import defaultdict, Counter
 
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, check_mesh_conformity
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, check_mesh_conformity
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.scripts.trace_seed0')
-import sofia.sofia.remesh_driver as debug_check
+import sofia.core.remesh_driver as debug_check
 # disable flips for this trace run to observe behavior without flips
 debug_check.ALLOW_FLIPS = False
-from sofia.sofia.remesh_driver import compact_copy, tri_min_angle
+from sofia.core.remesh_driver import compact_copy, tri_min_angle
 
 
 OUT = 'diagnostics'
@@ -149,7 +149,7 @@ def run_trace():
                 p0 = editor.points[int(tri[0])]; p1 = editor.points[int(tri[1])]; p2 = editor.points[int(tri[2])]
                 angs = []
                 # reuse triangle_angles via mesh_modifier2? use simple law of cosines here
-                from sofia.sofia.mesh_modifier2 import triangle_angles
+                from sofia.core.mesh_modifier2 import triangle_angles
                 angs = triangle_angles(p0,p1,p2)
                 idx = list(tri).index(opp)
                 return angs[idx]

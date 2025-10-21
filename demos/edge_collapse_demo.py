@@ -16,9 +16,9 @@ from typing import List, Tuple
 
 import numpy as np
 
-from sofia.sofia.logging_utils import configure_logging, get_logger
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
-from sofia.sofia.visualization import plot_mesh
+from sofia.core.logging_utils import configure_logging, get_logger
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
+from sofia.core.visualization import plot_mesh
 
 log = get_logger('sofia.demo.edge_collapse')
 

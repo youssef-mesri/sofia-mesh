@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia.conformity import check_mesh_conformity
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.conformity import check_mesh_conformity
 
 
 def assert_maps_valid(editor):
@@ -193,7 +193,7 @@ def test_randomized_operations_on_delaunay(seed=42, n_ops=150):
     operations are in progress). At the end we compact and require strict
     conformity.
     """
-    from sofia.sofia.mesh_modifier2 import build_random_delaunay
+    from sofia.core.mesh_modifier2 import build_random_delaunay
 
     rng = np.random.RandomState(seed)
     pts, tris = build_random_delaunay(npts=80, seed=seed)

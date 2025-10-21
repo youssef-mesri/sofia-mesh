@@ -13,8 +13,8 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia.quality import compute_h
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.quality import compute_h
 
 log = logging.getLogger('sofia.refinement')
 

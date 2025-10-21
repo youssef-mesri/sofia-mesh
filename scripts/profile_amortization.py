@@ -5,9 +5,9 @@ import cProfile
 import argparse
 import numpy as np
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
-from sofia.sofia.remesh_driver import greedy_remesh
-from sofia.sofia.config import GreedyConfig, RemeshConfig
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
+from sofia.core.remesh_driver import greedy_remesh
+from sofia.core.config import GreedyConfig, RemeshConfig
 
 
 def run_profile(

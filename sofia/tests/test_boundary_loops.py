@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from sofia.sofia.diagnostics import count_boundary_loops, extract_boundary_loops
+from sofia.core.diagnostics import count_boundary_loops, extract_boundary_loops
 
 def test_no_boundary_in_closed_mesh():
     # Two triangles forming a square (0,1,2) and (0,2,3) with all edges used twice except boundary

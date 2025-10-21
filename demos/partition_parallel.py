@@ -15,13 +15,13 @@ from typing import List, Dict, Set, Tuple, Any
 
 import numpy as np
 
-from sofia.sofia.logging_utils import configure_logging, get_logger
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia.remesh_driver import build_random_delaunay, greedy_remesh
-from sofia.sofia.patch_driver import run_patch_batch_driver
-from sofia.sofia.config import PatchDriverConfig, RemeshConfig, GreedyConfig
-from sofia.sofia.conformity import build_edge_to_tri_map
-from sofia.sofia.visualization import plot_mesh, plot_mesh_by_tri_groups
+from sofia.core.logging_utils import configure_logging, get_logger
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.remesh_driver import build_random_delaunay, greedy_remesh
+from sofia.core.patch_driver import run_patch_batch_driver
+from sofia.core.config import PatchDriverConfig, RemeshConfig, GreedyConfig
+from sofia.core.conformity import build_edge_to_tri_map
+from sofia.core.visualization import plot_mesh, plot_mesh_by_tri_groups
 
 log = get_logger('sofia.demos.partition')
 

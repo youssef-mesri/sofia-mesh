@@ -1,5 +1,5 @@
 import numpy as np
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
 
 
 def test_reset_stats_zeroes_counters():

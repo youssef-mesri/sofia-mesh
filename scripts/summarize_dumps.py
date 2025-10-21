@@ -2,7 +2,7 @@
 import os
 import glob
 import numpy as np
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.scripts.summarize_dumps')
 from collections import Counter, defaultdict

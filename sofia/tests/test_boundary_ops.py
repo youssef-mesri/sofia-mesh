@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia.operations import op_remove_node_with_patch, op_split_edge
-from sofia.sofia.conformity import check_mesh_conformity
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.operations import op_remove_node_with_patch2, op_split_edge
+from sofia.core.conformity import check_mesh_conformity
 
 
 def square_mesh():
@@ -25,12 +25,12 @@ def test_remove_node_on_boundary_virtual_mode():
     pts, tris = square_mesh()
     editor = PatchBasedMeshEditor(pts.copy(), tris.copy(), virtual_boundary_mode=True)
     # Boundary removal in virtual mode may change cavity area - disable strict area preservation
-    from sofia.sofia.config import BoundaryRemoveConfig
+    from sofia.core.config import BoundaryRemoveConfig
     editor.boundary_remove_config = BoundaryRemoveConfig(require_area_preservation=False)
 
     # Pick boundary vertex with degree 2 (corner)
     v = 1  # vertex 1 is on boundary
-    ok, msg, _ = op_remove_node_with_patch(editor, v)
+    ok, msg, _ = op_remove_node_with_patch2(editor, v)
     assert ok, f"remove_node should work on boundary in virtual mode: {msg}"
 
     # Mesh should still be conforming (allowing tombstones before compaction)

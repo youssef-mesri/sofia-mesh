@@ -4,9 +4,9 @@ Moved from `check_patch_centering.py`.
 """
 from __future__ import annotations
 import numpy as np
-from sofia.sofia.logging_utils import get_logger, configure_logging
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, point_in_polygon
-from sofia.sofia.patch_batching import build_patches_from_metrics_strict
+from sofia.core.logging_utils import get_logger, configure_logging
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, point_in_polygon
+from sofia.core.patch_batching import build_patches_from_metrics_strict
 
 logger = get_logger('sofia.demos.patch_centering_check')
 

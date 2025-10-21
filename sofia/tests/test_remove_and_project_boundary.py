@@ -1,6 +1,6 @@
 import numpy as np
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.conformity import check_mesh_conformity
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.conformity import check_mesh_conformity
 
 
 def test_remove_degenerate_and_fill():

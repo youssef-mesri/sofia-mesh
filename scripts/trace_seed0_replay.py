@@ -9,10 +9,10 @@ import time
 import numpy as np
 from collections import defaultdict, Counter
 
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, check_mesh_conformity
-import sofia.sofia.remesh_driver as debug_check
-from sofia.sofia.remesh_driver import compact_copy, apply_patch_operation, build_patches_from_metrics_strict, partition_batches
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor, check_mesh_conformity
+import sofia.core.remesh_driver as debug_check
+from sofia.core.remesh_driver import compact_copy, apply_patch_operation, build_patches_from_metrics_strict, partition_batches
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.scripts.trace_seed0_replay')
 

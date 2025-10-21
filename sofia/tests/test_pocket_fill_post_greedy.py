@@ -2,8 +2,8 @@ import json
 import os
 import numpy as np
 
-from sofia.sofia.mesh_modifier2 import PatchBasedMeshEditor
-from sofia.sofia.remesh_driver import greedy_remesh
+from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.remesh_driver import greedy_remesh
 
 
 def build_quad_pocket():

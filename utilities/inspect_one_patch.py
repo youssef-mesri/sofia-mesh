@@ -1,7 +1,7 @@
-from sofia.sofia.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
-from sofia.sofia.patch_batching import vertex_patch, patch_boundary_loops
+from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
+from sofia.core.patch_batching import vertex_patch, patch_boundary_loops
 import numpy as np
-from sofia.sofia.logging_utils import get_logger
+from sofia.core.logging_utils import get_logger
 
 logger = get_logger('sofia.utilities.inspect_one_patch')
 
