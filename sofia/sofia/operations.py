@@ -491,10 +491,41 @@ def op_move_vertices_to_barycenter(editor, only_interior: bool = True) -> int:
 
     Notes
     -----
+    - Only operates on vertices with convex 1-ring patches to prevent creating
+      invalid meshes (vertices with non-convex patches are skipped).
     - Uses a conservative guard: every incident triangle must remain positively
       oriented and above EPS_AREA. If not, the move is reverted for that vertex.
     - Maps (edge_map, v_map) are unchanged; only coordinates move.
     """
+    def _is_patch_convex(vertex_idx, neighbor_indices, points):
+        """Check if the 1-ring patch around a vertex forms a convex polygon.
+        
+        For interior vertices, the 1-ring neighbors should form a convex polygon
+        when ordered angularly around the vertex.
+        """
+        if len(neighbor_indices) < 3:
+            return False
+        
+        # Order neighbors angularly around the vertex
+        center = points[vertex_idx]
+        neighbor_pts = points[neighbor_indices]
+        angles = np.arctan2(neighbor_pts[:, 1] - center[1], neighbor_pts[:, 0] - center[0])
+        sorted_indices = neighbor_indices[np.argsort(angles)]
+        sorted_pts = points[sorted_indices]
+        
+        # Check if the ordered neighbors form a convex polygon
+        # Use cross product sign consistency
+        n = len(sorted_pts)
+        for i in range(n):
+            p1 = sorted_pts[i]
+            p2 = sorted_pts[(i + 1) % n]
+            p3 = sorted_pts[(i + 2) % n]
+            # Cross product of (p2-p1) and (p3-p2)
+            cross = (p2[0] - p1[0]) * (p3[1] - p2[1]) - (p2[1] - p1[1]) * (p3[0] - p2[0])
+            if cross < 0:  # Non-convex turn detected
+                return False
+        return True
+    
     # Vectorized boundary detection
     n_pts = len(editor.points)
     boundary_vs = set()
@@ -513,8 +544,21 @@ def op_move_vertices_to_barycenter(editor, only_interior: bool = True) -> int:
             neighbors[v].extend(nbrs)
     # Convert neighbor lists to NumPy arrays for fast mean computation
     neighbors_np = [np.array(list(set(nbrs)), dtype=np.int32) if nbrs else np.array([], dtype=np.int32) for nbrs in neighbors]
+    
+    # Filter eligible vertices: must have neighbors and convex 1-ring patch
+    eligible = []
+    for v in range(n_pts):
+        if only_interior and v in boundary_vs:
+            continue
+        if neighbors_np[v].size == 0:
+            continue
+        # Check convexity of 1-ring patch
+        if not _is_patch_convex(v, neighbors_np[v], editor.points):
+            continue
+        eligible.append(v)
+    eligible = np.array(eligible, dtype=np.int32)
+    
     targets = np.copy(editor.points)
-    eligible = np.array([v for v in range(n_pts) if (not only_interior or v not in boundary_vs) and neighbors_np[v].size > 0], dtype=np.int32)
     for v in eligible:
         targets[v] = np.mean(editor.points[neighbors_np[v]], axis=0)
     # Batch triangle validity checks using NumPy
@@ -642,6 +686,32 @@ def op_edge_collapse(editor, edge=None, position: str = 'midpoint'):
         before_kw='before', after_kw='post')
     if not ok_q:
         return False, msg_q, None
+    
+    # Explicit edge crossing check (optional, controlled by editor flag)
+    if getattr(editor, 'reject_crossing_edges', False):
+        try:
+            # Build test mesh with tombstoned triangles removed and new triangles added
+            active_tris = [
+                tuple(t) for i, t in enumerate(editor.triangles)
+                if i not in touched and not np.all(np.array(t) == -1)
+            ]
+            test_tris = active_tris + [tuple(t) for t in new_tris]
+            test_tris_arr = np.array(test_tris, dtype=int) if test_tris else np.empty((0, 3), dtype=int)
+        
+            # Check for edge crossings using simulation
+            ok_cross, cross_msgs, _ = simulate_compaction_and_check(
+                cand_pts, test_tris_arr, reject_crossing_edges=True
+            )
+            if not ok_cross:
+                if stats:
+                    stats.fail += 1
+                crossing_msgs = [m for m in cross_msgs if 'crossing' in m.lower()] or cross_msgs
+                return False, f"edge collapse would create crossing edges: {crossing_msgs}", None
+        except Exception as e:
+            if stats:
+                stats.fail += 1
+            return False, f"edge crossing validation error: {e}", None
+    
     # Simulated compaction preflight: tombstone all touched, append new_tris
     ok_sim, sim_msg = _simulate_preflight(
         editor, cand_pts, touched, new_tris, stats,
@@ -1117,8 +1187,10 @@ def op_remove_node_with_patch2(editor, v_idx, force_strict=False):
                 stats.remove_early_rejects += 1
             return False, f"area preservation failed: {area_error}", None
     
-    # Validate conformity
+    # Validate conformity including edge crossings
     try:
+        from .conformity import simulate_compaction_and_check
+        
         active_tris = [
             tuple(t) for i, t in enumerate(editor.triangles)
             if i not in cavity_info.cavity_indices and not np.all(np.array(t) == -1)
@@ -1126,11 +1198,25 @@ def op_remove_node_with_patch2(editor, v_idx, force_strict=False):
         test_tris = active_tris + [tuple(t) for t in triangles]
         test_tris_arr = np.array(test_tris, dtype=int) if test_tris else np.empty((0, 3), dtype=int)
         
+        # First check basic conformity
         ok, msgs = check_mesh_conformity(editor.points, test_tris_arr, allow_marked=False)
         if not ok:
             if stats:
                 stats.remove_early_rejects += 1
             return False, f"conformity check failed: {msgs}", None
+        
+        # Then check for edge crossings using simulation (optional, controlled by editor flag)
+        if getattr(editor, 'reject_crossing_edges', False):
+            ok_sim, sim_msgs, _ = simulate_compaction_and_check(
+                editor.points, test_tris_arr, reject_crossing_edges=True
+            )
+            if not ok_sim:
+                if stats:
+                    stats.remove_early_rejects += 1
+                    stats.remove_early_validation += 1
+                # Filter for crossing messages
+                crossing_msgs = [m for m in sim_msgs if 'crossing' in m.lower()] or sim_msgs
+                return False, f"edge crossing detected: {crossing_msgs}", None
     except Exception as e:
         if stats:
             stats.remove_early_rejects += 1
@@ -2099,22 +2185,9 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
         # Also reject if any edge crossings are detected after adding candidates.
         # If final preflight simulation is enabled, defer heavy simulation to that step
         # to avoid duplicate work; otherwise do a quick simulation here for safety.
+        # IMPORTANT: Always check for edge crossings even when quality is high, as crossings
+        # can occur independently of triangle quality (BUG FIX: was incorrectly bypassing this check).
         if not getattr(editor, 'simulate_compaction_on_commit', False):
-            # Skip heavy final simulation if patch quality is high
-            try:
-                pq2 = pq
-            except NameError:
-                try:
-                    pq2 = _patch_quality(tris_cand if 'tris_cand' in locals() else tris_cand, editor.points)
-                except Exception:
-                    pq2 = 0.0
-            if pq2 >= _SIM_QUALITY_THRESH:
-                pq_skipped = True
-            else:
-                pq_skipped = False
-            if pq_skipped:
-                # Accept based on local checks (quality was verified earlier)
-                return True, []
             try:
                 from .conformity import simulate_compaction_and_check
                 t_sim0 = time.perf_counter()
