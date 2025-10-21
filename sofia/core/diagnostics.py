@@ -19,6 +19,19 @@ from .logging_utils import get_logger
 
 logger = get_logger('sofia.diagnostics')
 
+# Try importing numba for performance optimizations
+try:
+    import numba
+    from numba import njit
+    HAS_NUMBA = True
+except ImportError:
+    HAS_NUMBA = False
+    # Define dummy decorator if numba is not available
+    def njit(*args, **kwargs):
+        def decorator(func):
+            return func
+        return decorator if not args else decorator(args[0])
+
 
 def compact_copy(editor):
     """Return a compacted (points, tris, mapping, active_idx) copy of the editor state.
@@ -64,6 +77,131 @@ def _vectorized_boundary_edges(tris: np.ndarray) -> np.ndarray:
     return uniq[counts == 1]
 
 
+@njit(cache=True)
+def _extract_loops_numba(boundary_edges: np.ndarray, n_vertices: int):
+    """Numba-optimized loop extraction from boundary edges.
+    
+    Returns arrays: loop_starts, loop_data
+    - loop_starts[i] = start index in loop_data for loop i
+    - loop_data = flattened vertex indices for all loops
+    """
+    if boundary_edges.shape[0] == 0:
+        return np.array([0], dtype=np.int32), np.empty(0, dtype=np.int32)
+    
+    # Build adjacency list using arrays (Numba-friendly)
+    # Count neighbors per vertex first
+    neighbor_count = np.zeros(n_vertices, dtype=np.int32)
+    for i in range(boundary_edges.shape[0]):
+        a, b = boundary_edges[i, 0], boundary_edges[i, 1]
+        neighbor_count[a] += 1
+        neighbor_count[b] += 1
+    
+    # Allocate adjacency structure (max 2 neighbors per boundary vertex typically)
+    max_neighbors = max(2, np.max(neighbor_count))
+    adjacency = np.full((n_vertices, max_neighbors), -1, dtype=np.int32)
+    adj_idx = np.zeros(n_vertices, dtype=np.int32)
+    
+    # Fill adjacency list
+    for i in range(boundary_edges.shape[0]):
+        a, b = boundary_edges[i, 0], boundary_edges[i, 1]
+        adjacency[a, adj_idx[a]] = b
+        adj_idx[a] += 1
+        adjacency[b, adj_idx[b]] = a
+        adj_idx[b] += 1
+    
+    # Find all vertices involved in boundary
+    boundary_verts = np.unique(boundary_edges.flatten())
+    
+    # Track visited vertices
+    visited = np.zeros(n_vertices, dtype=np.int8)
+    
+    # Pre-allocate output arrays (worst case: each vertex is its own loop)
+    max_loops = len(boundary_verts)
+    loop_starts_temp = np.zeros(max_loops + 1, dtype=np.int32)
+    loop_data_temp = np.zeros(len(boundary_verts), dtype=np.int32)
+    
+    n_loops = 0
+    data_idx = 0
+    
+    for start_idx in range(len(boundary_verts)):
+        start_v = boundary_verts[start_idx]
+        if visited[start_v]:
+            continue
+        
+        # BFS to find component
+        queue = np.zeros(n_vertices, dtype=np.int32)
+        queue_start = 0
+        queue_end = 1
+        queue[0] = start_v
+        visited[start_v] = 1
+        
+        component = np.zeros(n_vertices, dtype=np.int32)
+        comp_size = 0
+        
+        while queue_start < queue_end:
+            u = queue[queue_start]
+            queue_start += 1
+            component[comp_size] = u
+            comp_size += 1
+            
+            # Add unvisited neighbors
+            for j in range(neighbor_count[u]):
+                w = adjacency[u, j]
+                if w != -1 and not visited[w]:
+                    visited[w] = 1
+                    queue[queue_end] = w
+                    queue_end += 1
+        
+        # Mark start of this loop
+        loop_starts_temp[n_loops] = data_idx
+        
+        # Order the loop greedily
+        if comp_size <= 2:
+            # Trivial case - just copy sorted
+            for i in range(comp_size):
+                loop_data_temp[data_idx] = component[i]
+                data_idx += 1
+            # Sort the small array in-place
+            if comp_size == 2 and loop_data_temp[data_idx-2] > loop_data_temp[data_idx-1]:
+                tmp = loop_data_temp[data_idx-2]
+                loop_data_temp[data_idx-2] = loop_data_temp[data_idx-1]
+                loop_data_temp[data_idx-1] = tmp
+        else:
+            # Greedy ordering: follow edges
+            cur = component[0]
+            loop_data_temp[data_idx] = cur
+            data_idx += 1
+            
+            prev = -1
+            used = np.zeros(n_vertices, dtype=np.int8)
+            used[cur] = 1
+            
+            for _ in range(comp_size - 1):
+                # Find next neighbor
+                found_next = False
+                for j in range(neighbor_count[cur]):
+                    nb = adjacency[cur, j]
+                    if nb != -1 and nb != prev and not used[nb]:
+                        loop_data_temp[data_idx] = nb
+                        data_idx += 1
+                        used[nb] = 1
+                        prev = cur
+                        cur = nb
+                        found_next = True
+                        break
+                
+                if not found_next:
+                    break
+        
+        n_loops += 1
+    
+    # Mark end
+    loop_starts_temp[n_loops] = data_idx
+    
+    # Return trimmed arrays
+    return loop_starts_temp[:n_loops+1], loop_data_temp[:data_idx]
+
+
 def extract_boundary_loops(points, tris) -> List[List[int]]:
     """Return explicit boundary loops as lists of vertex indices.
 
@@ -73,10 +211,26 @@ def extract_boundary_loops(points, tris) -> List[List[int]]:
     loop may start at an arbitrary vertex, but contains each boundary vertex
     exactly once.
     """
-    from collections import defaultdict, deque
     boundary_edges = _vectorized_boundary_edges(np.asarray(tris, dtype=np.int32))
     if boundary_edges.size == 0:
         return []
+    
+    # Use Numba version if available for large meshes
+    if HAS_NUMBA and boundary_edges.shape[0] > 20:
+        n_vertices = int(np.max(boundary_edges) + 1) if boundary_edges.size > 0 else 0
+        loop_starts, loop_data = _extract_loops_numba(boundary_edges, n_vertices)
+        
+        # Convert flat representation to list of lists
+        loops = []
+        for i in range(len(loop_starts) - 1):
+            start = loop_starts[i]
+            end = loop_starts[i + 1]
+            loops.append(loop_data[start:end].tolist())
+        
+        return loops
+    
+    # Fallback to Python implementation for small meshes or when Numba unavailable
+    from collections import defaultdict, deque
     # Build adjacency per boundary edges
     adj = defaultdict(list)
     for a, b in boundary_edges:
