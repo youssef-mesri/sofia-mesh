@@ -229,7 +229,7 @@ def greedy_remesh(editor, max_vertex_passes=1, max_edge_passes=1, verbose=False,
                     _strict_cd = cd
             if not do_check:
                 return True, 'ok', None
-            ok_sim, msgs_sim, _ = simulate_compaction_and_check(editor.points, editor.triangles, reject_crossing_edges=True)
+            ok_sim, msgs_sim = simulate_compaction_and_check(editor.points, editor.triangles, reject_crossing_edges=True)
             if not ok_sim:
                 for m in msgs_sim:
                     if 'crossing edges' in m:

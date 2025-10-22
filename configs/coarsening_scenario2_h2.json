@@ -1,0 +1,11 @@
+{
+  "mesh": { "type": "random_delaunay", "npts": 120, "seed": 7 },
+  "auto": {
+    "iterations": 5,
+    "remove_degree_max": 6,
+    "remove_max_per_iter": 30,
+    "allow_boundary_remove": false,
+    "barycenter_passes": 1
+  },
+  "plot": { "out_before": "coarsen2_before.png", "out_after": "coarsen2_after.png" }
+}

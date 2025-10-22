@@ -72,7 +72,7 @@ def _simulate_preflight(editor, candidate_points, triangles_to_tombstone, new_tr
         for idx in triangles_to_tombstone:
             cand_tris[int(idx)] = [-1, -1, -1]
         cand_sim = cand_tris.tolist() + [list(t) for t in new_tris]
-        ok_sim, sim_msgs, sim_inv = simulate_compaction_and_check(
+        ok_sim, sim_msgs = simulate_compaction_and_check(
             candidate_points, cand_sim,
             eps_area=eps_area,
             reject_boundary_loop_increase=getattr(editor,'reject_boundary_loop_increase',False),
@@ -236,14 +236,34 @@ def editor_check(editor):
     return check_mesh_conformity(editor.points, editor.triangles)
 
 
-def op_split_edge(editor, edge=None):
+def op_split_edge(editor, edge=None, skip_preflight_check=False, skip_simulation=False):
+    """Split an edge by inserting a vertex at its midpoint.
+    
+    Parameters
+    ----------
+    editor : PatchBasedMeshEditor
+        The mesh editor
+    edge : tuple, optional
+        The edge to split (u, v)
+    skip_preflight_check : bool, default=False
+        If True, skip initial conformity check (faster for batch operations)
+    skip_simulation : bool, default=False
+        If True, skip simulation preflight (faster for batch operations)
+        
+    Returns
+    -------
+    (bool, str, dict|None)
+        Success flag, message, and info dict
+    """
     stats = getattr(editor, '_get_op_stats', None)
     stats = stats('split_midpoint') if stats else None
     if stats: stats.attempts += 1
-    ok, msgs = editor_check(editor)
-    if not ok:
-        if stats: stats.fail += 1
-        return False, "mesh not conforming before add", msgs
+    
+    if not skip_preflight_check:
+        ok, msgs = editor_check(editor)
+        if not ok:
+            if stats: stats.fail += 1
+            return False, "mesh not conforming before add", msgs
     if edge is None:
         if stats: stats.fail += 1
         return False, "Specify edge", None
@@ -273,16 +293,8 @@ def op_split_edge(editor, edge=None):
     else:
         if stats: stats.fail += 1
         return False, "Edge is not splittable (no incident triangles)", None
-    try:
-        tmp_tri_full = [tuple(t) for i,t in enumerate(editor.triangles) if i not in tris_idx and not np.all(np.array(t) == -1)]
-        tmp_tri_full.extend(new_tris)
-        tmp_tri_full = np.array(tmp_tri_full, dtype=int)
-        ok_sub, _ = check_mesh_conformity(new_points_candidate, tmp_tri_full, allow_marked=False)
-    except Exception:
-        ok_sub = False
-    if not ok_sub:
-        if stats: stats.fail += 1
-        return False, "local retriangulation failed validation", None
+    # Note: Conformity validation is performed later by _simulate_preflight (line ~318)
+    # which calls simulate_compaction_and_check. No need to check twice.
     # orient & quality policy
     new_tris = _orient_tris(new_points_candidate, new_tris)
     enforce_q = getattr(editor, 'enforce_split_quality', True)
@@ -307,11 +319,12 @@ def op_split_edge(editor, edge=None):
         except Exception:
             pass
     # simulated compaction preflight
-    ok_sim, sim_msg = _simulate_preflight(
-        editor, new_points_candidate, tris_idx, new_tris, stats,
-        reject_msg_prefix="Split (midpoint) ")
-    if not ok_sim:
-        return False, sim_msg, None
+    if not skip_simulation:
+        ok_sim, sim_msg = _simulate_preflight(
+            editor, new_points_candidate, tris_idx, new_tris, stats,
+            reject_msg_prefix="Split (midpoint) ")
+        if not ok_sim:
+            return False, sim_msg, None
     # commit
     editor.points = new_points_candidate
     for idx in tris_idx:
@@ -596,7 +609,7 @@ def op_move_vertices_to_barycenter(editor, only_interior: bool = True) -> int:
     return moved
 
 
-def op_edge_collapse(editor, edge=None, position: str = 'midpoint'):
+def op_edge_collapse(editor, edge=None, position: str = 'midpoint', skip_preflight_check=False, skip_simulation=False):
     """Collapse an edge by replacing its endpoints with a single vertex.
 
     Strategy: append a new vertex at the chosen position (midpoint), tombstone all
@@ -612,6 +625,10 @@ def op_edge_collapse(editor, edge=None, position: str = 'midpoint'):
         The edge to collapse (u,v). Must exist in the current mesh (boundary or interior).
     position : str, default 'midpoint'
         Currently supports 'midpoint'.
+    skip_preflight_check : bool, default=False
+        If True, skip initial conformity check (faster for batch operations)
+    skip_simulation : bool, default=False
+        If True, skip simulation preflight (faster for batch operations)
 
     Returns
     -------
@@ -621,10 +638,12 @@ def op_edge_collapse(editor, edge=None, position: str = 'midpoint'):
     stats_fn = getattr(editor, '_get_op_stats', None)
     stats = stats_fn('edge_collapse') if stats_fn else None
     if stats: stats.attempts += 1
-    ok, msgs = editor_check(editor)
-    if not ok:
-        if stats: stats.fail += 1
-        return False, "mesh not conforming before collapse", msgs
+    
+    if not skip_preflight_check:
+        ok, msgs = editor_check(editor)
+        if not ok:
+            if stats: stats.fail += 1
+            return False, "mesh not conforming before collapse", msgs
     if edge is None or len(edge) != 2:
         if stats: stats.fail += 1
         return False, "Specify a valid edge (u,v)", None
@@ -691,15 +710,18 @@ def op_edge_collapse(editor, edge=None, position: str = 'midpoint'):
     if getattr(editor, 'reject_crossing_edges', False):
         try:
             # Build test mesh with tombstoned triangles removed and new triangles added
-            active_tris = [
-                tuple(t) for i, t in enumerate(editor.triangles)
-                if i not in touched and not np.all(np.array(t) == -1)
-            ]
-            test_tris = active_tris + [tuple(t) for t in new_tris]
-            test_tris_arr = np.array(test_tris, dtype=int) if test_tris else np.empty((0, 3), dtype=int)
+            # Optimized: use numpy boolean indexing
+            mask = np.ones(len(editor.triangles), dtype=bool)
+            if touched:
+                mask[list(touched)] = False
+            mask &= (editor.triangles[:, 0] != -1)
+            active_tris = editor.triangles[mask]
+            test_tris_arr = np.vstack([active_tris, new_tris]) if mask.any() and len(new_tris) > 0 else (
+                active_tris if mask.any() else (np.array(new_tris, dtype=np.int32) if len(new_tris) > 0 else np.empty((0, 3), dtype=np.int32))
+            )
         
             # Check for edge crossings using simulation
-            ok_cross, cross_msgs, _ = simulate_compaction_and_check(
+            ok_cross, cross_msgs = simulate_compaction_and_check(
                 cand_pts, test_tris_arr, reject_crossing_edges=True
             )
             if not ok_cross:
@@ -713,11 +735,12 @@ def op_edge_collapse(editor, edge=None, position: str = 'midpoint'):
             return False, f"edge crossing validation error: {e}", None
     
     # Simulated compaction preflight: tombstone all touched, append new_tris
-    ok_sim, sim_msg = _simulate_preflight(
-        editor, cand_pts, touched, new_tris, stats,
-        reject_msg_prefix="Edge collapse ")
-    if not ok_sim:
-        return False, sim_msg, None
+    if not skip_simulation:
+        ok_sim, sim_msg = _simulate_preflight(
+            editor, cand_pts, touched, new_tris, stats,
+            reject_msg_prefix="Edge collapse ")
+        if not ok_sim:
+            return False, sim_msg, None
     # Commit: append point, tombstone touched, append replacements
     editor.points = cand_pts
     for idx in touched:
@@ -832,12 +855,14 @@ def try_remove_node_strategically(editor, v_idx, config=None):
     # Validate conformity
     try:
         # Temporarily remove old triangles and add new ones
-        active_tris = [
-            tuple(t) for i, t in enumerate(editor.triangles)
-            if i not in cavity_info.cavity_indices and not np.all(np.array(t) == -1)
-        ]
-        test_tris = active_tris + [tuple(t) for t in triangles]
-        test_tris_arr = np.array(test_tris, dtype=int) if test_tris else np.empty((0, 3), dtype=int)
+        # Optimized: use numpy boolean indexing
+        mask = np.ones(len(editor.triangles), dtype=bool)
+        if cavity_info.cavity_indices:
+            mask[list(cavity_info.cavity_indices)] = False
+        mask &= (editor.triangles[:, 0] != -1)
+        test_tris_arr = np.vstack([editor.triangles[mask], triangles]) if mask.any() and len(triangles) > 0 else (
+            editor.triangles[mask] if mask.any() else (np.array(triangles, dtype=np.int32) if len(triangles) > 0 else np.empty((0, 3), dtype=np.int32))
+        )
         
         from .conformity import check_mesh_conformity
         ok, msgs = check_mesh_conformity(editor.points, test_tris_arr, allow_marked=False)
@@ -985,11 +1010,12 @@ def _handle_virtual_boundary_mode(editor, v_idx, cavity_info, stats=None):
         
         # Validate conformity with just deletions (no new triangles)
         try:
-            tmp_tri_full = [
-                tuple(t) for i, t in enumerate(editor.triangles) 
-                if i not in cavity_info.cavity_indices and not np.all(np.array(t) == -1)
-            ]
-            tmp_tri_full = np.array(tmp_tri_full, dtype=int) if tmp_tri_full else np.empty((0, 3), dtype=int)
+            # Optimized: use numpy boolean indexing
+            mask = np.ones(len(editor.triangles), dtype=bool)
+            if cavity_info.cavity_indices:
+                mask[list(cavity_info.cavity_indices)] = False
+            mask &= (editor.triangles[:, 0] != -1)
+            tmp_tri_full = editor.triangles[mask] if mask.any() else np.empty((0, 3), dtype=np.int32)
             ok_sub, msgs = check_mesh_conformity(editor.points, tmp_tri_full, allow_marked=False)
         except Exception as e:
             if stats:
@@ -1191,12 +1217,14 @@ def op_remove_node_with_patch2(editor, v_idx, force_strict=False):
     try:
         from .conformity import simulate_compaction_and_check
         
-        active_tris = [
-            tuple(t) for i, t in enumerate(editor.triangles)
-            if i not in cavity_info.cavity_indices and not np.all(np.array(t) == -1)
-        ]
-        test_tris = active_tris + [tuple(t) for t in triangles]
-        test_tris_arr = np.array(test_tris, dtype=int) if test_tris else np.empty((0, 3), dtype=int)
+        # Optimized: use numpy boolean indexing
+        mask = np.ones(len(editor.triangles), dtype=bool)
+        if cavity_info.cavity_indices:
+            mask[list(cavity_info.cavity_indices)] = False
+        mask &= (editor.triangles[:, 0] != -1)
+        test_tris_arr = np.vstack([editor.triangles[mask], triangles]) if mask.any() and len(triangles) > 0 else (
+            editor.triangles[mask] if mask.any() else (np.array(triangles, dtype=np.int32) if len(triangles) > 0 else np.empty((0, 3), dtype=np.int32))
+        )
         
         # First check basic conformity
         ok, msgs = check_mesh_conformity(editor.points, test_tris_arr, allow_marked=False)
@@ -1207,7 +1235,7 @@ def op_remove_node_with_patch2(editor, v_idx, force_strict=False):
         
         # Then check for edge crossings using simulation (optional, controlled by editor flag)
         if getattr(editor, 'reject_crossing_edges', False):
-            ok_sim, sim_msgs, _ = simulate_compaction_and_check(
+            ok_sim, sim_msgs = simulate_compaction_and_check(
                 editor.points, test_tris_arr, reject_crossing_edges=True
             )
             if not ok_sim:
@@ -1420,8 +1448,12 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
             used_fallback = False
             # Validate local conformity of the mesh with incident triangles tombstoned
             try:
-                tmp_tri_full = [tuple(t) for i, t in enumerate(editor.triangles) if i not in cavity_tri_indices and not np.all(np.array(t) == -1)]
-                tmp_tri_full = np.array(tmp_tri_full, dtype=int) if tmp_tri_full else np.empty((0,3), dtype=int)
+                # Optimized: use numpy boolean indexing
+                mask = np.ones(len(editor.triangles), dtype=bool)
+                if cavity_tri_indices:
+                    mask[list(cavity_tri_indices)] = False
+                mask &= (editor.triangles[:, 0] != -1)
+                tmp_tri_full = editor.triangles[mask] if mask.any() else np.empty((0, 3), dtype=np.int32)
                 ok_sub, msgs = check_mesh_conformity(editor.points, tmp_tri_full, allow_marked=False)
             except Exception as e:
                 return False, f"retriangulation validation error: {e}", None
@@ -1960,9 +1992,14 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
     def _validate_candidate(tris_cand):
         _t_val_start = time.perf_counter()
         t_build0 = time.perf_counter()
-        arr = [tuple(t) for i, t in enumerate(editor.triangles) if i not in cavity_tri_indices and not np.all(np.array(t) == -1)]
-        arr.extend(tris_cand)
-        arr = np.array(arr, dtype=int) if arr else np.empty((0,3), dtype=int)
+        # Optimized: use numpy boolean indexing
+        mask = np.ones(len(editor.triangles), dtype=bool)
+        if cavity_tri_indices:
+            mask[list(cavity_tri_indices)] = False
+        mask &= (editor.triangles[:, 0] != -1)
+        arr = np.vstack([editor.triangles[mask], tris_cand]) if mask.any() and len(tris_cand) > 0 else (
+            editor.triangles[mask] if mask.any() else (np.array(tris_cand, dtype=np.int32) if len(tris_cand) > 0 else np.empty((0, 3), dtype=np.int32))
+        )
         t_build1 = time.perf_counter()
         # For boundary removal with a polygon cycle, optionally enforce area preservation
         if getattr(editor, 'virtual_boundary_mode', False) and tris_cand:
@@ -2171,7 +2208,7 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
             try:
                 from .conformity import simulate_compaction_and_check
                 t_sim0 = time.perf_counter()
-                ok_sim, sim_msgs, _ = simulate_compaction_and_check(editor.points, arr, reject_crossing_edges=True)
+                ok_sim, sim_msgs = simulate_compaction_and_check(editor.points, arr, reject_crossing_edges=True)
                 t_sim1 = time.perf_counter()
                 if not ok_sim:
                     try:
@@ -2191,7 +2228,7 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
             try:
                 from .conformity import simulate_compaction_and_check
                 t_sim0 = time.perf_counter()
-                ok_sim, sim_msgs, _ = simulate_compaction_and_check(editor.points, arr, reject_crossing_edges=True)
+                ok_sim, sim_msgs = simulate_compaction_and_check(editor.points, arr, reject_crossing_edges=True)
                 t_sim1 = time.perf_counter()
                 if not ok_sim:
                     try:

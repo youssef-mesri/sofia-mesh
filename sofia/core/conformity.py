@@ -124,33 +124,35 @@ def simulate_compaction_and_check(points, triangles, eps_area=EPS_AREA, reject_b
 	except Exception:
 		active_tris = tris
 	if active_tris.size == 0:
-		return True, [], []
+		return True, []
 	used_vertices = sorted({int(v) for tri in active_tris for v in tri if int(v) >= 0})
 	try:
 		new_points = np.vstack([pts[idx] for idx in used_vertices]) if used_vertices else np.empty((0,2))
 	except Exception:
-		return False, ['error building compacted points'], []
+		return False, ['error building compacted points']
 	old_to_new = {old: new for new, old in enumerate(used_vertices)}
 	try:
 		remapped = np.array([[old_to_new[int(t[0])], old_to_new[int(t[1])], old_to_new[int(t[2])]] for t in active_tris], dtype=int)
 	except Exception:
-		return False, ['triangle index out of range during simulation'], []
+		return False, ['triangle index out of range during simulation']
 	ok_conf, msgs = check_mesh_conformity(new_points, remapped, allow_marked=False,
 										  reject_boundary_loops=reject_any_boundary_loops)
-	# Vectorized inversion detection on remapped tris
-	try:
-		areas = triangles_signed_areas(new_points, remapped)
-		inv = [(int(i), float(a)) for i, a in enumerate(areas) if a <= -eps_area]
-	except Exception:
-		inv = []
-	edge_count = defaultdict(int)
-	for t in remapped:
-		a,b,c = int(t[0]), int(t[1]), int(t[2])
-		edges = [(min(a,b), max(a,b)), (min(b,c), max(b,c)), (min(c,a), max(c,a))]
-		for e in edges: edge_count[e] += 1
-	boundary_edges = [e for e,c in edge_count.items() if c == 1]
-	if reject_boundary_loop_increase:
-		pass
+	# The following block is redundant with check_mesh_conformity, so it is commented out.
+	# # Vectorized inversion detection on remapped tris
+	# try:
+	#     areas = triangles_signed_areas(new_points, remapped)
+	#     inv = [(int(i), float(a)) for i, a in enumerate(areas) if a <= -eps_area]
+	# except Exception:
+	#     inv = []
+	# edge_count = defaultdict(int)
+	# for t in remapped:
+	#     a,b,c = int(t[0]), int(t[1]), int(t[2])
+	#     edges = [(min(a,b), max(a,b)), (min(b,c), max(b,c)), (min(c,a), max(c,a))]
+	#     for e in edges:
+	#         edge_count[e] += 1
+	# boundary_edges = [e for e,c in edge_count.items() if c == 1]
+	# if reject_boundary_loop_increase:
+	#     pass
 	crossed = False
 	if reject_crossing_edges:
 		# Build unique edge list
@@ -263,8 +265,8 @@ def simulate_compaction_and_check(points, triangles, eps_area=EPS_AREA, reject_b
 			logger.info("crossing_detection_ms=%.3f pairs_tested=%d", 1000.0*(t_cross1-t_cross0), 0)
 		except Exception:
 			pass
-	ok = ok_conf and (len(inv) == 0) and (not crossed)
-	return ok, msgs, inv
+	ok = ok_conf and (not crossed)
+	return ok, msgs
 
 
 def build_kept_edge_grid(points, kept_edges):

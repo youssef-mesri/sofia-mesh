@@ -25,8 +25,11 @@ Example JSON (see configs/coarsening_scenario.json):
 from __future__ import annotations
 
 import argparse
+import cProfile as _cprof
+import io as _io
 import json
 import logging
+import pstats as _pstats
 from typing import Any, Dict, Tuple
 
 import numpy as np
@@ -77,8 +80,10 @@ def is_boundary_vertex(editor: PatchBasedMeshEditor, v: int) -> bool:
             u, w = int(t[i]), int(t[(i+1)%3])
             key = tuple(sorted((u, w)))
             if v in (u, w):
-                inc = [tt for tt in editor.edge_map.get(key, []) if not np.all(editor.triangles[int(tt)] == -1)]
-                if len(inc) == 1:
+                # Optimized: count non-tombstoned triangles without list comprehension
+                incident_tris = editor.edge_map.get(key, [])
+                count = sum(1 for tt in incident_tris if editor.triangles[int(tt)][0] != -1)
+                if count == 1:
                     return True
     return False
 
@@ -130,6 +135,7 @@ def auto_coarsen(editor: PatchBasedMeshEditor, auto_cfg: Dict[str, Any]):
     do_remove = bool(auto_cfg.get('remove_low_degree_vertices', True))
     remove_degree_max = int(auto_cfg.get('remove_degree_max', 4))
     remove_max = int(auto_cfg.get('remove_max_per_iter', 20))
+    use_remove_patch2 = bool(auto_cfg.get('use_remove_patch2', False))
 
     # Target-h driven coarsening (2h, 4h, ...)
     factor = auto_cfg.get('target_h_factor', None)
@@ -194,7 +200,11 @@ def auto_coarsen(editor: PatchBasedMeshEditor, auto_cfg: Dict[str, Any]):
                                 scored.append((v, deg))
                         scored.sort(key=lambda x: (x[1], x[0]))
                         for v, degv in scored:
-                            ok, msg, _ = editor.remove_node_with_patch(int(v))
+                            if use_remove_patch2:
+                                from sofia.core.operations import op_remove_node_with_patch2
+                                ok, msg, _ = op_remove_node_with_patch2(editor, int(v))
+                            else:
+                                ok, msg, _ = editor.remove_node_with_patch(int(v))
                             log.debug('coarsen(h): remove_node v=%d deg=%d -> %s (%s)', v, degv, ok, msg)
                             if ok:
                                 removed += 1
@@ -260,7 +270,11 @@ def auto_coarsen(editor: PatchBasedMeshEditor, auto_cfg: Dict[str, Any]):
             scored.sort(key=lambda x: (x[1], x[0]))
             removed = 0
             for v, deg in scored:
-                ok, msg, _ = editor.remove_node_with_patch(int(v))
+                if use_remove_patch2:
+                    from sofia.core.operations import op_remove_node_with_patch2
+                    ok, msg, _ = op_remove_node_with_patch2(editor, int(v))
+                else:
+                    ok, msg, _ = editor.remove_node_with_patch(int(v))
                 log.debug('coarsen: remove_node v=%d deg=%d -> %s (%s)', v, deg, ok, msg)
                 if ok:
                     removed += 1
@@ -275,14 +289,8 @@ def auto_coarsen(editor: PatchBasedMeshEditor, auto_cfg: Dict[str, Any]):
         log.info('coarsen: post-smooth moves=%d (passes=%d)', moves, passes)
 
 
-def main():
-    ap = argparse.ArgumentParser(description='Apply coarsening scenario (collapse_edge, remove_node, smoothing) from JSON')
-    ap.add_argument('--scenario', type=str, required=True, help='Path to scenario JSON file')
-    ap.add_argument('--log-level', type=str, choices=['DEBUG','INFO','WARNING','ERROR','CRITICAL'], default='INFO')
-    args = ap.parse_args()
-
-    configure_logging(getattr(logging, args.log_level.upper(), logging.INFO))
-
+def _run(args):
+    """Main logic extracted for profiling."""
     with open(args.scenario, 'r') as f:
         scenario = json.load(f)
 
@@ -310,6 +318,35 @@ def main():
     editor.compact_triangle_indices()
     plot_mesh(editor, outname=out_after)
     log.info('Wrote %s', out_after)
+
+
+def main():
+    ap = argparse.ArgumentParser(description='Apply coarsening scenario (collapse_edge, remove_node, smoothing) from JSON')
+    ap.add_argument('--scenario', type=str, required=True, help='Path to scenario JSON file')
+    ap.add_argument('--log-level', type=str, choices=['DEBUG','INFO','WARNING','ERROR','CRITICAL'], default='INFO')
+    ap.add_argument('--profile', action='store_true', help='Enable cProfile and print top hotspots')
+    ap.add_argument('--profile-out', type=str, default=None, help='Write raw cProfile stats to this .pstats file when --profile is set')
+    ap.add_argument('--profile-top', type=int, default=25, help='How many entries to show in hotspots (default: 25)')
+    args = ap.parse_args()
+
+    configure_logging(getattr(logging, args.log_level.upper(), logging.INFO))
+
+    if args.profile:
+        pr = _cprof.Profile()
+        pr.enable()
+        _run(args)
+        pr.disable()
+        
+        if args.profile_out:
+            pr.dump_stats(args.profile_out)
+            log.info('Wrote profiling stats to %s', args.profile_out)
+        
+        s = _io.StringIO()
+        ps = _pstats.Stats(pr, stream=s).sort_stats('cumulative')
+        ps.print_stats(args.profile_top)
+        log.info('Profile (top %d by cumulative time):\n%s', args.profile_top, s.getvalue())
+    else:
+        _run(args)
 
 
 if __name__ == '__main__':

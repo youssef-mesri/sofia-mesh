@@ -8,9 +8,12 @@ This script reuses utilities from `demos/refinement_scenario.py` where appropria
 from __future__ import annotations
 
 import argparse
+import cProfile as _cprof
+import io as _io
 import math
 import os
 import logging
+import pstats as _pstats
 from typing import Tuple, List
 
 import numpy as np
@@ -734,11 +737,29 @@ def main():
                         help='maximum edge splits when refining')
     parser.add_argument('--include-boundary-refine', action='store_true', dest='include_boundary',
                         help='include boundary edges in refinement edge list')
+    parser.add_argument('--profile', action='store_true', help='Enable cProfile and print top hotspots')
+    parser.add_argument('--profile-out', type=str, default=None, help='Write raw cProfile stats to this .pstats file when --profile is set')
+    parser.add_argument('--profile-top', type=int, default=25, help='How many entries to show in hotspots (default: 25)')
     args = parser.parse_args()
 
     configure_logging(getattr(logging, args.log_level.upper(), logging.INFO))
-    # delegate to the runner which contains the extracted workflow
-    run_generate_scenario(args)
+    
+    if args.profile:
+        pr = _cprof.Profile()
+        pr.enable()
+        run_generate_scenario(args)
+        pr.disable()
+        
+        if args.profile_out:
+            pr.dump_stats(args.profile_out)
+            log.info('Wrote profiling stats to %s', args.profile_out)
+        
+        s = _io.StringIO()
+        ps = _pstats.Stats(pr, stream=s).sort_stats('cumulative')
+        ps.print_stats(args.profile_top)
+        log.info('Profile (top %d by cumulative time):\n%s', args.profile_top, s.getvalue())
+    else:
+        run_generate_scenario(args)
 
 
 

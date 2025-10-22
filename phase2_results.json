@@ -1,0 +1,39 @@
+{
+  "phase1": {
+    "phase": "Phase 1: Batch",
+    "batch_size": 5000,
+    "n_operations": 1121,
+    "batches_processed": 1,
+    "failed_batches": 0,
+    "total_time": 0.9838824812322855,
+    "ops_per_second": 1139.363716077126,
+    "ms_per_op": 0.8776828556933858,
+    "final_vertices": 1521,
+    "final_triangles": 2888,
+    "conformity_ok": true
+  },
+  "phase2": {
+    "phase": "Phase 2: Vectorized",
+    "batch_size": 1000,
+    "numba_available": true,
+    "n_operations": 1121,
+    "batches_processed": 2,
+    "failed_batches": 2,
+    "total_time": 0.47358631156384945,
+    "ops_per_second": 2367.044765923023,
+    "ms_per_op": 0.42246771771975866,
+    "final_vertices": 1521,
+    "final_triangles": 4616,
+    "conformity_ok": false
+  },
+  "comparison": {
+    "speedup": 2.077514609709401,
+    "combined_speedup": 7.811454932507347,
+    "time_saved": 0.510296169668436,
+    "phase1_rate": 1139.363716077126,
+    "phase2_rate": 2367.044765923023,
+    "extrapolated_1m_phase1": 438.84142784669297,
+    "extrapolated_1m_phase2": 211.23385885987935,
+    "target_achieved": false
+  }
+}

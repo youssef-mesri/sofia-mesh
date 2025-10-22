@@ -192,7 +192,7 @@ def apply_patch_operation(editor, patch, rng: random.Random, config: PatchDriver
     if getattr(config, 'reject_crossings', False):
         try:
             from .conformity import simulate_compaction_and_check
-            ok_sim, msgs_sim, _ = simulate_compaction_and_check(editor.points, editor.triangles, reject_crossing_edges=True)
+            ok_sim, msgs_sim = simulate_compaction_and_check(editor.points, editor.triangles, reject_crossing_edges=True)
             if not ok_sim:
                 rollback()
                 return False, 'crossing-edges', op, param, local_before, local_after, tri_count_before, None, []

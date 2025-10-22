@@ -83,7 +83,7 @@ def plot_mesh(
     ok_conf, msgs = check_mesh_conformity(new_points, new_tris, allow_marked=False)
     crossings = []
     if highlight_crossings:
-        ok_sim, sim_msgs, _ = simulate_compaction_and_check(editor.points, editor.triangles, reject_crossing_edges=True)
+        ok_sim, sim_msgs = simulate_compaction_and_check(editor.points, editor.triangles, reject_crossing_edges=True)
         for m in sim_msgs:
             if 'crossing edges detected' in m:
                 try:

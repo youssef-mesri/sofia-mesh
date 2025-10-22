@@ -40,7 +40,7 @@ def test_greedy_strict_rejects_crossing_flip():
     )
     # After strict greedy, ensure no crossing edges reported by conformity simulate routine.
     from sofia.core.conformity import simulate_compaction_and_check
-    ok_sim, msgs, inv = simulate_compaction_and_check(editor.points, editor.triangles, reject_crossing_edges=True)
+    ok_sim, msgs = simulate_compaction_and_check(editor.points, editor.triangles, reject_crossing_edges=True)
     # Accept outcome if: either fully ok OR no crossing messages present (even if inversion flagged separately).
     crossing_msgs = [m for m in msgs if 'crossing edges detected' in m]
     assert not crossing_msgs, f"Crossings detected after strict greedy: {crossing_msgs}"

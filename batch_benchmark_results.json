@@ -1,0 +1,35 @@
+{
+  "normal": {
+    "mode": "normal",
+    "n_operations": 616,
+    "success_count": 616,
+    "fail_count": 0,
+    "total_time": 1.7929700389504433,
+    "ops_per_second": 343.56402316716344,
+    "ms_per_op": 2.9106656476468236,
+    "final_vertices": 841,
+    "final_triangles": 2744,
+    "conformity_ok": true
+  },
+  "batch": {
+    "mode": "batch",
+    "batch_size": 5000,
+    "n_operations": 616,
+    "batches_processed": 1,
+    "failed_batches": 0,
+    "total_time": 0.47713130712509155,
+    "ops_per_second": 1291.0492160148708,
+    "ms_per_op": 0.7745638102680058,
+    "final_vertices": 841,
+    "final_triangles": 1568,
+    "conformity_ok": true
+  },
+  "comparison": {
+    "speedup": 3.757812602475848,
+    "time_saved": 1.3158387318253517,
+    "normal_rate": 343.56402316716344,
+    "batch_rate": 1291.0492160148708,
+    "extrapolated_1m_normal": 1455.3328238234117,
+    "extrapolated_1m_batch": 387.2819051340029
+  }
+}
