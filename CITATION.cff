@@ -1,0 +1,26 @@
+# Citation File Format (CFF)
+# https://citation-file-format.github.io/
+
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "SOFIA: Smart Optimized Flexible Isotropic Adaptation"
+version: 1.0.0
+date-released: 2025-10-24
+url: "https://github.com/youssef-mesri/sofia"
+repository-code: "https://github.com/youssef-mesri/sofia"
+license: MIT
+authors:
+  - family-names: "Mesri"
+    given-names: "Youssef"
+    email: "your.email@domain.com"
+    affiliation: "Your Institution"
+    orcid: "https://orcid.org/0000-0000-0000-0000"  # Replace with actual ORCID if available
+keywords:
+  - mesh generation
+  - triangular mesh
+  - remeshing
+  - computational geometry
+  - mesh modification
+  - mesh quality
+abstract: "SOFIA is a pure Python library for 2D triangular mesh modification and remeshing. It provides robust, high-quality local operations to edit, refine, and optimize meshes while maintaining mesh conformity and quality."
