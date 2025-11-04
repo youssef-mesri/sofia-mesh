@@ -19,44 +19,44 @@
 
 ---
 
-## 🎯 What is SOFIA?
+## What is SOFIA?
 
 SOFIA is a **pure Python** library for **2D triangular mesh modification** and **remeshing**. It provides robust, high-quality local operations to edit, refine, and optimize meshes while maintaining mesh conformity and quality.
 
 Perfect for:
-- 🔬 **Computational scientists** working with 2D simulations
-- 🎨 **Computer graphics** professionals needing mesh processing
-- 📊 **Numerical analysis** requiring adaptive mesh refinement
-- 🎓 **Researchers** in mesh generation and optimization
+- **Computational scientists** working with 2D simulations
+- **Computer graphics** professionals needing mesh processing
+- **Numerical analysis** requiring adaptive mesh refinement
+- **Researchers** in mesh generation and optimization
 
 ---
 
-## ✨ Features
+## Features
 
 ### Core Operations
-- ✅ **Edge Split** - Midpoint and Delaunay-based splitting
-- ✅ **Edge Collapse** - Quality-preserving mesh coarsening
-- ✅ **Edge Flip** - Improve triangle quality through flipping
-- ✅ **Vertex Insertion/Removal** - Add or remove mesh vertices
-- ✅ **Pocket Filling** - Fill holes in meshes intelligently
-- ✅ **Boundary Operations** - Safe manipulation of mesh boundaries
+- **Edge Split** - Midpoint and Delaunay-based splitting
+- **Edge Collapse** - Quality-preserving mesh coarsening
+- **Edge Flip** - Improve triangle quality through flipping
+- **Vertex Insertion/Removal** - Add or remove mesh vertices
+- **Pocket Filling** - Fill holes in meshes intelligently
+- **Boundary Operations** - Safe manipulation of mesh boundaries
 
 ### Quality & Robustness
-- 🎯 **Quality Metrics** - Min angle, area, shape measures
-- 🛡️ **Conformity Checks** - Ensure valid mesh topology
-- ⚡ **Amortized Validation** - Fast incremental checking
-- 🔍 **Strict Mode** - Optional rigorous validation
-- 📐 **Area Preservation** - Maintain geometric properties
+- **Quality Metrics** - Min angle, area, shape measures
+- **Conformity Checks** - Ensure valid mesh topology
+- **Amortized Validation** - Fast incremental checking
+- **Strict Mode** - Optional rigorous validation
+- **Area Preservation** - Maintain geometric properties
 
 ### Workflows
-- 🔄 **Greedy Remeshing** - Iterative quality improvement
-- 📦 **Patch-based Processing** - Batch operations on mesh regions
-- 🎨 **Visualization** - Built-in plotting with Matplotlib
-- 🧪 **Extensive Testing** - 50+ unit tests for reliability
+- **Greedy Remeshing** - Iterative quality improvement
+-  **Patch-based Processing** - Batch operations on mesh regions
+- **Visualization** - Built-in plotting with Matplotlib
+- **Extensive Testing** - 50+ unit tests for reliability
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### Using pip (Recommended)
 
@@ -80,7 +80,7 @@ pip install -e .
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Basic Example - Improve Mesh Quality
 
@@ -130,7 +130,7 @@ print(f"Final quality: {improved_editor.mesh_min_angle():.2f}°")
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - **[API Reference](docs/API_REFERENCE.md)** - Complete API documentation
 - **[Examples](examples/)** - Practical usage examples
@@ -139,7 +139,7 @@ print(f"Final quality: {improved_editor.mesh_min_angle():.2f}°")
 
 ---
 
-## 💡 Examples
+## Examples
 
 Check out the `examples/` directory for more:
 
@@ -149,22 +149,22 @@ Check out the `examples/` directory for more:
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
-### ✅ Current (v1.0) - Python Implementation
+### Current (v1.0) - Python Implementation
 - Pure Python implementation
 - All core features working
 - Suitable for meshes up to ~10K triangles
 - Easy installation, no compilation needed
 
-### 🔄 Next (v2.0) - High-Performance C++ Backend
+### Next (v2.0) - High-Performance C++ Backend
 - **20-50x performance improvement** 🚀
 - Transparent integration (same API)
 - Suitable for meshes up to 1M+ triangles
 - Optional: falls back to Python if C++ unavailable
 - **Status:** In development (private branch)
 
-### 📋 Future (v3.0+)
+### Future (v3.0+)
 - GPU acceleration
 - 3D tetrahedral mesh support
 - Parallel batch processing
@@ -172,7 +172,7 @@ Check out the `examples/` directory for more:
 
 ---
 
-## 🎓 Citation
+## Citation
 
 If you use SOFIA in your research, please cite:
 
@@ -188,23 +188,23 @@ If you use SOFIA in your research, please cite:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-- 🐛 **Found a bug?** [Open an issue](https://github.com/youssef-mesri/sofia/issues)
-- 💡 **Have an idea?** [Start a discussion](https://github.com/youssef-mesri/sofia/discussions)
-- 🔧 **Want to contribute?** [Submit a pull request](https://github.com/youssef-mesri/sofia/pulls)
+- **Found a bug?** [Open an issue](https://github.com/youssef-mesri/sofia/issues)
+- **Have an idea?** [Start a discussion](https://github.com/youssef-mesri/sofia/discussions)
+- **Want to contribute?** [Submit a pull request](https://github.com/youssef-mesri/sofia/pulls)
 
 ---
 
-## 📄 License
+## License
 
 SOFIA is released under the [MIT License](LICENSE).
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Inspired by classical mesh modification algorithms
 - Built with modern Python best practices
@@ -212,21 +212,21 @@ SOFIA is released under the [MIT License](LICENSE).
 
 ---
 
-## 📞 Contact
+## Contact
 
 **Author:** Youssef Mesri
 
 - **Issues:** [GitHub Issues](https://github.com/youssef-mesri/sofia/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/youssef-mesri/sofia/discussions)
 - **Email:** [youssef.mesri@minesparis.psl.eu](mailto:youssef.mesri@minesparis.psl.eu)
-- **ORCID:** [0000-0002-XXXX-XXXX](https://orcid.org/0000-0002-XXXX-XXXX) *(à mettre à jour)*
+- **ORCID:** [0000-0002-5136-5435](https://orcid.org/0000-0002-5136-5435) 
 
 ---
 
 <div align="center">
 
-**Made with ❤️ for the computational geometry community**
+**Made with love for the computational geometry community**
 
-⭐ Star us on GitHub if you find SOFIA useful!
+Star us on GitHub if you find SOFIA useful!
 
 </div>

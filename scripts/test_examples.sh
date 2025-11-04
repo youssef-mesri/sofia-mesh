@@ -21,7 +21,7 @@ FAILED_FILES=()
 
 # Check if examples directory exists
 if [ ! -d "$EXAMPLES_DIR" ]; then
-    echo "❌ Error: $EXAMPLES_DIR directory not found"
+    echo "[ERROR] $EXAMPLES_DIR directory not found"
     exit 1
 fi
 
@@ -29,7 +29,7 @@ fi
 EXAMPLES=($(find "$EXAMPLES_DIR" -maxdepth 1 -name "*.py" | sort))
 
 if [ ${#EXAMPLES[@]} -eq 0 ]; then
-    echo "❌ Error: No example files found in $EXAMPLES_DIR"
+    echo " [ERROR] No example files found in $EXAMPLES_DIR"
     exit 1
 fi
 
@@ -45,14 +45,14 @@ for example in "${EXAMPLES[@]}"; do
     timeout 60s python "$example" > /dev/null 2>&1
     
     if [ $? -eq 0 ]; then
-        echo "✓ OK"
+        echo "OK"
         ((SUCCESS++))
     elif [ $? -eq 124 ]; then
-        echo "✗ TIMEOUT (>60s)"
+        echo " TIMEOUT (>60s)"
         ((FAILED++))
         FAILED_FILES+=("$filename (timeout)")
     else
-        echo "✗ FAILED"
+        echo " FAILED"
         ((FAILED++))
         FAILED_FILES+=("$filename")
     fi
@@ -61,8 +61,8 @@ done
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "Results:"
-echo "  ✓ Passed: $SUCCESS"
-echo "  ✗ Failed: $FAILED"
+echo "  Passed: $SUCCESS"
+echo "  Failed: $FAILED"
 
 if [ $FAILED -gt 0 ]; then
     echo ""
@@ -72,11 +72,11 @@ if [ $FAILED -gt 0 ]; then
     done
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    echo "❌ Some examples failed"
+    echo "[ERROR] Some examples failed"
     exit 1
 else
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
-    echo "✅ All examples passed!"
+    echo "[SUCCESS] All examples passed!"
     exit 0
 fi

@@ -2,10 +2,10 @@
 
 This directory contains practical examples demonstrating SOFIA's mesh editing capabilities, from basic operations to advanced boundary refinement and complete workflows.
 
-## 🎯 Quick Start Examples
+## Quick Start Examples
 
 ### 1. Basic Remeshing (`basic_remeshing.py`)
-**Difficulty:** ⭐ Beginner  
+**Difficulty:** Beginner  
 **Time:** ~5 minutes
 
 Learn the fundamental mesh operations:
@@ -27,7 +27,7 @@ python examples/basic_remeshing.py
 ---
 
 ### 2. Quality Improvement (`quality_improvement.py`)
-**Difficulty:** ⭐ Beginner  
+**Difficulty:** Beginner  
 **Time:** ~5 minutes
 
 Mesh refinement through edge subdivision:
@@ -47,7 +47,7 @@ python examples/quality_improvement.py
 ---
 
 ### 3. Boundary Operations (`boundary_operations.py`)
-**Difficulty:** ⭐⭐ Intermediate  
+**Difficulty:** Intermediate  
 **Time:** ~10 minutes
 
 Safe manipulation of mesh boundaries:
@@ -66,10 +66,10 @@ python examples/boundary_operations.py
 
 ---
 
-## 🚀 Advanced Examples
+## Advanced Examples
 
 ### 4. Adaptive Refinement (`adaptive_refinement.py`)
-**Difficulty:** ⭐⭐ Intermediate  
+**Difficulty:** Intermediate  
 **Time:** ~10 minutes
 
 Target-based adaptive mesh refinement:
@@ -95,7 +95,7 @@ python examples/adaptive_refinement.py
 ---
 
 ### 5. Mesh Coarsening (`mesh_coarsening.py`)
-**Difficulty:** ⭐⭐⭐ Advanced  
+**Difficulty:** Advanced  
 **Time:** ~15 minutes
 
 Simplification through edge collapse:
@@ -122,7 +122,7 @@ python examples/mesh_coarsening.py
 ---
 
 ### 6. Complete Workflow (`mesh_workflow.py`)
-**Difficulty:** ⭐⭐⭐ Advanced  
+**Difficulty:** Advanced  
 **Time:** ~15 minutes
 
 Full mesh editing pipeline combining multiple operations:
@@ -149,7 +149,7 @@ python examples/mesh_workflow.py
 ---
 
 ### 7. Boundary Refinement (`boundary_refinement.py`)
-**Difficulty:** ⭐⭐ Intermediate  
+**Difficulty:** Intermediate  
 **Time:** ~10 minutes
 
 Selective refinement of mesh boundaries:
@@ -174,7 +174,7 @@ python examples/boundary_refinement.py
 ---
 
 ### 8. Combined Refinement (`combined_refinement.py`)
-**Difficulty:** ⭐⭐⭐ Advanced  
+**Difficulty:** Advanced  
 **Time:** ~15 minutes
 
 Multi-region refinement with different strategies:
@@ -201,7 +201,7 @@ python examples/combined_refinement.py
 
 ---
 
-## 📊 Output Files
+## Output Files
 
 All examples generate high-quality visualizations (150 DPI) showing:
 - **Before/after comparisons**
@@ -215,7 +215,7 @@ Generated files:
 
 ---
 
-## 🔧 Requirements
+## Requirements
 
 ```bash
 # Core dependencies (already in requirements.txt)
@@ -228,7 +228,7 @@ All examples work with the pure Python implementation on the `main` branch.
 
 ---
 
-## 💡 Tips
+## Tips
 
 **For Beginners:**
 1. Start with `basic_remeshing.py` to understand core operations
@@ -249,26 +249,23 @@ All examples work with the pure Python implementation on the `main` branch.
 
 ---
 
-## 📖 Learning Path
+## Learning Path
 
 ```
 Basic Remeshing (5 min)
-         ↓
+         
 Quality Improvement (5 min)  
-         ↓
+         
 Boundary Operations (10 min)
-         ↓
-    ┌────┴────┐
-    ↓         ↓
-Adaptive    Boundary
-Refinement  Refinement
-(10 min)    (10 min)
-    ↓         ↓
-Mesh       Combined
-Coarsening Refinement
-(15 min)   (15 min)
-    └────┬────┘
-         ↓
+
+Adaptive Refinement (10 min)   
+
+Boundary Refinement (10 min)
+
+Combined Refinement (15 min) 
+
+Mesh Coarsening   (15 min)      
+
 Complete Workflow (15 min)
 ```
 
@@ -276,7 +273,7 @@ Complete Workflow (15 min)
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 **Import Errors:**
 ```bash
@@ -298,7 +295,7 @@ plt.show()  # Display interactively instead of just saving
 
 ---
 
-## 📚 Further Reading
+## Further Reading
 
 - [SOFIA Documentation](../docs/)
 - [API Reference](../docs/API.md)
@@ -307,7 +304,7 @@ plt.show()  # Display interactively instead of just saving
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Have a new example idea? See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines on:
 - Adding new examples
@@ -361,9 +358,9 @@ Feel free to modify these examples:
 
 ## Need Help?
 
-- 📖 **API Reference:** See `docs/API_REFERENCE.md`
-- 💬 **Discussions:** https://github.com/youssef-mesri/sofia/discussions
-- 🐛 **Issues:** https://github.com/youssef-mesri/sofia/issues
+- **API Reference:** See `docs/API_REFERENCE.md`
+- **Discussions:** https://github.com/youssef-mesri/sofia/discussions
+- **Issues:** https://github.com/youssef-mesri/sofia/issues
 
 ---
 

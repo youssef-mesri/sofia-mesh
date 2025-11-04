@@ -142,3 +142,9 @@ min_angle_snapshots/
 # Ensure documentation images are tracked (override any prior *.png ignores)
 !docs/**/*.png
 !docs/*.png
+
+# Publication preparation files (temporary)
+ACTION_SUMMARY.md
+FINAL_READINESS_REPORT.md
+PUBLICATION_READINESS_ANALYSIS.md
+REORGANIZATION_COMPLETE.md
