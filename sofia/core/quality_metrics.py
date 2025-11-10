@@ -16,7 +16,7 @@ class TriangleQualityMetrics:
     def normalized_quality(points: np.ndarray, triangles: np.ndarray) -> np.ndarray:
         """Compute normalized quality metrics for triangles.
         
-        Quality = (area) / (sum(edge_len^2)) scaled so equilateral -> 1.
+        Quality = 4*sqrt(3) * (area) / (sum(edge_len^2)) scaled so equilateral -> 1.
         
         Args:
             points: (N, 2) array of vertex coordinates

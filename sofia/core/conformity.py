@@ -649,8 +649,10 @@ def check_mesh_conformity(points, triangles, verbose=False, allow_marked=True,
 						for w in adj.get(u, []):
 							if w not in visited:
 								visited.add(w); dq.append(w)
-				msgs.append(f"Boundary loops detected: {loops} (boundary edges={int(np.sum(b_mask))})")
-				ok = False
+				# Reject if more than 1 loop (isolated triangles/holes)
+				if loops > 1:
+					msgs.append(f"Multiple boundary loops detected: {loops} (boundary edges={int(np.sum(b_mask))})")
+					ok = False
 	except Exception:
 		# Fallback to legacy map if any vectorized step fails
 		edge_map = build_edge_to_tri_map(active_tris)
@@ -674,8 +676,10 @@ def check_mesh_conformity(points, triangles, verbose=False, allow_marked=True,
 						for w in adj.get(u, []):
 							if w not in visited:
 								visited.add(w); dq.append(w)
-				msgs.append(f"Boundary loops detected: {loops} (boundary edges={len(boundary_edges)})")
-				ok = False
+				# Reject if more than 1 loop (isolated triangles/holes)
+				if loops > 1:
+					msgs.append(f"Multiple boundary loops detected: {loops} (boundary edges={len(boundary_edges)})")
+					ok = False
 	if verbose:
 		from .logging_utils import get_logger
 		logger = get_logger('sofia.conformity')

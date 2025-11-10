@@ -612,9 +612,10 @@ def op_move_vertices_to_barycenter(editor, only_interior: bool = True) -> int:
 def op_edge_collapse(editor, edge=None, position: str = 'midpoint', skip_preflight_check=False, skip_simulation=False):
     """Collapse an edge by replacing its endpoints with a single vertex.
 
-    Strategy: append a new vertex at the chosen position (midpoint), tombstone all
-    triangles incident to either endpoint, and append modified copies where the
-    endpoint is replaced with the new vertex. Degenerate candidates are dropped.
+    Strategy: append a new vertex at the chosen position (midpoint by default, or
+    automatically chooses a boundary vertex if one or both endpoints are on the boundary).
+    Tombstone all triangles incident to either endpoint, and append modified copies where
+    the endpoint is replaced with the new vertex. Degenerate candidates are dropped.
 
     This mirrors commit style used by other ops (no immediate compaction).
 
@@ -624,7 +625,9 @@ def op_edge_collapse(editor, edge=None, position: str = 'midpoint', skip_preflig
     edge : tuple[int,int]
         The edge to collapse (u,v). Must exist in the current mesh (boundary or interior).
     position : str, default 'midpoint'
-        Currently supports 'midpoint'.
+        Position strategy: 'midpoint' (default), or 'auto' (chooses boundary vertex if present).
+        When 'midpoint' is specified and one endpoint is on the boundary, it automatically
+        collapses to the boundary vertex instead.
     skip_preflight_check : bool, default=False
         If True, skip initial conformity check (faster for batch operations)
     skip_simulation : bool, default=False
@@ -635,6 +638,7 @@ def op_edge_collapse(editor, edge=None, position: str = 'midpoint', skip_preflig
     (bool, str, dict|None)
         Success flag, message, and info with counts on success.
     """
+    
     stats_fn = getattr(editor, '_get_op_stats', None)
     stats = stats_fn('edge_collapse') if stats_fn else None
     if stats: stats.attempts += 1
@@ -657,12 +661,33 @@ def op_edge_collapse(editor, edge=None, position: str = 'midpoint', skip_preflig
     if len(incident) != 2:
         if stats: stats.fail += 1
         return False, "Edge is not collapsible (must be interior with exactly two adjacent triangles)", None
-    # Decide new vertex position
-    if position == 'midpoint':
+    
+    # Check if either endpoint is on the boundary
+    from .conformity import is_boundary_vertex_from_maps
+    u_is_boundary = is_boundary_vertex_from_maps(u, editor.edge_map)
+    v_is_boundary = is_boundary_vertex_from_maps(v, editor.edge_map)
+    
+    # Decide new vertex position based on boundary status
+    if u_is_boundary and v_is_boundary:
+        # Both on boundary: collapse to first vertex (keep boundary intact)
+        p_new = editor.points[u].copy()
+        collapse_to_existing = u
+    elif u_is_boundary:
+        # Only u on boundary: collapse to u
+        p_new = editor.points[u].copy()
+        collapse_to_existing = u
+    elif v_is_boundary:
+        # Only v on boundary: collapse to v
+        p_new = editor.points[v].copy()
+        collapse_to_existing = v
+    elif position == 'midpoint' or position == 'auto':
+        # Neither on boundary: use midpoint
         p_new = 0.5*(editor.points[u] + editor.points[v])
+        collapse_to_existing = None
     else:
         if stats: stats.fail += 1
         return False, f"Unsupported position mode: {position}", None
+    
     new_idx = len(editor.points)
     cand_pts = np.vstack([editor.points, p_new])
     # Gather all triangles incident to u or v (for rewrite), and explicitly mark the two adjacent
@@ -685,26 +710,35 @@ def op_edge_collapse(editor, edge=None, position: str = 'midpoint', skip_preflig
             continue
         if has_u or has_v:
             rep = [new_idx if x == u or x == v else x for x in tri]
-            # Filter degenerate
+            # Filter degenerate, TODO maybe not needed due to earlier checks ? 
             if len({int(rep[0]), int(rep[1]), int(rep[2])}) < 3:
                 continue
+            # reject inverted or near-zero-area triangles
             a = triangle_area(cand_pts[int(rep[0])], cand_pts[int(rep[1])], cand_pts[int(rep[2])])
             if abs(a) <= EPS_AREA:
-                continue
+                if stats:
+                    stats.fail += 1
+                return False, "edge collapse would create inverted triangle", None
+            #if abs(a) <= EPS_AREA:
+            #    continue
             new_tris.append(rep)
     # Orient and quality check against previous local neighborhood
     new_tris = _orient_tris(cand_pts, new_tris)
     old_local = [editor.triangles[int(ti)] for ti in touched if not np.any(np.array(editor.triangles[int(ti)]) == -1)]
-    ok_q, msg_q = _evaluate_quality_change(
-        editor,
-        old_local,
-        new_tris,
-        stats,
-        op_label="Edge collapse",
-        candidate_points=cand_pts,
-        before_kw='before', after_kw='post')
-    if not ok_q:
-        return False, msg_q, None
+    
+    # Quality check (can be disabled for anisotropic remeshing where elongated triangles are desired)
+    enforce_collapse_quality = getattr(editor, 'enforce_collapse_quality', True)
+    if enforce_collapse_quality:
+        ok_q, msg_q = _evaluate_quality_change(
+            editor,
+            old_local,
+            new_tris,
+            stats,
+            op_label="Edge collapse",
+            candidate_points=cand_pts,
+            before_kw='before', after_kw='post')
+        if not ok_q:
+            return False, msg_q, None
     
     # Explicit edge crossing check (optional, controlled by editor flag)
     if getattr(editor, 'reject_crossing_edges', False):
@@ -1227,24 +1261,29 @@ def op_remove_node_with_patch2(editor, v_idx, force_strict=False):
         )
         
         # First check basic conformity
-        ok, msgs = check_mesh_conformity(editor.points, test_tris_arr, allow_marked=False)
+        ok, msgs = check_mesh_conformity(
+            editor.points, test_tris_arr, allow_marked=False,
+            reject_boundary_loops=getattr(editor, 'reject_any_boundary_loops', False)
+        )
         if not ok:
             if stats:
                 stats.remove_early_rejects += 1
             return False, f"conformity check failed: {msgs}", None
         
-        # Then check for edge crossings using simulation (optional, controlled by editor flag)
-        if getattr(editor, 'reject_crossing_edges', False):
+        # Then check for edge crossings and boundary loops using simulation (controlled by editor flags)
+        if getattr(editor, 'reject_crossing_edges', False) or getattr(editor, 'reject_any_boundary_loops', False):
             ok_sim, sim_msgs = simulate_compaction_and_check(
-                editor.points, test_tris_arr, reject_crossing_edges=True
+                editor.points, test_tris_arr, 
+                reject_crossing_edges=getattr(editor, 'reject_crossing_edges', False),
+                reject_any_boundary_loops=getattr(editor, 'reject_any_boundary_loops', False)
             )
             if not ok_sim:
                 if stats:
                     stats.remove_early_rejects += 1
                     stats.remove_early_validation += 1
-                # Filter for crossing messages
-                crossing_msgs = [m for m in sim_msgs if 'crossing' in m.lower()] or sim_msgs
-                return False, f"edge crossing detected: {crossing_msgs}", None
+                # Filter for specific messages
+                filter_msgs = [m for m in sim_msgs if 'crossing' in m.lower() or 'boundary' in m.lower()] or sim_msgs
+                return False, f"validation failed: {filter_msgs}", None
     except Exception as e:
         if stats:
             stats.remove_early_rejects += 1
