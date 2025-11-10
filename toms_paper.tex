@@ -58,7 +58,7 @@ Paris, France\\
 \maketitle
 
 \begin{abstract}
-We present SOFIA (Smart Optimized Flexible Isotropic and Anisotropic Adaptation), a comprehensive algorithmic framework for quality-driven adaptive modification of two-dimensional triangular meshes. The framework implements a suite of local topological operations---edge splitting, edge collapsing, edge flipping, vertex insertion and removal---with rigorous quality guarantees and conformity preservation. We introduce novel algorithms including: (1) patch-based mesh modification with optimal cavity retriangulation, (2) \emph{smart edge collapse with automatic boundary preservation}, eliminating the need for manual vertex protection by detecting boundary vertices topologically and achieving zero geometric deviation, and (3) structured boundary layer insertion with geometric progression for anisotropic mesh generation. Our algorithms support both isotropic and anisotropic adaptation through metric tensor fields, enabling highly stretched elements (aspect ratios up to 10:1) for boundary layer meshes and directional features. The framework maintains mesh validity through incremental conformity checking with amortized $O(1)$ cost per operation, and employs strategic quality metrics with adaptive handling for isotropic versus anisotropic contexts. We provide complete complexity analysis showing that our core operations achieve $O(d^2)$ worst-case complexity where $d$ is the maximum vertex degree, with typical $O(1)$ amortized cost in practice. Extensive computational experiments on benchmark meshes demonstrate that SOFIA achieves superior quality improvement rates (up to 87.5\% boundary edge length reduction) for isotropic meshes and efficient anisotropic adaptation (3× error reduction with 7.9× fewer elements than uniform isotropic meshes). The smart boundary preservation algorithm is validated numerically with zero deviation (to machine precision) across hundreds of collapse operations. The implementation is available as an open-source Python library, providing a practical tool for computational scientists working with finite element methods, computational fluid dynamics, and geometric modeling applications.
+We present SOFIA (Smart Optimized Flexible Isotropic and Anisotropic Adaptation), a comprehensive algorithmic framework for quality-driven adaptive modification of two-dimensional triangular meshes. The framework implements a suite of local topological operations---edge splitting, edge collapsing, edge flipping, vertex insertion and removal---with rigorous quality guarantees and conformity preservation. We introduce novel algorithms including: (1) patch-based mesh modification with optimal cavity retriangulation, (2) \emph{smart edge collapse with automatic boundary preservation}, eliminating the need for manual vertex protection by detecting boundary vertices topologically and achieving zero geometric deviation, and (3) structured boundary layer insertion with geometric progression for anisotropic mesh generation. Our algorithms support both isotropic and anisotropic adaptation through metric tensor fields, enabling highly stretched elements (aspect ratios up to 10:1) for boundary layer meshes and directional features. The framework maintains mesh validity through incremental conformity checking with amortized $O(1)$ cost per operation, and employs strategic quality metrics with adaptive handling for isotropic versus anisotropic contexts. We provide complete complexity analysis showing that our core operations achieve $O(d^2)$ worst-case complexity where $d$ is the maximum vertex degree, with typical $O(1)$ amortized cost in practice. Extensive computational experiments on benchmark meshes demonstrate that SOFIA achieves superior quality improvement rates (up to 87.5\% boundary edge length reduction) for isotropic meshes and efficient anisotropic adaptation (3\times error reduction with 7.9\times fewer elements than uniform isotropic meshes). The smart boundary preservation algorithm is validated numerically with zero deviation (to machine precision) across hundreds of collapse operations. The implementation is available as an open-source Python library, providing a practical tool for computational scientists working with finite element methods, computational fluid dynamics, and geometric modeling applications.
 \end{abstract}
 
 \textbf{Keywords:} Triangular meshes, mesh adaptation, Delaunay triangulation, mesh quality, local operations, computational geometry, anisotropic meshes, boundary preservation, boundary layers
@@ -494,7 +494,7 @@ For an edge $e = [p, q]$, the \emph{metric edge length} is the line integral
 \begin{equation}
 L_M(e) = \int_0^1 \big\Vert q-p \big\Vert_{M\big((1-t)p + t q\big)}\, dt, \quad \text{approximated by } L_M(e) \approx \Vert q-p \Vert_{M(\bar{x})},\; \bar{x} = \tfrac{p+q}{2}.
 \end{equation}
-The unit ball of $M(x)$ is an ellipse $\{v : v^\top M(x) v \le 1\}$, thus metric balls are ellipses in Euclidean space. This motivates \emph{metric-Delaunay} ideas: a triangulation is “more Delaunay” if, locally, edge flips reduce violations of an empty-ellipse criterion (an anisotropic analogue of the empty-circle test). In practice we use efficient surrogates: compare the two diagonals of a convex quad and prefer the one minimizing the worst metric angle or maximizing a metric-based quality measure.
+The unit ball of $M(x)$ is an ellipse $\{v : v^\top M(x) v \le 1\}$, thus metric balls are ellipses in Euclidean space. This motivates \emph{metric-Delaunay} ideas: a triangulation is "more Delaunay" if, locally, edge flips reduce violations of an empty-ellipse criterion (an anisotropic analogue of the empty-circle test). In practice we use efficient surrogates: compare the two diagonals of a convex quad and prefer the one minimizing the worst metric angle or maximizing a metric-based quality measure.
 
 \begin{theorem}[Delaunay Angle Maximization, Lawson 1977 \cite{Lawson1977}]
 \label{thm:delaunay-angle-max}
@@ -1641,7 +1641,7 @@ x_3 & y_3 & 1
 \begin{itemize}
 \item \emph{Direct computation} (above formula): Subject to catastrophic cancellation when points are nearly collinear. For example, if $p_1 \approx p_2 \approx p_3$ are clustered in a small region, subtractions cancel leading digits, leaving only rounding errors.
 
-\item \emph{Exact arithmetic} \cite{Shewchuk1997}: Use adaptive precision—compute with standard doubles, but switch to arbitrary precision if result is near zero (within error bounds). Shewchuk's predicates detect potential inaccuracy and refine the computation only when necessary, achieving exact results with minimal overhead.
+\item \emph{Exact arithmetic} \cite{Shewchuk1997}: Use adaptive precision---compute with standard doubles, but switch to arbitrary precision if result is near zero (within error bounds). Shewchuk's predicates detect potential inaccuracy and refine the computation only when necessary, achieving exact results with minimal overhead.
 
 \item \emph{Tolerance-based decision}: Set threshold $\varepsilon_{\text{orient}} = 10^{-10}$ (relative to coordinate scale). If $|\text{Orient2D}| < \varepsilon_{\text{orient}}$, treat as collinear. This approach is simpler but can fail on carefully constructed adversarial inputs.
 \end{itemize}
@@ -1783,7 +1783,7 @@ Beyond exact predicates, several techniques ensure robustness:
 
 \item \textbf{Operation rollback}: Each operation saves affected triangles before modification. If validation fails (quality check, orientation check), the operation is rolled back atomically, restoring the previous state. This ensures the mesh never enters an invalid state.
 
-\item \textbf{Simulation mode}: Operations can be executed in "dry-run" mode, computing the result without committing changes. This allows algorithms to evaluate multiple candidates (e.g., trying different collapse orders) and select the best.
+\item \textbf{Simulation mode}: Operations can be executed in ``dry-run`` mode, computing the result without committing changes. This allows algorithms to evaluate multiple candidates (e.g., trying different collapse orders) and select the best.
 
 \item \textbf{Assertions and invariants}: Debug mode includes extensive assertions checking:
   \begin{itemize}
@@ -1963,7 +1963,7 @@ We test several strategies:
 \item \textbf{Greedy Full}: Combined splits + flips + collapses with quality threshold $\theta_{\min} = 15°$
 \item \textbf{Adaptive Refine}: Split edges/triangles exceeding size criterion (area or length)
 \item \textbf{Adaptive Coarsen}: Collapse edges below size criterion, maintaining quality
-\item \textbf{Full Pipeline}: Refine → Optimize → Coarsen → Final optimization (multi-stage)
+\item \textbf{Full Pipeline}: Refine $\to$ Optimize $\to$ Coarsen $\to$ Final optimization (multi-stage)
 \end{itemize}
 
 \subsection{Quality Improvement Results}
@@ -2040,17 +2040,17 @@ Split all triangles with area $> A_{\max}$, using edge split (Algorithm~\ref{alg
 \toprule
 Mesh & $m_0$ & $m_{\text{final}}$ & Ratio & $Q_{\text{final}}$ (deg) & Time (s) \\
 \midrule
-Square   & 42  & 57  & 1.36× & 48.2 & 0.05 \\
-Circle   & 162 & 241 & 1.49× & 45.7 & 0.18 \\
-L-shape  & 94  & 176 & 1.87× & 42.9 & 0.11 \\
-Airfoil  & 384 & 627 & 1.63× & 44.8 & 0.38 \\
+Square   & 42  & 57  & 1.36\times & 48.2 & 0.05 \\
+Circle   & 162 & 241 & 1.49\times & 45.7 & 0.18 \\
+L-shape  & 94  & 176 & 1.87\times & 42.9 & 0.11 \\
+Airfoil  & 384 & 627 & 1.63\times & 44.8 & 0.38 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \textbf{Observations:}
 \begin{itemize}
-\item Refinement ratio varies by geometry: L-shape requires most refinement (1.87×) due to large initial triangles near corners, while Square is nearly uniform (1.36×).
+\item Refinement ratio varies by geometry: L-shape requires most refinement (1.87\times) due to large initial triangles near corners, while Square is nearly uniform (1.36\times).
 \item Quality improves significantly: $Q_{\text{final}} \geq 42.9°$ for all meshes (vs. $Q_0 \approx 25-35°$). Edge splits naturally create well-shaped triangles when splitting at midpoints.
 \item Efficiency: $\approx 0.6$ ms per triangle added, dominated by map updates ($O(1)$ per split but with larger constants than flips).
 \end{itemize}
@@ -2075,7 +2075,7 @@ Iteration & $m$ & $h_{\max}$ (boundary) & $Q_{\min}$ (deg) & Time (s) \\
 \end{tabular}
 \end{table}
 
-After 3 iterations, maximum boundary edge length reduced by 62.4\% (from 0.245 to 0.092), improving boundary approximation error from $O(h^2) \approx 0.06$ to $O(h^2) \approx 0.008$ (7.5× reduction in geometric error). Quality simultaneously improves due to better aspect ratios.
+After 3 iterations, maximum boundary edge length reduced by 62.4\% (from 0.245 to 0.092), improving boundary approximation error from $O(h^2) \approx 0.06$ to $O(h^2) \approx 0.008$ (7.5\times reduction in geometric error). Quality simultaneously improves due to better aspect ratios.
 
 \textbf{Practical application:} For NACA0012 airfoil, $h_{\max} = 0.01$ near leading/trailing edges captures curvature accurately, reducing drag coefficient error from 4.3\% to 1.2\% in CFD simulation (validated against wind tunnel data).
 
@@ -2261,11 +2261,11 @@ The \texttt{combined\_refinement.py} example (see Section~\ref{sec:experiments})
 \item \textbf{Area-based refinement} ($A_{\max} = 0.008$): 203 triangles, $Q_{\min} = 40.8°$
   \begin{itemize}
   \item Splits 27 large triangles in interior regions
-  \item Slight quality decrease (42.4° → 40.8°) due to new triangles, but still excellent
+  \item Slight quality decrease (42.4° $\to$ 40.8°) due to new triangles, but still excellent
   \end{itemize}
 \item \textbf{Final optimization} (5 iterations): 203 triangles, $Q_{\min} = 41.7°$
   \begin{itemize}
-  \item Recovers quality after refinement (40.8° → 41.7°)
+  \item Recovers quality after refinement (40.8° $\to$ 41.7°)
   \item Only 12 flips needed (most triangles already optimal)
   \end{itemize}
 \end{enumerate}
@@ -2321,7 +2321,7 @@ In practical applications, refinement and coarsening are driven by \emph{error i
 \paragraph{Solution-Driven Indicators (FEM/CFD).}
 \begin{itemize}
 \item \textbf{Gradient magnitude}: $\eta_{\nabla u}(t) = \|\nabla u\|_{t}$ (or per-edge jump). High gradients trigger refinement.
-\item \textbf{Recovery-based}: $\eta_{ZZ}(t) = \|\nabla u - \mathcal{R}(\nabla u)\|_{t}$ (Zienkiewicz–Zhu-style). Robust and inexpensive post-processing.
+\item \textbf{Recovery-based}: $\eta_{ZZ}(t) = \|\nabla u - \mathcal{R}(\nabla u)\|_{t}$ (Zienkiewicz--Zhu-style). Robust and inexpensive post-processing.
 \item \textbf{Residual/goal-oriented}: local residuals or adjoint-weighted indicators for QoI accuracy; typically steer refinement near features impacting outputs.
 \item \textbf{Flow features (CFD)}: vorticity $\|\omega\|$, $Q$-criterion, shock sensors (\,$\|\nabla \rho\|$); boundary-layer control via wall distance (e.g., targeting $y^+$ bands).
 \end{itemize}
@@ -2358,7 +2358,7 @@ Adaptive mesh refinement crucial for FEA accuracy. Indicators from Section~\ref{
 \item Crack tip refinement in fracture mechanics
 \end{itemize}
 
-  	extbf{Example:} Heat diffusion on L-shape with singularity at reentrant corner. Using a recovery-based indicator (Z--Z), adaptive refinement reduces error from 12.3\% to 1.8\% using 2.5× fewer elements than uniform refinement.
+  	extbf{Example:} Heat diffusion on L-shape with singularity at reentrant corner. Using a recovery-based indicator (Z--Z), adaptive refinement reduces error from 12.3\% to 1.8\% using 2.5\times fewer elements than uniform refinement.
 
 \subsection{Computational Fluid Dynamics}
 
@@ -2397,13 +2397,13 @@ We demonstrate metric-driven adaptation on a square domain $[0,1]^2$ with a sinu
 
 \textbf{Results after 20 iterations:}
 \begin{itemize}
-\item \textbf{Mesh statistics}: 1894 triangles, 980 vertices (11.7× increase)
+\item \textbf{Mesh statistics}: 1894 triangles, 980 vertices (11.7\times increase)
 \item \textbf{Metric edge lengths}: $L_M \in [0.29, 1.20]$ with mean $0.96$ (target is 1.0)
   \begin{itemize}
   \item 78\% of edges satisfy $0.7 \leq L_M \leq 1.2$ (ideal range with hysteresis)
   \item Before adaptation: $L_M \in [0.12, 3.45]$ (mean $1.82$), only 12\% in ideal range
   \end{itemize}
-\item \textbf{Approximation error}: Reduced from $0.500$ to $0.164$ (3.05× improvement)
+\item \textbf{Approximation error}: Reduced from $0.500$ to $0.164$ (3.05\times improvement)
   \begin{itemize}
   \item Error measured as maximum normal distance from mesh vertices to curve
   \item Anisotropic adaptation concentrates resolution near curve feature
@@ -2467,8 +2467,8 @@ These examples validate the effectiveness of SOFIA's anisotropic capabilities:
 \paragraph{Comparison with Isotropic Approaches.}
 For the sinusoidal curve example, isotropic refinement to achieve comparable error ($\varepsilon \approx 0.16$) would require uniform resolution $h \approx 0.008$ throughout the domain, resulting in:
 \begin{itemize}
-\item Estimated $\sim 15{,}000$ triangles (vs. 1894 anisotropic, 7.9× increase)
-\item $\sim 7{,}500$ vertices (vs. 980, 7.7× increase)
+\item Estimated $\sim 15{,}000$ triangles (vs. 1894 anisotropic, 7.9\times increase)
+\item $\sim 7{,}500$ vertices (vs. 980, 7.7\times increase)
 \item Significantly higher computational cost for subsequent FEM solve
 \end{itemize}
 Anisotropic adaptation achieves the same accuracy with far fewer elements by concentrating resolution where needed (perpendicular to features) while keeping parallel directions coarse.
