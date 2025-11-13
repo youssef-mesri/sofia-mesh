@@ -44,3 +44,4 @@ Most demos write PNG (and sometimes CSV) files to the project root so they are e
 ## Notes
 
 These demos are excluded from test coverage (they are visualization-only) and should not be imported by production code paths. Their APIs are stable at the function level (`run_*`).
+ 
