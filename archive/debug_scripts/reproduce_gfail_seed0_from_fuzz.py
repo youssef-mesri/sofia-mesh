@@ -87,5 +87,5 @@ def main():
     logger.info('No offending commit detected during greedy_remesh run')
     return 0
 
-if __name__ == '__main__':
+if __name__ == '__main__': 
     sys.exit(main())

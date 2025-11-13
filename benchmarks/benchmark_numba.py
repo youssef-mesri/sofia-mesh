@@ -84,9 +84,9 @@ if __name__ == "__main__":
     
     print("=" * 70)
     if geometry.HAS_NUMBA:
-        print("✓ Numba JIT acceleration is ACTIVE")
+        print("Numba JIT acceleration is ACTIVE")
         print("  Expected speedup: 3-10x on large meshes")
     else:
-        print("⚠ Numba JIT is NOT available - using NumPy fallback")
+        print("Numba JIT is NOT available - using NumPy fallback")
         print("  Install numba>=0.57 for acceleration")
     print("=" * 70)

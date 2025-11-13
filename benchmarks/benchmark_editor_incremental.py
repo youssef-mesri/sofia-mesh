@@ -1,6 +1,6 @@
 """Benchmark incremental structures integrated into PatchBasedMeshEditor.
 
-This script tests the real-world performance of Phase 4 incremental computation
+This script tests the real-world performance of incremental computation
 when integrated into the mesh editor workflow.
 """
 
@@ -57,7 +57,7 @@ def benchmark_editor_conformity_checks(n_points=100, n_checks=1000):
     
     # Calculate speedup
     speedup = time_trad / time_inc if time_inc > 0 else float('inf')
-    print(f"\n   💥 SPEEDUP: {speedup:.1f}x faster")
+    print(f"\n   SPEEDUP: {speedup:.1f}x faster")
     
     return {
         'n_triangles': n_triangles,
@@ -112,7 +112,7 @@ def benchmark_editor_operations(n_points=100, n_operations=50):
     
     # Calculate speedup
     speedup = time_trad / time_inc if time_inc > 0 else float('inf')
-    print(f"\n   💥 SPEEDUP: {speedup:.1f}x faster")
+    print(f"\n   SPEEDUP: {speedup:.1f}x faster")
     
     return {
         'n_triangles': n_triangles,
@@ -191,7 +191,7 @@ def benchmark_editor_with_modifications(n_points=100, n_splits=20):
     
     # Calculate speedup
     speedup = time_trad / time_inc if time_inc > 0 else float('inf')
-    print(f"\n   💥 SPEEDUP: {speedup:.1f}x faster")
+    print(f"\n   SPEEDUP: {speedup:.1f}x faster")
     
     return {
         'incremental_ms': time_inc,
@@ -260,7 +260,7 @@ if __name__ == '__main__':
         print(f"  {r['n_triangles']:<12} {r['incremental_ms']:<12.3f} {r['traditional_ms']:<12.3f} {r['speedup']:<12.1f}x")
     
     print("\n" + "="*70)
-    print("✅ Phase 4 incremental structures successfully integrated!")
+    print(" Incremental structures successfully integrated!")
     print("   - Conformity checks: up to {:.0f}x faster".format(max(r['speedup'] for r in results_checks)))
     print("   - Operation cycles: up to {:.0f}x faster".format(max(r['speedup'] for r in results_ops)))
     print("   - Real modifications: {:.1f}x faster".format(result_mods['speedup']))

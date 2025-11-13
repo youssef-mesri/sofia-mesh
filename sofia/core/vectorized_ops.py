@@ -437,9 +437,9 @@ def split_edges_fast(editor, edges: List[Tuple[int, int]]) -> Tuple[int, int]:
 if __name__ == '__main__':
     # Quick test
     if NUMBA_AVAILABLE:
-        print("✓ Numba available - JIT compilation enabled")
+        print(" Numba available - JIT compilation enabled")
     else:
-        print("⚠ Numba not available - falling back to Python (slower)")
+        print(" Numba not available - falling back to Python (slower)")
     
     # Test JIT functions
     import time
@@ -452,4 +452,4 @@ if __name__ == '__main__':
     t1 = time.perf_counter()
     
     print(f"Computed {len(edges)} midpoints in {(t1-t0)*1000:.2f} ms")
-    print(f"Average: {(t1-t0)/len(edges)*1e6:.2f} µs per edge")
+    print(f"Average: {(t1-t0)/len(edges)*1e6:.2f} \u03bc s per edge") # encocodage utf-8 pour mu

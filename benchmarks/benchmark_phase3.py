@@ -1,12 +1,12 @@
-"""Benchmark Phase 3: Parallel Processing
+"""Benchmark : Parallel Processing
 
-Compares sequential batch processing (Phase 2) vs parallel processing (Phase 3).
+Compares sequential batch processing vs parallel processing.
 
 Expected Results:
-- Phase 2 (single-threaded): ~2,367 ops/sec
-- Phase 3 (4 workers): ~8,000-9,000 ops/sec (3-4x speedup)
+- single-threaded: ~2,367 ops/sec
+- 4 workers: ~8,000-9,000 ops/sec (3-4x speedup)
 - Combined speedup: ~25x vs baseline
-- Target achieved: 16,000+ triangles/sec ✓
+- Target achieved: 16,000+ triangles/sec 
 """
 import numpy as np
 import time
@@ -103,9 +103,9 @@ def benchmark_phase2_sequential(grid_size=20, n_splits=1500, batch_size=5000):
     ok, msgs = check_mesh_conformity(editor.points, editor.triangles, allow_marked=True)
     
     if ok:
-        print(f"  ✓ Conformity check PASSED")
+        print(f"  Conformity check PASSED")
     else:
-        print(f"  ✗ Conformity check FAILED:")
+        print(f"  Conformity check FAILED:")
         for msg in msgs[:5]:
             print(f"    - {msg}")
         if len(msgs) > 5:
@@ -174,9 +174,9 @@ def benchmark_phase3_parallel(grid_size=20, n_splits=1500, n_workers=4, batch_si
     ok, msgs = check_mesh_conformity(editor.points, editor.triangles, allow_marked=True)
     
     if ok:
-        print(f"  ✓ Conformity check PASSED")
+        print(f"  Conformity check PASSED")
     else:
-        print(f"  ✗ Conformity check FAILED:")
+        print(f"  Conformity check FAILED:")
         for msg in msgs[:5]:
             print(f"    - {msg}")
         if len(msgs) > 5:
@@ -212,9 +212,9 @@ def compare_phases(phase2_results, phase3_results):
     print(f"  Speedup: {speedup:.2f}x")
     
     if speedup > 1:
-        print(f"  ✓ Phase 3 is {speedup:.2f}x FASTER")
+        print(f"  Phase 3 is {speedup:.2f}x FASTER")
     else:
-        print(f"  ✗ Phase 3 is {1/speedup:.2f}x SLOWER (overhead too high)")
+        print(f"  Phase 3 is {1/speedup:.2f}x SLOWER (overhead too high)")
     
     print(f"\nPer-Operation Latency:")
     print(f"  Phase 2: {phase2_results['ms_per_op']:.3f} ms")
@@ -246,7 +246,7 @@ def compare_phases(phase2_results, phase3_results):
     print(f"  Achieved: {triangles_per_sec:.0f} triangles/sec")
     
     if triangles_per_sec >= target_per_sec:
-        print(f"  ✓✓✓ TARGET EXCEEDED by {(triangles_per_sec/target_per_sec - 1)*100:.1f}% ✓✓✓")
+        print(f"  TARGET EXCEEDED by {(triangles_per_sec/target_per_sec - 1)*100:.1f}% ✓✓✓")
     else:
         gap = target_per_sec / triangles_per_sec
         print(f"  Still need {gap:.2f}x more speedup")
@@ -262,13 +262,13 @@ def compare_phases(phase2_results, phase3_results):
     print(f"  Target:  {time_target}s (1.0 min)")
     
     if time_phase3 <= time_target:
-        print(f"  ✓ Phase 3 achieves target ({time_target - time_phase3:.1f}s faster)!")
+        print(f"  Phase 3 achieves target ({time_target - time_phase3:.1f}s faster)!")
     else:
         print(f"  Need {time_target / time_phase3:.2f}x more speedup")
     
     print(f"\nConformity:")
-    print(f"  Phase 2: {'✓ PASS' if phase2_results['conformity'] else '✗ FAIL'}")
-    print(f"  Phase 3: {'✓ PASS' if phase3_results['conformity'] else '✗ FAIL'}")
+    print(f"  Phase 2: {'PASS' if phase2_results['conformity'] else '✗ FAIL'}")
+    print(f"  Phase 3: {'PASS' if phase3_results['conformity'] else '✗ FAIL'}")
 
 
 def main():

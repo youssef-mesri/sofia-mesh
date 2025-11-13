@@ -64,5 +64,5 @@ def main():
     plot_mesh(editor, outname=args.out_after)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     main()

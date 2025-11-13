@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive benchmark comparing performance with and without Numba.
+benchmark comparing performance with and without Numba.
 
 This script tests the same operations twice:
 1. With Numba enabled (if available)
@@ -280,9 +280,9 @@ if __name__ == "__main__":
     
     print("\nConclusion:")
     if np.mean(geo_speedups + conf_speedups) > 3:
-        print("  ✓ Numba provides SIGNIFICANT performance improvements (>3x)")
+        print("  Numba provides SIGNIFICANT performance improvements (>3x)")
     elif np.mean(geo_speedups + conf_speedups) > 1.5:
-        print("  ✓ Numba provides MODERATE performance improvements (1.5-3x)")
+        print("  Numba provides MODERATE performance improvements (1.5-3x)")
     else:
-        print("  ⚠ Numba provides minimal performance improvements (<1.5x)")
+        print("  Numba provides minimal performance improvements (<1.5x)")
     print("="*80)

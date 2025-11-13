@@ -1014,5 +1014,5 @@ def run_generate_scenario(args: argparse.Namespace):
         print('refine_to_target_h_local result:', ok_ref, det_ref)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__': 
     main()

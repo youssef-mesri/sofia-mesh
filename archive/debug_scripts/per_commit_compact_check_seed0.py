@@ -96,7 +96,7 @@ def main():
                 sys.exit(0)
         return res
 
-    # bind wrappers
+    # bind wrapperss
     import types
     editor.add_node = types.MethodType(lambda self, *a, **k: wrap_call('add_node', orig_add, *a, **k), editor)
     editor.remove_node_with_patch = types.MethodType(lambda self, *a, **k: wrap_call('remove_node_with_patch', orig_remove, *a, **k), editor)

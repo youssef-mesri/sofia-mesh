@@ -55,6 +55,6 @@ def run_patch_boundary_report(npts=40, seed=7, node_top_k=12):  # pragma: no cov
     logger.info('Wrote patch_boundary_report.csv, patch_boundaries_explicit.png and patch_boundaries_colored.png')
     return rows
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == '__main__':  # pragma: no cover 
     configure_logging('INFO')
     run_patch_boundary_report()

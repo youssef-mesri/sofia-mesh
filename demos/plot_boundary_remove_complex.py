@@ -301,7 +301,7 @@ def _plot_boundary_side_by_side(editor_before: PatchBasedMeshEditor, editor_afte
     plt.close(fig)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__': 
     plot_degree_three_case()
     plot_corner_with_splits_case()
     print('Saved plots to', OUTDIR)

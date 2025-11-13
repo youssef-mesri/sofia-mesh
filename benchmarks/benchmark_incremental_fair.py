@@ -117,7 +117,7 @@ def benchmark_non_manifold_detection(n_triangles=1000, n_queries=1000):
     speedup_query = time_full / time_inc if time_inc > 0 else float('inf')
     print(f"  Full check (vectorized):  {time_full:.3f} ms ({time_full/n_queries:.4f} ms/check)")
     print(f"  Incremental (O(1)):       {time_inc:.3f} ms ({time_inc/n_queries:.4f} ms/check)")
-    print(f"  💥 SPEEDUP: {speedup_query:.1f}x")
+    print(f"  SPEEDUP: {speedup_query:.1f}x")
     
     # Test 2: Mixed workload (operations + checks)
     n_ops = 100
@@ -156,7 +156,7 @@ def benchmark_non_manifold_detection(n_triangles=1000, n_queries=1000):
     
     print(f"  Full check:       {avg_full:.4f} ms/operation")
     print(f"  Incremental:      {avg_inc:.4f} ms/operation")
-    print(f"  💥 SPEEDUP: {speedup_mixed:.1f}x")
+    print(f"  SPEEDUP: {speedup_mixed:.1f}x")
     
     # Test 3: Initial build time
     print(f"\nScenario 3: Initial Build")
@@ -215,7 +215,7 @@ def benchmark_edge_map_queries(n_triangles=1000):
     speedup = time_full / time_inc if time_inc > 0 else float('inf')
     print(f"  Full rebuild:     {time_full:.3f} ms ({time_full/1000:.4f} ms/query)")
     print(f"  Incremental:      {time_inc:.3f} ms ({time_inc/1000:.4f} ms/query)")
-    print(f"  💥 SPEEDUP: {speedup:.1f}x")
+    print(f"  SPEEDUP: {speedup:.1f}x")
     
     # Test: Non-manifold edge detection
     print(f"\nNon-Manifold Edge Detection (1000 queries):")
@@ -236,7 +236,7 @@ def benchmark_edge_map_queries(n_triangles=1000):
     speedup = time_full / time_inc if time_inc > 0 else float('inf')
     print(f"  Full rebuild:     {time_full:.3f} ms ({time_full/1000:.4f} ms/query)")
     print(f"  Incremental:      {time_inc:.3f} ms ({time_inc/1000:.4f} ms/query)")
-    print(f"  💥 SPEEDUP: {speedup:.1f}x")
+    print(f"  SPEEDUP: {speedup:.1f}x")
 
 
 def compare_with_full_check_mesh_conformity(n_triangles=1000):
@@ -269,8 +269,8 @@ def compare_with_full_check_mesh_conformity(n_triangles=1000):
     print(f"  Full check (7 validations): {time_full:.3f} ms")
     print(f"  Incremental (1 check):       {time_inc:.3f} ms")
     print(f"  MISLEADING speedup:          {speedup:.1f}x")
-    print(f"\n  ⚠️  This compares comprehensive validation vs single check!")
-    print(f"  ⚠️  See fair benchmark above for apples-to-apples comparison.")
+    print(f"\n  This compares comprehensive validation vs single check!")
+    print(f"  See fair benchmark above for apples-to-apples comparison.")
 
 
 if __name__ == '__main__':

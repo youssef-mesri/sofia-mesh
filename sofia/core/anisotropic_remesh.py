@@ -42,7 +42,7 @@ def _apply_dlog(M: np.ndarray, dM: np.ndarray) -> np.ndarray:
     """Apply the Fréchet derivative of log at M to perturbation dM.
 
     Uses eigen-decomposition: if M = V diag(lam) V^T and B = V^T dM V then
-    Dlog(M)[dM] = V (C ∘ B) V^T where C_ij = (log lam_i - log lam_j)/(lam_i - lam_j)
+    Dlog(M)[dM] = V (C * B) V^T where C_ij = (log lam_i - log lam_j)/(lam_i - lam_j)
     and diagonal C_ii = 1/lam_i.
     """
     vals, vecs = np.linalg.eigh(M)
@@ -63,7 +63,7 @@ def _apply_dexp(A: np.ndarray, dA: np.ndarray) -> np.ndarray:
     """Apply the Fréchet derivative of exp at A to perturbation dA.
 
     If A = V diag(alpha) V^T and B = V^T dA V then
-    Dexp(A)[dA] = V (D ∘ B) V^T where D_ij = (exp(alpha_i)-exp(alpha_j))/(alpha_i-alpha_j)
+    Dexp(A)[dA] = V (D * B) V^T where D_ij = (exp(alpha_i)-exp(alpha_j))/(alpha_i-alpha_j)
     and diagonal D_ii = exp(alpha_i).
     """
     vals, vecs = np.linalg.eigh(A)
@@ -348,7 +348,7 @@ def smooth_patch_vertices(y_vertices, connectivity, boundary_vs=None, omega=0.5,
 
 
 def optimize_vertex_metric_equilateral(v_idx, editor, metric_fn, max_iter=20, grad_eps=1e-6, ls_c=1e-4, ls_r=0.5, min_step=1e-8, grad_mode='analytic'):
-    """Optimize position of vertex `v_idx` to minimize Σ_j (l_M(x,x_j) - 1)^2 where l_M uses
+    """Optimize position of vertex 'v_idx' to minimize sum_j (l_M(x,x_j) - 1)^2 where l_M uses
     the log-Euclidean averaged metric between x and neighbor positions x_j.
 
     This implementation uses a central finite-difference gradient and a simple backtracking

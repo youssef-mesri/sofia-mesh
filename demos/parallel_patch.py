@@ -130,5 +130,5 @@ def main():
                          rid, r.get('iterations'), float(r.get('final_min_angle', float('nan'))), r.get('npts'), r.get('ntri'))
 
 
-if __name__ == '__main__':
+if __name__ == '__main__': 
     main()

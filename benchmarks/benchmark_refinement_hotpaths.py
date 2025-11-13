@@ -132,7 +132,7 @@ def main():
         print(f"    Improvement:    {improvement:5.1f}% faster")
         
         if speedup >= 1.1:
-            print(f"    ✓ Noticeable improvement")
+            print(f"    Noticeable improvement")
         
     # Restore
     geometry.HAS_NUMBA = ORIG_GEOM

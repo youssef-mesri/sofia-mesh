@@ -230,7 +230,7 @@ def main():
           f"mean length: {initial_stats['boundary_mean']:.3f}")
     print(f"    Interior edges: {initial_stats['n_interior']}, "
           f"mean length: {initial_stats['interior_mean']:.3f}")
-    print(f"    Conformity: {'✓ Valid' if valid else '✗ Invalid'}")
+    print(f"    Conformity: {' Valid' if valid else ' Invalid'}")
     
     # Step 2: Combined refinement
     print("\n[2] Applying combined refinement strategy...")
@@ -265,7 +265,7 @@ def main():
           f"(+{refined_stats['n_boundary'] - initial_stats['n_boundary']})")
     print(f"    Interior edges: {refined_stats['n_interior']} "
           f"(+{refined_stats['n_interior'] - initial_stats['n_interior']})")
-    print(f"    Conformity: {'✓ Valid' if valid else '✗ Invalid'}")
+    print(f"    Conformity: {' Valid' if valid else ' Invalid'}")
     
     # Step 3: Analysis
     print("\n[3] Refinement effectiveness analysis...")
@@ -436,15 +436,15 @@ def main():
     
     plt.tight_layout()
     plt.savefig('combined_refinement_result.png', dpi=150, bbox_inches='tight')
-    print("  ✓ Saved visualization to 'combined_refinement_result.png'")
+    print("  Saved visualization to 'combined_refinement_result.png'")
     
     print("\n" + "=" * 70)
-    print("✓ Example completed successfully!")
-    print(f"✓ Boundary splits: {refine_stats['boundary_splits']} "
+    print(" Example completed successfully!")
+    print(f" Boundary splits: {refine_stats['boundary_splits']} "
           f"({refine_stats['corner_splits']} near corners)")
-    print(f"✓ Interior splits: {refine_stats['interior_splits']}")
-    print(f"✓ Total mesh growth: {initial_n_verts} → {refined_n_verts} vertices")
-    print(f"✓ Mesh conformity maintained throughout")
+    print(f" Interior splits: {refine_stats['interior_splits']}")
+    print(f" Total mesh growth: {initial_n_verts} → {refined_n_verts} vertices")
+    print(f" Mesh conformity maintained throughout")
     print("=" * 70)
 
 if __name__ == "__main__":

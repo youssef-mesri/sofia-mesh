@@ -113,13 +113,13 @@ if __name__ == "__main__":
     
     print("=" * 70)
     if conformity.HAS_NUMBA:
-        print("✓ Numba-accelerated grid operations are ACTIVE")
+        print(" Numba-accelerated grid operations are ACTIVE")
         print("  Expected speedup: 10-20x on large meshes (>1000 edges)")
         print("  Key optimizations:")
         print("    - Vectorized grid cell assignment")
         print("    - Parallel bbox overlap checks")
         print("    - Batch processing of candidate pairs")
     else:
-        print("⚠ Numba is NOT available - using NumPy-only implementation")
+        print(" Numba is NOT available - using NumPy-only implementation")
         print("  Install numba>=0.57 for full acceleration")
     print("=" * 70)

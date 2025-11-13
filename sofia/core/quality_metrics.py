@@ -57,7 +57,7 @@ class TriangleQualityMetrics:
         # Normalization factor: for equilateral triangle, 
         # area = (sqrt(3)/4) * side^2, sum(edges^2) = 3 * side^2
         # So raw_q = (sqrt(3)/4) / 3 = sqrt(3)/12
-        # To normalize: multiply by 12/sqrt(3) = 4*sqrt(3) ≈ 6.928
+        # To normalize: multiply by 12/sqrt(3) = 4*sqrt(3) = 6.928....
         norm_factor = 4.0 * np.sqrt(3.0)
         normalized_q = raw_q * norm_factor
         

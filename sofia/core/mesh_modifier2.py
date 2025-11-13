@@ -295,12 +295,12 @@ class PatchBasedMeshEditor:
     def compact_triangle_indices(self):
         """
         Reconstruit la numérotation des triangles (0...N-1) et les maps d'adjacence.
-        À appeler après toutes les modifications locales pour garantir la cohérence.
+        A appeler après toutes les modifications locales pour garantir la cohérence.
 
         Side-effects:
         - Stores fast, vectorizable mappings for vertices:
-          * `last_compaction_old_to_new` -> np.ndarray (N_old,), int32, -1 for removed, else new index.
-          * `last_compaction_new_to_old` -> np.ndarray (N_new,), int32, mapping new index -> old index.
+          * 'last_compaction_old_to_new' -> np.ndarray (N_old,), int32, -1 for removed, else new index.
+          * 'last_compaction_new_to_old' -> np.ndarray (N_new,), int32, mapping new index -> old index.
 
         Returns
         -------
@@ -1196,9 +1196,9 @@ def patch_replace_cavity(points, triangles, cavity_tri_indices, new_triangles, r
     Retourne (points_new, triangles_new)
     """
     import numpy as np
-    # 1. Retirer les triangles de la cavité
+    # Retirer les triangles de la cavité
     triangles_new = [t for i, t in enumerate(triangles) if i not in cavity_tri_indices]
-    # 2. Gérer la suppression d'un sommet
+    # Gérer la suppression d'un sommet
     points_new = points.copy()
     remap_func = None
     if removed_vertex is not None:
@@ -1208,11 +1208,11 @@ def patch_replace_cavity(points, triangles, cavity_tri_indices, new_triangles, r
             return [v-1 if v > removed_vertex else v for v in tri]
         triangles_new = [remap(t) for t in triangles_new]
         remap_func = remap
-    # 3. Ajouter de nouveaux sommets si besoin
+    # Ajouter de nouveaux sommets si besoin
     if added_points is not None:
         for p in added_points:
             points_new = np.vstack([points_new, p])
-    # 4. Ajouter les nouveaux triangles (avec remapping si suppression)
+    # Ajouter les nouveaux triangles (avec remapping si suppression)
     if remap_func is not None:
         new_triangles = [remap_func(t) for t in new_triangles]
     triangles_new.extend(new_triangles)

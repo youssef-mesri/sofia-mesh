@@ -47,6 +47,6 @@ def run_patch_centering_check(npts=40, seed=7, node_top_k=12):  # pragma: no cov
         logger.info('%s', b)
     return bad
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == '__main__':  # pragma: no cover 
     configure_logging('INFO')
     run_patch_centering_check()

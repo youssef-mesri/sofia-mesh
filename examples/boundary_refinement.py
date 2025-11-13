@@ -171,7 +171,7 @@ def main():
     print(f"    Boundary edges: {initial_boundary_stats['n_boundary_edges']}")
     print(f"    Boundary edge length: mean={initial_boundary_stats['mean_length']:.3f}, "
           f"max={initial_boundary_stats['max_length']:.3f}")
-    print(f"    Conformity: {'✓ Valid' if valid else '✗ Invalid'}")
+    print(f"    Conformity: {' Valid' if valid else ' Invalid'}")
     
     # Step 2: Refine boundary edges
     print("\n[2] Refining boundary edges...")
@@ -195,7 +195,7 @@ def main():
           f"(+{refined_boundary_stats['n_boundary_edges'] - initial_boundary_stats['n_boundary_edges']})")
     print(f"    Boundary edge length: mean={refined_boundary_stats['mean_length']:.3f}, "
           f"max={refined_boundary_stats['max_length']:.3f}")
-    print(f"    Conformity: {'✓ Valid' if valid else '✗ Invalid'}")
+    print(f"    Conformity: {' Valid' if valid else ' Invalid'}")
     
     # Step 3: Analysis
     print("\n[3] Boundary refinement analysis...")
@@ -334,21 +334,21 @@ Improvement:
   Edges split: {splits}
   Max length reduction: {boundary_improvement:.1f}%
   Target threshold: {max_length}
-  Conformity: ✓ Maintained
+  Conformity: Maintained
 """
     ax.text(0.05, 0.5, stats_text, fontsize=9, family='monospace',
             verticalalignment='center')
     
     plt.tight_layout()
     plt.savefig('boundary_refinement_result.png', dpi=150, bbox_inches='tight')
-    print("  ✓ Saved visualization to 'boundary_refinement_result.png'")
+    print("  Saved visualization to 'boundary_refinement_result.png'")
     
     print("\n" + "=" * 70)
-    print("✓ Example completed successfully!")
-    print(f"✓ Boundary refined: {initial_boundary_stats['n_boundary_edges']} → "
+    print(" Example completed successfully!")
+    print(f" Boundary refined: {initial_boundary_stats['n_boundary_edges']} → "
           f"{refined_boundary_stats['n_boundary_edges']} edges")
-    print(f"✓ Max boundary edge reduced by {boundary_improvement:.1f}%")
-    print(f"✓ Mesh conformity maintained throughout")
+    print(f" Max boundary edge reduced by {boundary_improvement:.1f}%")
+    print(f" Mesh conformity maintained throughout")
     print("=" * 70)
 
 if __name__ == "__main__":

@@ -43,6 +43,6 @@ def run_inspect_patch0_nodes(npts=40, seed=7, node_top_k=12):  # pragma: no cove
     logger.info('inside list: %s', [v for v,flag in inside if flag])
     return p0
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == '__main__':  # pragma: no cover  
     configure_logging('INFO')
     run_inspect_patch0_nodes()

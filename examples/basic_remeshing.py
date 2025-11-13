@@ -57,9 +57,9 @@ def main():
     for edge in edges_to_split:
         success = editor.split_edge(edge=edge)
         if success:
-            print(f"  ✓ Split edge {edge}")
+            print(f"  Split edge {edge}")
         else:
-            print(f"  ✗ Failed to split edge {edge}")
+            print(f"  Failed to split edge {edge}")
     
     # Step 5: Check final quality
     print("\n[5] Checking final mesh quality...")
@@ -96,13 +96,13 @@ def main():
     
     plt.tight_layout()
     plt.savefig('basic_remeshing_result.png', dpi=150, bbox_inches='tight')
-    print("  ✓ Saved visualization to 'basic_remeshing_result.png'")
+    print("  Saved visualization to 'basic_remeshing_result.png'")
     
     # Optional: show plot
     # plt.show()
     
     print("\n" + "=" * 60)
-    print("✓ Example completed successfully!")
+    print(" Example completed successfully!")
     print("=" * 60)
 
 if __name__ == "__main__":

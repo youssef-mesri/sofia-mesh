@@ -1,7 +1,7 @@
 """Benchmark batch operations vs normal operations for performance comparison.
 
 This script tests the BatchEditor performance against normal operation execution
-on a large-scale mesh refinement task.
+on a large-scale mesh refinement taks.
 """
 
 import numpy as np
@@ -305,10 +305,10 @@ def compare_results(normal_results, batch_results):
     logger.info(f"  Target:      60s (1 min)")
     
     if batch_time_1m <= 60:
-        logger.info(f"  ✓ TARGET ACHIEVED with batch mode!")
+        logger.info(f"  TARGET ACHIEVED with batch mode!")
     else:
         additional_speedup = batch_time_1m / 60
-        logger.info(f"  ✗ Need {additional_speedup:.1f}x more speedup")
+        logger.info(f"  Need {additional_speedup:.1f}x more speedup")
     
     return {
         'speedup': speedup,

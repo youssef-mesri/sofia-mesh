@@ -254,19 +254,19 @@ Coarsening Process:
   • Successful: {successes}
   • Success rate: {successes/attempts*100:.1f}%
   • Mesh reduction: {reduction:.1f}%
-  • Quality preserved: ✓
+  • Quality preserved: OK
 """
     ax.text(0.1, 0.5, stats_text, fontsize=10, family='monospace',
             verticalalignment='center')
     
     plt.tight_layout()
     plt.savefig('mesh_coarsening_result.png', dpi=150, bbox_inches='tight')
-    print("  ✓ Saved visualization to 'mesh_coarsening_result.png'")
+    print("  Saved visualization to 'mesh_coarsening_result.png'")
     
     print("\n" + "=" * 70)
-    print("✓ Example completed successfully!")
-    print(f"✓ Mesh simplified: {initial_stats['n_triangles']} → {final_stats['n_triangles']} triangles")
-    print(f"✓ Reduction: {reduction:.1f}% while maintaining quality")
+    print(" Example completed successfully!")
+    print(f" Mesh simplified: {initial_stats['n_triangles']} → {final_stats['n_triangles']} triangles")
+    print(f" Reduction: {reduction:.1f}% while maintaining quality")
     print("=" * 70)
 
 if __name__ == "__main__":

@@ -47,6 +47,6 @@ def run_patch_batches(npts=40, seed=7, node_top_k=12, edge_top_k=6):  # pragma: 
 # backward compatible alias
 main = run_patch_batches
 
-if __name__ == '__main__':  # pragma: no cover
+if __name__ == '__main__':  # pragma: no cover 
     configure_logging('INFO')
     run_patch_batches()

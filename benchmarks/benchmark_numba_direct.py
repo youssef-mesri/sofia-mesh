@@ -237,7 +237,7 @@ if __name__ == "__main__":
     
     print(f"\nConformity module optimizations:")
     for name, speedup in conf_results:
-        print(f"  {name:<35} {speedup:>6.2f}x speedup")
+        print(f"  {name:<35} {speedup:>6.2f}x speedup ")
     
     if all_speedups:
         avg_speedup = np.mean(all_speedups)

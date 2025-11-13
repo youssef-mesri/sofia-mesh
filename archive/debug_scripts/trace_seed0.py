@@ -199,5 +199,5 @@ def run_trace():
     np.savez(os.path.join(OUT, 'trace_seed0.npz'), trace=trace)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__': 
     run_trace()

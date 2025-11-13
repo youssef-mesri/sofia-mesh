@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Replay gfail_seed_0 operation trace step-by-step and check compacted conformity after each commit.
-Saves a diagnostic NPZ with the offending op and mesh snapshot when found.
+Saves a diagnostic NPZ with the offending op and mesh snapshot when found
 """
 import numpy as np
 import os

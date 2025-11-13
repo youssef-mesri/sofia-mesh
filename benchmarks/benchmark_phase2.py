@@ -1,4 +1,4 @@
-"""Benchmark Phase 2 vectorized operations vs Phase 1 batch operations.
+"""Benchmark vectorized operations vs batch operations.
 
 This script compares:
 1. Normal mode (per-operation validation)
@@ -203,9 +203,9 @@ def benchmark_phase2_vectorized(points, triangles, n_splits=1000, batch_size=100
 
 
 def compare_phases(phase1_results, phase2_results):
-    """Compare Phase 1 vs Phase 2 performance."""
+    """Compare Batch vs Vectorized performance."""
     logger.info(f"\n{'='*70}")
-    logger.info("PHASE 1 vs PHASE 2 COMPARISON")
+    logger.info("BATCH vs VECTORIZED COMPARISON")
     logger.info(f"{'='*70}")
     
     speedup = phase1_results['total_time'] / phase2_results['total_time']
@@ -247,10 +247,10 @@ def compare_phases(phase1_results, phase2_results):
     logger.info(f"  Target:   60s (1 min)")
     
     if phase2_time_1m <= 60:
-        logger.info(f"  🎯 TARGET ACHIEVED with Phase 2!")
+        logger.info(f"  TARGET ACHIEVED with Phase 2!")
     else:
         additional_speedup = phase2_time_1m / 60
-        logger.info(f"  ⚠ Need {additional_speedup:.2f}x more speedup")
+        logger.info(f"  Need {additional_speedup:.2f}x more speedup")
         logger.info(f"     (Phase 3: Parallel processing can provide 3-4x)")
     
     return {
@@ -324,7 +324,7 @@ def main():
                 return obj
             
             json.dump(results, f, indent=2, default=convert)
-        logger.info(f"\n✓ Results saved to {args.output}")
+        logger.info(f"\n Results saved to {args.output}")
     
     logger.info(f"\n{'='*70}")
     logger.info("BENCHMARK COMPLETE")

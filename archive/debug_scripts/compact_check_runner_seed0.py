@@ -39,7 +39,7 @@ def compact_hook(ed, pass_type, pass_idx):
         logger.info('Wrote %s', fn)
         sys.exit(0)
 
-# install hook in per-run context (back-compat global may be ignored by driver)
+# install hook in per-run context (back-compat global may be ignored by the driver)
 debug_check.COMPACT_CHECK_HOOK = compact_hook
 set_context({'compact_check_hook': compact_hook})
 logger.info('Running greedy_remesh with compact hook...')

@@ -67,7 +67,7 @@ def main():
     
     # Verify conformity
     is_valid, msg = check_mesh_conformity(editor.points, editor.triangles)
-    print(f"  Mesh conformity: {'✓ Valid' if is_valid else '✗ Invalid'}")
+    print(f"  Mesh conformity: {' Valid' if is_valid else ' Invalid'}")
     
     # Step 2: Split a boundary edge
     print("\n[2] Splitting boundary edge...")
@@ -84,7 +84,7 @@ def main():
     
     if boundary_edge is not None:
         success = editor.split_edge(edge=boundary_edge)
-        print(f"  {'✓' if success else '✗'} Split boundary edge {boundary_edge}")
+        print(f"  {'ok' if success else 'ko'} Split boundary edge {boundary_edge}")
         print(f"  Mesh now has {len(editor.points)} vertices")
     
     # Step 3: Remove a boundary vertex
@@ -103,16 +103,16 @@ def main():
             success = editor.remove_node(test_vertex)
             
             if success:
-                print(f"  ✓ Successfully removed vertex {test_vertex}")
+                print(f"  Successfully removed vertex {test_vertex}")
                 print(f"  Mesh now has {len(editor.points)} vertices")
             else:
-                print(f"  ✗ Removal rejected")
+                print(f"  Removal rejected")
         except Exception as e:
-            print(f"  ✗ Removal failed: {e}")
+            print(f"  Removal failed: {e}")
     
     # Verify final conformity
     is_valid, msg = check_mesh_conformity(editor.points, editor.triangles)
-    print(f"\n  Final conformity check: {'✓ Valid' if is_valid else '✗ Invalid'}")
+    print(f"\n  Final conformity check: {' Valid' if is_valid else ' Invalid'}")
     
     # Step 4: Visualize
     print("\n[4] Creating visualization...")
@@ -164,18 +164,18 @@ def main():
     
     plt.tight_layout()
     plt.savefig('boundary_operations_result.png', dpi=150, bbox_inches='tight')
-    print("  ✓ Saved visualization to 'boundary_operations_result.png'")
+    print("  Saved visualization to 'boundary_operations_result.png'")
     
     # Optional: show plot
     # plt.show()
     
     print("\n" + "=" * 60)
-    print("✓ Example completed successfully!")
-    print("✓ Boundary operations maintain mesh validity")
+    print(" Example completed successfully!")
+    print(" Boundary operations maintain mesh validity")
     print("=" * 60)
     
     # Print important note
-    print("\n📝 Note:")
+    print("\n Note:")
     print("   Boundary operations preserve local area by default.")
     print("   Use BoundaryRemoveConfig(require_area_preservation=False)")
     print("   to relax this constraint for exploratory purposes.")

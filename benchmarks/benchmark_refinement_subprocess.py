@@ -103,11 +103,11 @@ def main():
     print("=" * 80)
     
     if speedup >= 1.2:
-        print("✓✓ Significant improvement!")
+        print("Significant improvement!")
     elif speedup >= 1.1:
-        print("✓ Noticeable improvement")
+        print("Noticeable improvement")
     else:
-        print("~ Modest improvement")
+        print("Tiny improvement")
 
 if __name__ == '__main__':
     main()

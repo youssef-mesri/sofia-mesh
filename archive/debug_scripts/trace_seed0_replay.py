@@ -126,7 +126,7 @@ def run_replay(seed=0, allow_flips=True, max_iters=50, batch_attempts=2, patch_r
     return trace
 
 
-if __name__ == '__main__':
+if __name__ == '__main__': 
     p = argparse.ArgumentParser()
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--allow-flips', action='store_true', help='Enable flips in the replay')

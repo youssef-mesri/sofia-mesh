@@ -164,6 +164,6 @@ __all__ = [
     'test_maps_consistency','test_improve_min_angle_loop'
 ]
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover 
     configure_logging('INFO')
     test_random_mesh()

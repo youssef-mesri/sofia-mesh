@@ -1,4 +1,4 @@
-"""Benchmark diagnostics.py boundary loop extraction performance."""
+"""Benchmark diagnostics.py boundary loop extraction performance """
 import numpy as np
 import time
 from sofia.core.diagnostics import (

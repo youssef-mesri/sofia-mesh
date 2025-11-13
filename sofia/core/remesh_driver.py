@@ -398,7 +398,7 @@ def greedy_remesh(editor, max_vertex_passes=1, max_edge_passes=1, verbose=False,
                 hook(editor, pass_type='vertex', pass_idx=vp)
             except Exception:
                 pass
-        # Optional end-of-pass compaction (vertex pass) — only if there were changes and tombstones exist
+        # Optional end-of-pass compaction (vertex pass) - only if there were changes and tombstones exist
         if changed and (config is not None and getattr(config, 'compact_end_of_pass', False)):
             if getattr(editor, 'has_tombstones', None) and editor.has_tombstones():
                 try:
@@ -508,7 +508,7 @@ def greedy_remesh(editor, max_vertex_passes=1, max_edge_passes=1, verbose=False,
                     ep, e_flipped, e_split, pass_rejected, changed, cur_min)
         if not changed:
             break
-        # Optional end-of-pass compaction (edge pass) — only if there were changes and tombstones exist
+        # Optional end-of-pass compaction (edge pass) - only if there were changes and tombstones exist
         if changed and (config is not None and getattr(config, 'compact_end_of_pass', False)):
             if getattr(editor, 'has_tombstones', None) and editor.has_tombstones():
                 try:

@@ -15,7 +15,7 @@ What this example shows:
 5. PROTECTING boundary layer vertices from collapse operations
 6. Maintaining boundary conformity during adaptation
 7. Visualizing metric field near boundaries with ellipses
-8. Comparing initial → BL insertion → adapted mesh
+8. Comparing initial -> BL insertion -> adapted mesh
 
 Perfect for: Boundary layer meshing, anisotropic boundary features, CFD preprocessing
 """
@@ -44,7 +44,7 @@ def boundary_layer_metric(x, boundary_thickness=0.25):
         boundary_thickness: Thickness of boundary layer region
         
     Returns:
-        2×2 symmetric positive-definite metric tensor M(x)
+        2x2 symmetric positive-definite metric tensor M(x)
     """
     # Distance from boundaries (assuming unit square [0,1]×[0,1])
     dist_left = float(x[0])
@@ -72,7 +72,7 @@ def boundary_layer_metric(x, boundary_thickness=0.25):
         h_perp = 0.3
         h_parallel = 0.3
     
-    # Convert to metric eigenvalues: λ = 1/h²
+    # Convert to metric eigenvalues: lambda = 1/h^2
     lam_perp = 1.0 / (h_perp ** 2)
     lam_parallel = 1.0 / (h_parallel ** 2)
     
@@ -640,7 +640,7 @@ def main():
     print(f"  Initial mesh: {n_pts_init} vertices, {n_tris_init} triangles")
     print(f"  Boundary vertices: {len(boundary_vertices)}")
     print(f"  Initial min angle: {min_angle_init:.2f}°")
-    print(f"  Initial conformity: {'✓' if check_conformity(editor) else '✗'}")
+    print(f"  Initial conformity: {'ok' if check_conformity(editor) else 'ko'}")
     
     # Step 2: Insert boundary layer vertices
     print("\n[2] Inserting boundary layer vertices to align with metric...")
@@ -672,9 +672,9 @@ def main():
     # Step 3: Perform iterative adaptation
     print(f"\n[3] Performing anisotropic boundary adaptation ({max_iter} iterations)...")
     print("  Strategy:")
-    print("  - Refine boundary edges where L_M > α_boundary")
-    print("  - Refine interior edges where L_M > α_interior")
-    print("  - Coarsen interior edges where L_M < β")
+    print("  - Refine boundary edges where L_M > alpha_boundary")
+    print("  - Refine interior edges where L_M > alpha_interior")
+    print("  - Coarsen interior edges where L_M < beta_collapse")
     print("  - PROTECT boundary layer vertices from collapse")
     print("  - Preserve boundary geometry and conformity")
     
@@ -731,7 +731,7 @@ def main():
         
         # Check conformity
         if not check_conformity(editor):
-            print(f"    ⚠ Warning: Conformity violated, stopping")
+            print(f"    Warning: Conformity violated, stopping")
             break
     
     print(f"\n  Adaptation summary:")
@@ -750,7 +750,7 @@ def main():
     print(f"  Boundary vertices: {len(boundary_vertices)}")
     print(f"  Final min angle: {min_angle_final:.2f}°")
     print(f"  Change: {n_tris_final - n_tris_init:+d} triangles ({100*(n_tris_final/n_tris_init - 1):.1f}%)")
-    print(f"  Final conformity: {'✓' if check_conformity(editor) else '✗'}")
+    print(f"  Final conformity: {'ok' if check_conformity(editor) else 'ko'}")
     
     # Step 5: Visualization
     print("\n[5] Creating visualization...")
@@ -901,7 +901,7 @@ def main():
         "",
         "BL Vertex Protection:",
         f"  Protected vertices:  {len(bl_vertex_set)}",
-        f"  Status: ✓ Preserved throughout",
+        f"  Status: Preserved throughout",
         "",
         "Boundary Layer Config:",
         f"  Layers:        {bl_n_layers}",
@@ -910,8 +910,8 @@ def main():
         f"  Total height:  {bl_total_height:.3f}",
         "",
         "Conformity:",
-        f"  Initial: {'✓ Conform' if check_conformity(editor_init) else '✗ Non-conform'}",
-        f"  Final:   {'✓ Conform' if check_conformity(editor) else '✗ Non-conform'}",
+        f"  Initial: {' Conform' if check_conformity(editor_init) else ' Non-conform'}",
+        f"  Final:   {' Conform' if check_conformity(editor) else ' Non-conform'}",
     ]
     
     ax9.text(0.05, 0.95, '\n'.join(summary_text), 
@@ -922,25 +922,25 @@ def main():
     # Save figure
     output_file = 'anisotropic_boundary_adaptation_result.png'
     plt.savefig(output_file, dpi=150, bbox_inches='tight')
-    print(f"  ✓ Saved visualization to '{output_file}'")
+    print(f"  Saved visualization to '{output_file}'")
     
     print("\n" + "=" * 70)
     print("Example completed successfully!")
     print("=" * 70)
     print("\nKey Takeaways:")
-    print("  • Boundary layer vertices inserted at geometric progression distances")
-    print("  • 5 BL layers with dual insertion strategy:")
-    print("  • Each layer: vertices at boundary points + edge midpoints")
-    print(f"  • 38 vertices per layer = 20 boundary vertices + 20 edge midpoints")
-    print(f"  • Layer heights: 0.020, 0.030, 0.045, 0.068, 0.101 (total ~0.10)")
-    print(f"  • {len(bl_vertex_set)} BL vertices inserted and PROTECTED from collapse")
-    print("  • Boundary edges (RED) are edges shared by only 1 triangle")
-    print("  • Anisotropic metric guides refinement near boundaries")
-    print("  • Mesh conformity is preserved throughout")
-    print("  • Blue ellipses show metric anisotropy and orientation")
-    print(f"  • Total vertices: {n_pts_init} → {n_pts_after_bl} → {n_pts_final}")
-    print(f"  • Production-quality BL mesh with layer-by-layer refinement")
-    
+    print("  - Boundary layer vertices inserted at geometric progression distances")
+    print("  - 5 BL layers with dual insertion strategy:")
+    print("  - Each layer: vertices at boundary points + edge midpoints")
+    print(f"  - 38 vertices per layer = 20 boundary vertices + 20 edge midpoints")
+    print(f"  - Layer heights: 0.020, 0.030, 0.045, 0.068, 0.101 (total ~0.10)")
+    print(f"  - {len(bl_vertex_set)} BL vertices inserted and PROTECTED from collapse")
+    print("  - Boundary edges (RED) are edges shared by only 1 triangle")
+    print("  - Anisotropic metric guides refinement near boundaries")
+    print("  - Mesh conformity is preserved throughout")
+    print("  - Blue ellipses show metric anisotropy and orientation")
+    print(f"  - Total vertices: {n_pts_init} -> {n_pts_after_bl} -> {n_pts_final}")
+    print(f"  - Production-quality BL mesh with layer-by-layer refinement")
+
     return 0
 
 

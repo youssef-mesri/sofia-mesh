@@ -28,4 +28,4 @@ def run_patch_stats_debug(npts=40, seed=7, node_top_k=12):  # pragma: no cover
     return patches
 
 if __name__ == '__main__':  # pragma: no cover
-    run_patch_stats_debug()
+    run_patch_stats_debug() 

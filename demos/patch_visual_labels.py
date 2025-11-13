@@ -1,4 +1,4 @@
-"""Draw patches with IDs and per-patch zooms (moved from patch_visual_labels.py)."""
+"""Draw patches with IDs and per-patch zooms."""
 from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np

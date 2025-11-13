@@ -184,7 +184,7 @@ def main():
     print(f"    Edge splits: {splits}")
     print(f"    Vertices: {refined_stats['n_vertices']} (+{refined_stats['n_vertices'] - initial_stats['n_vertices']})")
     print(f"    Triangles: {refined_stats['n_triangles']} (+{refined_stats['n_triangles'] - initial_stats['n_triangles']})")
-    print(f"    Conformity: {'✓ Valid' if valid else '✗ Invalid'}")
+    print(f"    Conformity: {' Valid' if valid else ' Invalid'}")
     
     # Save refined state
     refined_points = editor.points.copy()
@@ -218,7 +218,7 @@ def main():
     print(f"    Triangles: {final_stats['n_triangles']}")
     print(f"    Edges: {final_stats['n_edges']}")
     print(f"    Min angle: {final_stats['min_angle']:.2f}°")
-    print(f"    Conformity: {'✓ Valid' if final_valid else '✗ Invalid - ' + final_msg}")
+    print(f"    Conformity: {' Valid' if final_valid else ' Invalid - ' + final_msg}")
     
     # Step 5: Visualization
     print("\n[5] Creating visualization...")
@@ -274,13 +274,13 @@ def main():
     
     plt.tight_layout()
     plt.savefig('mesh_workflow_result.png', dpi=150, bbox_inches='tight')
-    print("  ✓ Saved visualization to 'mesh_workflow_result.png'")
+    print("  Saved visualization to 'mesh_workflow_result.png'")
     
     print("\n" + "=" * 70)
-    print("✓ Example completed successfully!")
-    print(f"✓ Workflow: {initial_stats['n_triangles']} → "
+    print(" Example completed successfully!")
+    print(f" Workflow: {initial_stats['n_triangles']} → "
           f"{refined_stats['n_triangles']} → {final_stats['n_triangles']} triangles")
-    print(f"✓ All operations preserved mesh conformity: {final_valid}")
+    print(f" All operations preserved mesh conformity: {final_valid}")
     print("=" * 70)
 
 if __name__ == "__main__":

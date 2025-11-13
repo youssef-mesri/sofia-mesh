@@ -6,7 +6,7 @@ Usage: python replay_and_inspect.py /path/to/patch_log.csv --npts 40 --seed 7 --
 """
 import sys, csv, ast
 import numpy as np
-from geometry import EPS_AREA
+from sofia.core.geometry import EPS_AREA
 import matplotlib.pyplot as plt
 from sofia.core.mesh_modifier2 import build_random_delaunay, PatchBasedMeshEditor
 

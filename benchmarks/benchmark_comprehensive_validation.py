@@ -1,4 +1,4 @@
-"""Comprehensive benchmark: Full incremental validation vs check_mesh_conformity.
+""" Full incremental validation vs check_mesh_conformity.
 
 This benchmark compares ALL 7 checks performed incrementally vs the full check:
 1. Marked triangle filtering
@@ -9,7 +9,7 @@ This benchmark compares ALL 7 checks performed incrementally vs the full check:
 6. Non-manifold edge detection
 7. Boundary loop counting
 
-This is the TRULY FAIR comparison - same functionality, different implementation.
+FAIR comparison - same functionality, different implementation.
 """
 
 import numpy as np
@@ -101,7 +101,7 @@ def benchmark_full_validation(n_triangles=1000, n_queries=1000):
     speedup = time_full_query / time_inc_query if time_inc_query > 0 else float('inf')
     print(f"  Full check:       {time_full_query:.3f} ms ({time_full_query/n_queries:.4f} ms/check)")
     print(f"  Incremental:      {time_inc_query:.3f} ms ({time_inc_query/n_queries:.4f} ms/check)")
-    print(f"  💥 SPEEDUP:       {speedup:.1f}x")
+    print(f"  SPEEDUP:       {speedup:.1f}x")
     
     # Test 3: Mixed workload
     n_ops = 100
@@ -135,7 +135,7 @@ def benchmark_full_validation(n_triangles=1000, n_queries=1000):
     
     print(f"  Full check:       {avg_full:.4f} ms/operation")
     print(f"  Incremental:      {avg_inc:.4f} ms/operation")
-    print(f"  💥 SPEEDUP:       {speedup_mixed:.1f}x")
+    print(f"  SPEEDUP:       {speedup_mixed:.1f}x")
     
     # Test 4: Break-even analysis
     break_even_queries = int(np.ceil((time_inc_build - time_full_build) / (time_full_query/n_queries - time_inc_query/n_queries)))
@@ -172,9 +172,9 @@ def benchmark_validation_correctness(n_triangles=500):
     inc_ok, inc_msgs = validator.get_messages(check_duplicates=True)
     
     if full_ok == inc_ok:
-        print(f"  ✅ Results match: conforming={full_ok}")
+        print(f"  Results match: conforming={full_ok}")
     else:
-        print(f"  ❌ MISMATCH: full={full_ok}, incremental={inc_ok}")
+        print(f"  MISMATCH: full={full_ok}, incremental={inc_ok}")
         print(f"     Full messages: {full_msgs}")
         print(f"     Incremental messages: {inc_msgs}")
     
@@ -191,9 +191,9 @@ def benchmark_validation_correctness(n_triangles=500):
     ok3 = validator2.is_conforming(check_duplicates=True)
     
     if ok1 == ok2 == ok3:
-        print(f"  ✅ Validator is consistent: all checks return {ok1}")
+        print(f"  Validator is consistent: all checks return {ok1}")
     else:
-        print(f"  ❌ MISMATCH: results vary: {ok1}, {ok2}, {ok3}")
+        print(f"  MISMATCH: results vary: {ok1}, {ok2}, {ok3}")
     
     # Test 3: Functional API
     print(f"\nTest 3: Functional API (check_mesh_conformity_incremental)")
@@ -203,9 +203,9 @@ def benchmark_validation_correctness(n_triangles=500):
     ok_orig, msgs_orig = check_mesh_conformity(points, triangles, allow_marked=False)
     
     if ok_func == ok_orig:
-        print(f"  ✅ Functional API matches: conforming={ok_func}")
+        print(f"  Functional API matches: conforming={ok_func}")
     else:
-        print(f"  ❌ MISMATCH: original={ok_orig}, functional={ok_func}")
+        print(f"  MISMATCH: original={ok_orig}, functional={ok_func}")
 
 
 def benchmark_by_check_type(n_triangles=1000):

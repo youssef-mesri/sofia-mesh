@@ -339,5 +339,5 @@ def main():
     log.info('Wrote %s and %s', args.out_before, args.out_after)
 
 
-if __name__ == '__main__':
+if __name__ == '__main__': 
     main()

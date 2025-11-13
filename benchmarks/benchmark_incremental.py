@@ -118,7 +118,7 @@ def benchmark_edge_map(n_triangles=1000, n_operations=100):
     print(f"  Incremental:    {avg_inc:.4f} ms/operation (median: {np.median(times_inc):.4f} ms)")
     
     speedup = avg_full / avg_inc if avg_inc > 0 else float('inf')
-    print(f"\n  💥 SPEEDUP: {speedup:.1f}x faster")
+    print(f"\n  SPEEDUP: {speedup:.1f}x faster")
     
     # Test 3: Query performance
     print(f"\nQuery performance (1000 edge lookups):")
@@ -203,7 +203,7 @@ def benchmark_conformity_checker(n_triangles=1000, n_operations=100):
     print(f"  Incremental:    {avg_inc:.4f} ms/operation (median: {np.median(times_inc):.4f} ms)")
     
     speedup = avg_full / avg_inc if avg_inc > 0 else float('inf')
-    print(f"\n  💥 SPEEDUP: {speedup:.1f}x faster")
+    print(f"\n  SPEEDUP: {speedup:.1f}x faster")
     
     # Test 3: Query performance
     print(f"\nQuery performance (1000 conformity checks):")
@@ -267,7 +267,7 @@ def benchmark_validation():
         removed, added = simulate_edge_split(triangles, i)
         checker.update_after_operation(removed, added)
     
-    print(f"  ✓ Conformity checker operations completed")
+    print(f"  Conformity checker operations completed")
     print(f"  Is conforming: {checker.is_conforming()}")
     print(f"  Boundary edges: {checker.get_boundary_edge_count()}")
     print(f"  Non-manifold edges: {checker.get_non_manifold_edge_count()}")

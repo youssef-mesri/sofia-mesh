@@ -248,12 +248,12 @@ Refinement Process:
     
     plt.tight_layout()
     plt.savefig('adaptive_refinement_result.png', dpi=150, bbox_inches='tight')
-    print("  ✓ Saved visualization to 'adaptive_refinement_result.png'")
+    print("  Saved visualization to 'adaptive_refinement_result.png'")
     
     print("\n" + "=" * 70)
-    print("✓ Example completed successfully!")
-    print(f"✓ Mesh refined from {len(initial_triangles)} to {len(final_areas)} triangles")
-    print(f"✓ Area uniformity improved by {(1 - np.std(final_areas)/np.std(initial_areas_data)) * 100:.1f}%")
+    print(" Example completed successfully!")
+    print(f" Mesh refined from {len(initial_triangles)} to {len(final_areas)} triangles")
+    print(f" Area uniformity improved by {(1 - np.std(final_areas)/np.std(initial_areas_data)) * 100:.1f}%")
     print("=" * 70)
 
 if __name__ == "__main__":

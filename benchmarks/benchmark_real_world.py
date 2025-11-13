@@ -231,16 +231,16 @@ if __name__ == "__main__":
     print("="*80)
     
     if avg_speedup > 10:
-        print("  ✓✓✓ Numba provides DRAMATIC performance improvements (>10x)")
+        print("  Numba provides DRAMATIC performance improvements (>10x)")
         print("      Highly recommended for production use!")
     elif avg_speedup > 3:
-        print("  ✓✓ Numba provides SIGNIFICANT performance improvements (3-10x)")
+        print("  Numba provides SIGNIFICANT performance improvements (3-10x)")
         print("     Recommended for all users working with meshes >500 triangles")
     elif avg_speedup > 1.5:
-        print("  ✓ Numba provides MODERATE performance improvements (1.5-3x)")
+        print("  Numba provides MODERATE performance improvements (1.5-3x)")
         print("    Beneficial for users working with large meshes")
     else:
-        print("  ⚠ Numba provides minimal performance improvements (<1.5x)")
+        print("  Numba provides minimal performance improvements (<1.5x)")
         print("    May not be worth the dependency for small meshes")
     
     print("="*80)

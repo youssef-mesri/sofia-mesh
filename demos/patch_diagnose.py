@@ -51,5 +51,5 @@ def run_patch_diagnose(npts=40, seed=7, node_top_k=12):  # pragma: no cover (vis
 main = run_patch_diagnose
 
 if __name__ == '__main__':  # pragma: no cover
-    configure_logging('INFO')
+    configure_logging('INFO') 
     run_patch_diagnose()

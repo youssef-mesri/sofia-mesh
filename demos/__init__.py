@@ -27,7 +27,7 @@ from .patch_boundary_report import run_patch_boundary_report
 from .patch_visual_labels import run_patch_visual_labels
 from .inspect_patch0_nodes import run_inspect_patch0_nodes
 
-__all__ = [
+__all__ = [ 
     # basic demos
     'test_random_mesh','test_non_convex_cavity_star','test_flip_and_add_node','test_locate_point_optimized',
     'test_maps_consistency','test_improve_min_angle_loop',

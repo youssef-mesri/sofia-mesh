@@ -1710,7 +1710,7 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
             chosen = cand_infos[0][0]
             new_triangles = [list(chosen[0]), list(chosen[1])]
 
-    # If optimal star failed and (possibly) quad fast-path didn’t help, prefer polygon-based fallbacks
+    # If optimal star failed and (possibly) quad fast-path didn't help, prefer polygon-based fallbacks
     if not new_triangles and getattr(editor, 'virtual_boundary_mode', False) and cycle:
         # Collect multiple polygon-based candidate triangulations and rank them by
         # average normalized triangle quality. Prefer candidates that preserve area
@@ -2166,7 +2166,7 @@ def op_remove_node_with_patch(editor, v_idx, force_strict=False):
                     except Exception:
                         local_ok = False
             if local_ok:
-                # local validation passed — accept candidate without full simulation
+                # local validation passed - accept candidate without full simulation
                 return True, []
         except Exception:
             # any error in local fast-checks: fall back to full simulation below

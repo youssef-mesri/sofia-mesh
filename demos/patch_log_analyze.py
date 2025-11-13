@@ -61,7 +61,7 @@ def analyze(path):
     print(f"\nWrote summary to {out}")
 
 
-if __name__ == '__main__':
+if __name__ == '__main__': 
     if len(sys.argv) < 2:
         print('Usage: python patch_log_analyze.py /path/to/patch_log.csv')
         sys.exit(1)

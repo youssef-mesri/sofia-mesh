@@ -214,11 +214,11 @@ def main():
     
     plt.tight_layout()
     plt.savefig('quality_improvement_result.png', dpi=150, bbox_inches='tight')
-    print("  ✓ Saved visualization to 'quality_improvement_result.png'")
+    print("  Saved visualization to 'quality_improvement_result.png'")
     
     print("\n" + "=" * 60)
-    print("✓ Example completed successfully!")
-    print(f"✓ Mesh refined from {initial_stats['n_triangles']} to {final_stats['n_triangles']} triangles")
+    print(" Example completed successfully!")
+    print(f" Mesh refined from {initial_stats['n_triangles']} to {final_stats['n_triangles']} triangles")
     print("=" * 60)
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Adaptation demo: build a mesh and run anisotropic remeshing guided by a simple
-spatially-varying metric field. Inspired by `demos/generate_scenario.py` but
-focused on demonstrating `anisotropic_local_remesh`.
+spatially-varying metric field. Inspired by demos/generate_scenario.py but
+focused on demonstrating anisotropic_local_remesh.
 
 Usage examples:
     python3 demos/adapt_scenario.py --npts 80 --iters 4 --out adapt_demo.png

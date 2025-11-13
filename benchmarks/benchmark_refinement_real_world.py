@@ -208,7 +208,7 @@ def main():
         print(f"  Note: Numba not available for comparison")
         print("=" * 80)
     
-    # Restore original flags
+    # Restore original flag
     geometry.HAS_NUMBA = ORIG_GEOM_NUMBA
     conformity.HAS_NUMBA = ORIG_CONF_NUMBA
     diagnostics.HAS_NUMBA = ORIG_DIAG_NUMBA

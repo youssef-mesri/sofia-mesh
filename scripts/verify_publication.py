@@ -21,11 +21,11 @@ RESET = '\033[0m'
 def check(condition, message, warning=False):
     """Print a check result"""
     if condition:
-        print(f"{GREEN}✓{RESET} {message}")
+        print(f"{GREEN}OK{RESET} {message}")
         return True
     else:
         color = YELLOW if warning else RED
-        symbol = '⚠' if warning else '✗'
+        symbol = '!' if warning else 'KO'
         print(f"{color}{symbol}{RESET} {message}")
         return not warning
 
@@ -261,12 +261,12 @@ def main():
     # Summary
     print("=" * 70)
     if all_passed:
-        print(f"{GREEN}✓ All critical checks passed!{RESET}")
+        print(f"{GREEN}OK All critical checks passed!{RESET}")
     else:
-        print(f"{RED}✗ Some critical checks failed{RESET}")
+        print(f"{RED}KO Some critical checks failed{RESET}")
     
     if warnings:
-        print(f"{YELLOW}⚠ {len(warnings)} warning(s):{RESET}")
+        print(f"{YELLOW}! {len(warnings)} warning(s):{RESET}")
         for warning in warnings:
             print(f"  • {warning}")
     
@@ -274,7 +274,7 @@ def main():
     print()
     
     if all_passed and not warnings:
-        print(f"{GREEN}🎉 Ready for publication!{RESET}")
+        print(f"{GREEN} Ready for publication!{RESET}")
         print()
         print("Next steps:")
         print("  1. Review PUBLICATION_GUIDE.md")
@@ -284,13 +284,13 @@ def main():
         print("  5. Publish to PyPI")
         return 0
     elif all_passed:
-        print(f"{YELLOW}⚠ Ready with warnings{RESET}")
+        print(f"{YELLOW}! Ready with warnings{RESET}")
         print()
         print("Please review the warnings above before publishing.")
         print("See PUBLICATION_GUIDE.md for details.")
         return 0
     else:
-        print(f"{RED}❌ Not ready for publication{RESET}")
+        print(f"{RED}KO Not ready for publication{RESET}")
         print()
         print("Please fix the issues above before publishing.")
         return 1
