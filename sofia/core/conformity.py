@@ -136,8 +136,9 @@ def simulate_compaction_and_check(points, triangles, eps_area=EPS_AREA, reject_b
 	except Exception:
 		return False, ['triangle index out of range during simulation']
 	ok_conf, msgs = check_mesh_conformity(new_points, remapped, allow_marked=False,
-										  reject_boundary_loops=reject_any_boundary_loops)
-	# The following block is redundant with check_mesh_conformity, so it is commented out.
+										  reject_boundary_loops=reject_any_boundary_loops,
+										  reject_inverted=True)
+	# Note: reject_inverted is now enabled to catch inverted triangles during simulation
 	# # Vectorized inversion detection on remapped tris
 	# try:
 	#     areas = triangles_signed_areas(new_points, remapped)

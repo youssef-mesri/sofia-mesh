@@ -1050,7 +1050,14 @@ def _handle_virtual_boundary_mode(editor, v_idx, cavity_info, stats=None):
                 mask[list(cavity_info.cavity_indices)] = False
             mask &= (editor.triangles[:, 0] != -1)
             tmp_tri_full = editor.triangles[mask] if mask.any() else np.empty((0, 3), dtype=np.int32)
-            ok_sub, msgs = check_mesh_conformity(editor.points, tmp_tri_full, allow_marked=False)
+            
+            # Special case: if the result is an empty mesh (all triangles deleted), accept it
+            if tmp_tri_full.size == 0:
+                editor.logger.debug("[DEBUG] virtual-boundary: deletion results in empty mesh (acceptable)")
+                ok_sub = True
+                msgs = []
+            else:
+                ok_sub, msgs = check_mesh_conformity(editor.points, tmp_tri_full, allow_marked=False)
         except Exception as e:
             if stats:
                 stats.remove_early_rejects += 1
