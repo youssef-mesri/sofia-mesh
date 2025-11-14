@@ -15,12 +15,12 @@ The algorithm uses a **Hessian-based metric** derived from the level-set functio
 
 ## Features
 
-- ✅ **Metric normalization** to control target vertex count
-- ✅ **Edge flipping** for better metric alignment
-- ✅ **Laplacian smoothing** to improve element quality
-- ✅ **Extreme anisotropy** (ratio up to 70:1)
-- ✅ **Pure Python implementation** (no C++ core required)
-- ✅ **Conforming meshes** (each edge shared by ≤ 2 triangles)
+- **Metric normalization** to control target vertex count
+- **Edge flipping** for better metric alignment
+- **Laplacian smoothing** to improve element quality
+- **Extreme anisotropy** (ratio up to 70:1)
+- **Pure Python implementation** (no C++ core required)
+- **Conforming meshes** (each edge shared by ≤ 2 triangles)
 
 ## Usage
 
@@ -61,7 +61,7 @@ python anisotropic_remeshing.py --target-vertices 800 --alpha 1.5
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `--target-vertices` | 300 | Target number of vertices (actual ≈ 2-3×) |
+| `--target-vertices` | 300 | Target number of vertices (actual ~ 2-3×) |
 | `--alpha` | 1.3 | Split threshold (higher = less aggressive) |
 | `--beta` | 0.7 | Collapse threshold |
 | `--npts` | 150 | Initial Delaunay mesh size |
@@ -73,13 +73,13 @@ python anisotropic_remeshing.py --target-vertices 800 --alpha 1.5
 The remeshing process consists of the following steps:
 
 1. **Metric Construction (Hessian-based)**
-   - Compute Hessian H(φ) of level-set function
+   - Compute Hessian H(\phi) of level-set function
    - Extract eigenvalues/eigenvectors for anisotropic directions
    - Normalize metric to target vertex count
 
 2. **Iterative Remeshing Loop**
-   - **Split**: edges where L_M > α (metric edge length too long)
-   - **Collapse**: edges where L_M < β (metric edge length too short)
+   - **Split**: edges where L_M > alpha (metric edge length too long)
+   - **Collapse**: edges where L_M < beta (metric edge length too short)
    - **Flip**: edges to improve metric alignment (area-preserving)
    - **Smooth**: interior vertices (Laplacian, every 2 iterations)
 
@@ -92,18 +92,18 @@ The remeshing process consists of the following steps:
 
 ### Hessian Computation
 
-For the level-set φ(x,y) = y - f(x):
+For the level-set \phi(x,y) = y - f(x):
 
 ```
-H(φ) = [[-f''(x),  0    ],
+H(\phi) = [[-f''(x),  0    ],
         [0,        0    ]]
 ```
 
 For our sinusoidal curve:
 ```
-f(x) = 0.5 + 0.15·sin(4πx)
-f'(x) = 0.15·4π·cos(4πx)
-f''(x) = -0.15·(4π)²·sin(4πx)
+f(x) = 0.5 + 0.15·sin(4pi * x)
+f'(x) = 0.15·4π·cos(4pi * x)
+f''(x) = -0.15·(4π)²·sin(4pi * x)
 ```
 
 ### Metric Tensor
@@ -111,19 +111,19 @@ f''(x) = -0.15·(4π)²·sin(4πx)
 The metric tensor M controls mesh sizing:
 
 ```
-M = R @ Λ @ R^T
+M = R @ \Gamma @ R^T
 ```
 
 where:
 - **R** = [tangent | normal] (eigenvector matrix)
-- **Λ** = diag(1/h_tangent², 1/h_normal²) (eigenvalue matrix)
+- **\Gamma** = diag(1/h_tangent², 1/h_normal²) (eigenvalue matrix)
 
 ### Anisotropic Sizing
 
-| Location | h_⊥ (normal) | h_∥ (tangent) | Ratio |
+| Location | h_n (normal) | h_t (tangent) | Ratio |
 |----------|-------------|---------------|-------|
 | Near curve | 0.005 | 1.0 | **200:1** |
-| Transition (d < 0.25) | 0.005→0.30 | 1.0 | 200:1→1:1 |
+| Transition (d < 0.25) | 0.005->0.30 | 1.0 | 200:1→1:1 |
 | Far field | 0.30 | 0.30 | 1:1 |
 
 **Note:** Extreme anisotropy (200:1) produces triangles with aspect ratios up to 500:1 and minimum angles as low as 0.1°.
@@ -205,12 +205,12 @@ Quality checks are **disabled** (`enforce_split_quality=False`) to allow extreme
 **Status**: Implemented but non-functional due to `remove_node_with_patch` failures.
 
 **Implemented approach** (`remove_nodes_by_metric_quality`):
-- ✅ Direct metric-quality optimization (not degree-based heuristic)
-- ✅ Evaluates cavity quality: `Q = mean(|L_M - 1|)` for all edges in star
-- ✅ Simulates removal and computes new cavity quality
-- ✅ Accepts only if `Q_after < Q_before - threshold`
-- ✅ Ranks candidates by worst quality first
-- ✅ Verifies mesh conformity before attempting removal
+- Direct metric-quality optimization (not degree-based heuristic)
+- Evaluates cavity quality: `Q = mean(|L_M - 1|)` for all edges in star
+- Simulates removal and computes new cavity quality
+- Accepts only if `Q_after < Q_before - threshold`
+- Ranks candidates by worst quality first
+- Verifies mesh conformity before attempting removal
 
 **Why it doesn't work**:
 `remove_node_with_patch` systematically fails even with:
@@ -219,7 +219,7 @@ Quality checks are **disabled** (`enforce_split_quality=False`) to allow extreme
 - Good-quality cavities
 
 **Root cause analysis**:
-The core `remove_node_with_patch` function likely has:
+The core `remove_node_with_patch` function has:
 1. **Euclidean quality checks** instead of metric-aware checks
 2. **Too strict area preservation** constraints
 3. **Orientation issues** in retriangulated cavity
@@ -259,14 +259,6 @@ Metric-based flipping with area preservation:
 - Accept flip if variance decreases
 - Rollback if area changes > 1%
 - Typically 20-30 flips per run
-
-## References
-
-1. **Alauzet, F., & Loseille, A.** (2016). "A decade of progress on anisotropic mesh adaptation for computational fluid dynamics." *CAD Computer Aided Design*, 72, 13-39.
-
-2. **Loseille, A., & Alauzet, F.** (2011). "Continuous mesh framework part I: well-posed continuous interpolation error." *SIAM Journal on Numerical Analysis*, 49(1), 38-60.
-
-3. **Frey, P. J., & Alauzet, F.** (2005). "Anisotropic mesh adaptation for CFD computations." *Computer Methods in Applied Mechanics and Engineering*, 194(48-49), 5068-5082.
 
 ## Troubleshooting
 

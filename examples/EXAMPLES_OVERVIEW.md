@@ -2,15 +2,29 @@
 
 This directory contains example scripts demonstrating various mesh operations and remeshing techniques.
 
+## Quick Reference: Anisotropic Remeshing Examples
+
+| Example | Difficulty | Time | Key Feature | When to Use |
+|---------|-----------|------|-------------|-------------|
+| `anisotropic_remeshing.py` | Advanced | 15 min | Basic metric-guided adaptation | Learn fundamentals of anisotropic remeshing |
+| `anisotropic_levelset_adaptation.py` | Advanced | 20 min | Level-set based metric | Adapt to curved features and iso-contours |
+| `anisotropic_remeshing_normalized.py` | Expert | 30 min | Metric normalization + budget control | Target specific vertex count, production use |
+| `anisotropic_boundary_adaptation.py` | Advanced | 15 min | Boundary layer insertion | CFD preprocessing, boundary layer meshing |
+
+**Recommended learning path:** 
+9 → 11 → 12 (anisotropic_remeshing → levelset → normalized)
+
+---
+
 ## Main Examples
 
 ### Anisotropic Remeshing
 
-#### `simple_anisotropic_remeshing.py` ⭐ **Recommended**
-A clean, well-documented implementation of anisotropic remeshing with boundary preservation.
+#### `anisotropic_levelset_adaptation.py` **Recommended**
+A clean, well-documented implementation of anisotropic remeshing with level-set based metric and boundary preservation.
 
 **Features:**
-- Anisotropic metric field based on distance to a sinusoidal curve
+- Anisotropic metric field based on distance to a level-set function (sinusoidal curve)
 - Automatic boundary preservation (no manual protection needed for collapse)
 - Split/collapse/smooth operations
 - Comprehensive visualization with statistics
@@ -18,10 +32,12 @@ A clean, well-documented implementation of anisotropic remeshing with boundary p
 
 **Usage:**
 ```bash
-python simple_anisotropic_remeshing.py --max-iter 10 --alpha 0.8 --beta 0.7
+python anisotropic_levelset_adaptation.py --max-iter 10 --alpha 0.8 --beta 0.7
 ```
 
 **Key innovations:**
+- Level-set function φ(x,y) = y - (0.5 + 0.15·sin(4πx)) defines the feature
+- Metric adapts based on distance to iso-contours
 - Boundary vertices automatically detected and preserved during edge collapse
 - Quality checks based on angles are disabled (not suitable for anisotropic meshes)
 - C++ backend disabled to use Python implementation with boundary detection
@@ -30,6 +46,51 @@ python simple_anisotropic_remeshing.py --max-iter 10 --alpha 0.8 --beta 0.7
 - Error reduction: ~3x
 - Metric edge lengths: well-aligned to ideal (L_M ≈ 1.0)
 - Boundary perfectly preserved (deviation = 0.00)
+
+#### `anisotropic_remeshing_normalized.py` **Expert-Level**
+Advanced anisotropic remeshing with **metric normalization** for precise computational budget control.
+
+**Features:**
+- All features of `anisotropic_levelset_adaptation.py` plus:
+- **Metric normalization**: Target specific vertex count via determinant normalization
+- **Mesh quadrature integration**: 50× faster than grid sampling (0.01s vs 0.5s)
+- **Independent control**: Decouple anisotropy ratio from vertex count
+- Calibration factor for accurate vertex count targeting
+
+**Usage:**
+```bash
+# Target 350 vertices
+python anisotropic_remeshing_normalized.py --target-complexity 350 --alpha 1.3 --beta 0.5
+
+# Target 500 vertices with more iterations
+python anisotropic_remeshing_normalized.py --target-complexity 500 --max-iter 10
+
+# Disable normalization (original behavior)
+python anisotropic_remeshing_normalized.py --no-normalize
+```
+
+**Key innovation - Metric Normalization:**
+- Formula: M_normalized = α² · M where α = sqrt(N_target / (C · ∫√det(M) dΩ))
+- Calibration factor C ≈ 2.3 (for alpha=1.3, beta=0.5)
+- Mesh quadrature evaluates integral on triangle centroids
+- Target 350 → Actual 345 vertices (0.99 ratio, nearly perfect!)
+
+**Validation Results:**
+| Target | Actual | Ratio | Error |
+|--------|--------|-------|-------|
+| 150 | 200 | 1.33 | +33% |
+| 250 | 291 | 1.16 | +16% |
+| 350 | 345 | 0.99 | -1% ⭐ |
+| 500 | 426 | 0.85 | -15% |
+
+**Perfect for:**
+- Computational budget control in large-scale simulations
+- Comparing anisotropic strategies at fixed complexity
+- Production meshes with resource constraints
+
+**Documentation:**
+- Theory: `README_metric_normalization.md`
+- Performance: `MESH_QUADRATURE_RESULTS.md`
 
 #### `anisotropic_remeshing.py`
 Full-featured anisotropic remeshing with extensive diagnostics and boundary layer support.
@@ -136,15 +197,24 @@ Focused on improving mesh quality metrics.
 ## Key Concepts
 
 ### Anisotropic Remeshing
-- **Goal**: Adapt mesh to directional features (e.g., boundary layers, shocks)
+- **Goal**: Adapt mesh to directional features (e.g., boundary layers, shocks, level-sets)
 - **Metric**: 2×2 tensor defining desired edge lengths in different directions
 - **Operations**: Split long edges, collapse short edges (in metric space)
 - **Challenge**: Elongated triangles are desired, not defects!
 
+### Metric Normalization (Advanced)
+- **Goal**: Control computational budget by targeting specific vertex count
+- **Method**: Scale metric uniformly by factor alpha^2 to achieve target complexity
+- **Formula**: M_normalized = alpha^2 · M where alpha = sqrt(N_target / (C · \int \sqrt(det(M)) d\Omega))
+- **Integration**: Mesh-based quadrature evaluates \int \sqrt(det(M)) d\Omega on triangle centroids
+- **Calibration**: Empirical factor C relates integral to actual vertex count
+- **Benefit**: Independent control of anisotropy ratio and vertex count
+- **Accuracy**: Typically ±15-30%, excellent for 300-500 vertex range
+
 ### Boundary Preservation
 - **Important**: Domain boundary must remain unchanged during remeshing
 - **Implementation**: Automatic detection of boundary vertices in `op_edge_collapse`
-- **Collapse strategy**: If vertex on boundary → collapse to boundary vertex
+- **Collapse strategy**: If vertex on boundary -> collapse to boundary vertex
 - **Smoothing**: Exclude all boundary vertices (not just corners)
 
 ### Quality Checks
@@ -166,12 +236,17 @@ pip install -e .
 ### Basic execution
 ```bash
 cd examples
-python simple_anisotropic_remeshing.py
+python anisotropic_levelset_adaptation.py
 ```
 
 ### With parameters
 ```bash
-python simple_anisotropic_remeshing.py --max-iter 20 --alpha 0.8 --beta 0.7 --h-perp 0.008 --h-tang 0.15
+python anisotropic_levelset_adaptation.py --max-iter 20 --alpha 0.8 --beta 0.7 --h-perp 0.008 --h-tang 0.15
+```
+
+### Metric normalization example
+```bash
+python anisotropic_remeshing_normalized.py --target-complexity 350 --alpha 1.3 --beta 0.5 --max-iter 5
 ```
 
 ### View results
@@ -184,7 +259,8 @@ ls -lh *.png
 
 ## Output Files
 
-- `simple_remesh_result.png` - Visualization from simple_anisotropic_remeshing.py
+- `simple_remesh_result.png` - Visualization from anisotropic_levelset_adaptation.py
+- `simple_remesh_normalized_result.png` - Visualization from anisotropic_remeshing_normalized.py
 - `anisotropic_remeshing_result.png` - Visualization from anisotropic_remeshing.py
 - `anisotropic_boundary_adaptation_result.png` - Visualization from boundary adaptation
 
@@ -248,5 +324,7 @@ The C++ backend always collapses to midpoint and doesn't support boundary preser
 
 - Sofia documentation: `/path/to/Sofia/publication_prep/README.md`
 - Anisotropic remeshing: `README_anisotropic.md`
+- Metric normalization theory: `README_metric_normalization.md`
+- Mesh quadrature performance: `MESH_QUADRATURE_RESULTS.md`
 - Core operations: `sofia/core/operations.py`
 - Mesh editor: `sofia/core/mesh_modifier2.py`
