@@ -19,11 +19,11 @@ Learn the fundamental mesh operations:
 9. Anisotropic Remeshing → 11. Anisotropic Level-Set Adaptation → 
 12. Anisotropic Remeshing with Normalization [Expert] → 10. Anisotropic Boundary Adaptation ↓
 Anisotropic Remeshing (15 min)
-         ↓
+         
 Anisotropic Level-Set Adaptation (20 min)
-         ↓
+         
 Anisotropic Remeshing with Normalization (30 min) [Expert]
-         ↓
+         
 Anisotropic Boundary Adaptation (15 min)-by-step results
 
 ```bash
