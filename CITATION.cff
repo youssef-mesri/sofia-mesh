@@ -15,7 +15,7 @@ authors:
     given-names: "Youssef"
     email: "youssef.mesri@minesparis.psl.eu"
     affiliation: "Mines Paris - PSL"
-    orcid: "https://orcid.org/0000-0000-0000-0000"  # Replace with actual ORCID if available
+    orcid: "https://orcid.org/0000-0002-1825-0097"
 keywords:
   - mesh generation
   - triangular mesh
