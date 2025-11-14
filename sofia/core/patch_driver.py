@@ -31,7 +31,7 @@ import random
 import numpy as np
 
 from .constants import EPS_AREA, EPS_IMPROVEMENT
-from .config import PatchDriverConfig, RemeshConfig
+from .config import PatchDriverConfig, RemeshConfig, GreedyConfig
 from .diagnostics import (
     compact_copy,
     find_inverted_triangles,
@@ -331,6 +331,23 @@ def run_patch_batch_driver(editor, config: PatchDriverConfig, rng: random.Random
         gif_cap.save(editor, tag, _plot)
     if config.gif_capture:
         _save_frame('start')
+
+    local_greedy_cfg: Optional[GreedyConfig] = None
+    if config.use_greedy_remesh and greedy_remesh is not None and remesh_config is None:
+        gif_out = config.gif_out or 'patch_run.gif'
+        local_greedy_cfg = GreedyConfig(
+            max_vertex_passes=config.greedy_vertex_passes,
+            max_edge_passes=config.greedy_edge_passes,
+            strict=False,
+            reject_crossings=config.reject_crossings,
+            reject_new_loops=config.reject_new_loops,
+            force_pocket_fill=config.auto_fill_pockets,
+            verbose=False,
+            gif_capture=config.gif_capture,
+            gif_dir=config.gif_dir,
+            gif_out=gif_out.replace('patch_', 'greedy_') if gif_out else 'greedy_run.gif',
+            gif_fps=config.gif_fps,
+        )
     while iter_no < config.max_iterations:
         iter_start = time.time()
         g_before_iter = editor.global_min_angle()
@@ -346,8 +363,8 @@ def run_patch_batch_driver(editor, config: PatchDriverConfig, rng: random.Random
                 g_cfg.max_vertex_passes = config.greedy_vertex_passes
                 g_cfg.max_edge_passes = config.greedy_edge_passes
                 greedy_remesh(editor, config=g_cfg)
-            else:
-                greedy_remesh(editor, max_vertex_passes=config.greedy_vertex_passes, max_edge_passes=config.greedy_edge_passes, verbose=False)
+            elif local_greedy_cfg is not None:
+                greedy_remesh(editor, config=local_greedy_cfg)
 
         # Build list of triangles below threshold (vectorized)
         tris_arr = np.asarray(editor.triangles, dtype=int)

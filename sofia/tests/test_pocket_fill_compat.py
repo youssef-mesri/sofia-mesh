@@ -1,5 +1,14 @@
+import warnings
 import numpy as np
 from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+
+warnings.filterwarnings(
+    "ignore",
+    message='sofia.core.pocket_fill is deprecated; import pocket-fill strategies from '
+            'sofia.core.triangulation instead',
+    category=DeprecationWarning,
+)
+
 from sofia.core import pocket_fill as pf_compat
 from sofia.core import triangulation as tri
 

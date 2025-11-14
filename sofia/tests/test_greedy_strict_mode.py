@@ -1,6 +1,7 @@
 import numpy as np
 
 from sofia.core.mesh_modifier2 import PatchBasedMeshEditor
+from sofia.core.config import GreedyConfig
 from sofia.core.remesh_driver import greedy_remesh
 from sofia.core.conformity import check_mesh_conformity
 
@@ -24,11 +25,21 @@ def build_crossing_prone_mesh():
     return pts, tris
 
 
+def _run_greedy(editor, *, annotate_failures=False, rejected_log_path=None, **cfg_kwargs):
+    cfg = GreedyConfig(**cfg_kwargs)
+    return greedy_remesh(
+        editor,
+        config=cfg,
+        annotate_failures=annotate_failures,
+        rejected_log_path=rejected_log_path,
+    )
+
+
 def test_greedy_strict_rejects_crossing_flip():
     pts, tris = build_crossing_prone_mesh()
     editor = PatchBasedMeshEditor(pts.copy(), tris.copy())
     # Run a strict greedy pass with crossings rejection; edge passes encourage flips.
-    greedy_remesh(
+    _run_greedy(
         editor,
         max_vertex_passes=1,
         max_edge_passes=2,
@@ -62,7 +73,7 @@ def test_greedy_non_strict_pocket_fill():
     ], dtype=int)
     editor = PatchBasedMeshEditor(pts.copy(), tris.copy())
     pre_pts = len(editor.points)
-    greedy_remesh(
+    _run_greedy(
         editor,
         max_vertex_passes=1,
         max_edge_passes=0,
@@ -70,7 +81,6 @@ def test_greedy_non_strict_pocket_fill():
         strict=False,
         reject_crossings=False,
         reject_new_loops=False,
-        annotate_failures=False,
     )
     # Pocket fill may have added points OR triangles. Ensure at least one active triangle remains and no degenerate cluster.
     active = [t for t in editor.triangles if not np.all(np.array(t) == -1)]

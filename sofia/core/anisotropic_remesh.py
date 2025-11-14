@@ -54,7 +54,11 @@ def _apply_dlog(M: np.ndarray, dM: np.ndarray) -> np.ndarray:
             if i == j:
                 C[i, j] = 1.0 / vals[i]
             else:
-                C[i, j] = (math.log(vals[i]) - math.log(vals[j])) / (vals[i] - vals[j])
+                diff = vals[i] - vals[j]
+                if abs(diff) < EPS_TINY:
+                    C[i, j] = 1.0 / vals[i]
+                else:
+                    C[i, j] = (math.log(vals[i]) - math.log(vals[j])) / diff
     Mout = vecs @ (C * Vt_dM_V) @ vecs.T
     return Mout
 
@@ -74,7 +78,11 @@ def _apply_dexp(A: np.ndarray, dA: np.ndarray) -> np.ndarray:
             if i == j:
                 D[i, j] = math.exp(vals[i])
             else:
-                D[i, j] = (math.exp(vals[i]) - math.exp(vals[j])) / (vals[i] - vals[j])
+                diff = vals[i] - vals[j]
+                if abs(diff) < EPS_TINY:
+                    D[i, j] = math.exp(vals[i])
+                else:
+                    D[i, j] = (math.exp(vals[i]) - math.exp(vals[j])) / diff
     Mout = vecs @ (D * Vt_dA_V) @ vecs.T
     return Mout
 

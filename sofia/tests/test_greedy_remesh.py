@@ -2,6 +2,7 @@ import numpy as np
 
 from sofia.core.mesh_modifier2 import PatchBasedMeshEditor, build_random_delaunay
 from sofia.core.conformity import check_mesh_conformity
+from sofia.core.config import GreedyConfig
 from sofia.core.remesh_driver import greedy_remesh
 
 
@@ -17,12 +18,17 @@ def assert_maps_valid(editor):
             assert not np.all(editor.triangles[idx] == -1), f"v_map references tombstoned triangle {idx} for vertex {v}"
 
 
+def _run_greedy(editor, **cfg_kwargs):
+    cfg = GreedyConfig(**cfg_kwargs)
+    return greedy_remesh(editor, config=cfg)
+
+
 def test_greedy_remesh_preserves_conformity_and_nonregression():
     pts, tris = build_random_delaunay(npts=50, seed=1234)
     editor = PatchBasedMeshEditor(pts.copy(), tris.copy())
     pre_min = editor.global_min_angle()
 
-    ok = greedy_remesh(editor, max_vertex_passes=2, max_edge_passes=2, verbose=False)
+    ok = _run_greedy(editor, max_vertex_passes=2, max_edge_passes=2, verbose=False)
     assert ok is True
 
     # greedy_remesh may produce topological issues on some random seeds; ensure basic invariants hold
@@ -56,7 +62,7 @@ def test_greedy_remesh_removes_high_degree_center_on_regular_ngon():
     editor = PatchBasedMeshEditor(points.copy(), tris.copy())
     assert len(editor.v_map.get(center_idx, [])) == n
 
-    ok = greedy_remesh(editor, max_vertex_passes=1, max_edge_passes=0, verbose=False)
+    ok = _run_greedy(editor, max_vertex_passes=1, max_edge_passes=0, verbose=False)
     assert ok is True
 
     # compaction should remove the center vertex if removal succeeded
@@ -95,7 +101,7 @@ def test_greedy_remesh_improves_min_angle_on_skinny_configuration():
     pre_min = editor.global_min_angle()
     assert pre_min < 5.0  # confirm it's actually poor quality
 
-    greedy_remesh(editor, max_vertex_passes=2, max_edge_passes=1, verbose=False)
+    _run_greedy(editor, max_vertex_passes=2, max_edge_passes=1, verbose=False)
     post_min = editor.global_min_angle()
 
     # Non-decreasing min angle (allow tiny numerical slack)
