@@ -1,6 +1,6 @@
-# 🚀 Quick Start - Publication de SOFIA
+# Quick Start - Publication de SOFIA
 
-## Statut: ✅ PRÊT
+## Statut: PRÊT
 
 ### Pour Publier (1 heure)
 
@@ -42,19 +42,19 @@ twine upload dist/*
 
 ### Ce qui est Prêt
 
-✅ 8 exemples complets (2144 lignes)  
-✅ 8 visualisations (2.4 MB)  
-✅ Documentation complète (1059 lignes)  
-✅ Tests unitaires (50+)  
-✅ GitHub Actions (CI/CD)  
-✅ Package PyPI configuré  
-✅ Citations académiques  
-✅ Code de conduite
+11 exemples complets (2144 lignes)  
+8 visualisations (2.4 MB)  
+Documentation complète (1059 lignes)  
+Tests unitaires (50+)  
+GitHub Actions (CI/CD)  
+Package PyPI configuré  
+Citations académiques  
+Code de conduite
 
 ### Nouveautés
 
-⭐ **boundary_refinement.py** - Raffinement du bord (domaine circulaire)  
-⭐ **combined_refinement.py** - Raffinement multi-critères (domaine en L)
+**boundary_refinement.py** - Raffinement du bord (domaine circulaire)  
+**combined_refinement.py** - Raffinement multi-critères (domaine en L)
 
 ### Support
 

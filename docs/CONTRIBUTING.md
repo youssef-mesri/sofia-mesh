@@ -82,4 +82,4 @@ Before opening a PR, please check:
 - [ ] Docs/README examples updated if behavior changed
 - [ ] Clear description of the change and rationale
 
-Thanks for contributing! 🙌
+Thanks for contributing! 
