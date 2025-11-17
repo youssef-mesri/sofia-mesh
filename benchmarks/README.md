@@ -2,8 +2,10 @@
 
 This directory contains performance benchmarks for SOFIA's mesh operations.
 
+
 ## Benchmark Scripts
 
+- **benchmark_batch_ops.py** - Batch operation performance
 - **benchmark_boundary_loops.py** - Boundary loop performance
 - **benchmark_comprehensive_validation.py** - Complete validation suite
 - **benchmark_editor_incremental.py** - Incremental editor operations
@@ -13,6 +15,8 @@ This directory contains performance benchmarks for SOFIA's mesh operations.
 - **benchmark_numba.py** - Numba acceleration tests
 - **benchmark_numba_comparison.py** - Python vs Numba comparison
 - **benchmark_numba_direct.py** - Direct Numba integration
+- **benchmark_optim2.py** - Phase 2 optimization benchmarks
+- **benchmark_optim3.py** - Phase 3 optimization benchmarks
 - **benchmark_real_world.py** - Real-world scenarios
 - **benchmark_refinement_hotpaths.py** - Refinement hotpath analysis
 - **benchmark_refinement_real_world.py** - Real-world refinement
@@ -22,7 +26,7 @@ This directory contains performance benchmarks for SOFIA's mesh operations.
 
 Benchmark results are stored in `results/`:
 - **batch_benchmark_results.json** - Batch operation results
-- **phase2_results.json** - Phase 2 optimization results
+- **optim2_results.json** - Phase 2 optimization results
 
 ## Running Benchmarks
 

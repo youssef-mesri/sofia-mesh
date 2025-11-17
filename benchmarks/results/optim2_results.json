@@ -1,6 +1,6 @@
 {
   "phase1": {
-    "phase": "Phase 1: Batch",
+    "phase": "Optim 1: Batch",
     "batch_size": 5000,
     "n_operations": 1121,
     "batches_processed": 1,
@@ -13,7 +13,7 @@
     "conformity_ok": true
   },
   "phase2": {
-    "phase": "Phase 2: Vectorized",
+    "phase": "Optim 2: Vectorized",
     "batch_size": 1000,
     "numba_available": true,
     "n_operations": 1121,
