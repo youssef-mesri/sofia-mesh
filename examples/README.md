@@ -1,3 +1,13 @@
+# Running All Examples (Bash Script)
+
+You can run all example scripts automatically using:
+
+```bash
+bash ../scripts/test_examples.sh
+```
+
+This will execute every example in sequence and save the output figures in the current directory.
+
 # SOFIA Examples
 
 This directory contains practical examples demonstrating SOFIA's mesh editing capabilities, from basic operations to advanced boundary refinement and complete workflows.

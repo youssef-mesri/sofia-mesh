@@ -178,10 +178,10 @@ def op_split_edge_delaunay(editor, edge, strict_mode='centroid'):
         if stats: stats.fail += 1
         return False, "mesh not conforming before split", msgs
     a, b = tuple(sorted(edge))
-    tri_indices = sorted(set(editor.v_map.get(int(a), []) + editor.v_map.get(int(b), [])))
+    tri_indices = sorted(set(editor.v_map.get(int(a), set())) | set(editor.v_map.get(int(b), set())))
     if len(tri_indices) == 0:
         return False, "no incident triangles", None
-    from mesh_modifier2 import retriangulate_patch_strict  # lazy import to avoid cyclic
+    from sofia.core.mesh_modifier2 import retriangulate_patch_strict  # lazy import to avoid cyclic
     new_pts, new_tris, success, appended_tris = retriangulate_patch_strict(
         editor.points, editor.triangles, tri_indices,
         new_point_coords=[0.5*(editor.points[a]+editor.points[b])], strict_mode=strict_mode)

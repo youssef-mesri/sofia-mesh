@@ -34,6 +34,7 @@ _tri  = _imp('sofia.core.triangulation')
 _ops  = _imp('sofia.core.operations')
 _quality = _imp('sofia.core.quality')
 _stats = _imp('sofia.core.stats')
+_io = _imp('sofia.core.io')
 
 def _lazy_module(mod_name):
     class _ModuleProxy:
@@ -83,6 +84,10 @@ EPS_AREA = getattr(_const, 'EPS_AREA', 0.0)
 EPS_MIN_ANGLE_DEG = getattr(_const, 'EPS_MIN_ANGLE_DEG', 0.0)
 EPS_IMPROVEMENT = getattr(_const, 'EPS_IMPROVEMENT', 0.0)
 
+# I/O functions
+read_msh = _io.read_msh
+write_vtk = _io.write_vtk
+
 # Namespace submodules for exploratory users
 geometry = _geom
 conformity = _conf
@@ -91,6 +96,7 @@ operations = _ops
 stats = _stats
 quality = _quality
 constants = _const
+io = _io
 
 # Editor main class (imported lazily via internal path; prefers internal over root shim)
 try:  # pragma: no cover - defensive
