@@ -59,10 +59,10 @@ def select_random_edges(editor, n_edges):
     return [all_edges[i] for i in indices]
 
 
-def benchmark_phase2_sequential(grid_size=20, n_splits=1500, batch_size=5000):
-    """Benchmark Phase 2: Sequential batch processing."""
+def benchmark_optim2_sequential(grid_size=20, n_splits=1500, batch_size=5000):
+    """Benchmark Optim 2: Sequential batch processing."""
     print("=" * 70)
-    print("PHASE 2: Sequential Batch Processing")
+    print("OPTIM 2: Sequential Batch Processing")
     print("=" * 70)
     
     # Create mesh
@@ -114,7 +114,7 @@ def benchmark_phase2_sequential(grid_size=20, n_splits=1500, batch_size=5000):
     print(f"\nFinal mesh: {len(editor.points)} vertices, {len(editor.triangles)} triangles")
     
     return {
-        'phase': 'Phase 2 (Sequential)',
+        'optim': 'Optim 2 (Sequential)',
         'operations': stats['total_operations'],
         'time': elapsed,
         'ops_per_sec': ops_per_sec,
@@ -125,10 +125,10 @@ def benchmark_phase2_sequential(grid_size=20, n_splits=1500, batch_size=5000):
     }
 
 
-def benchmark_phase3_parallel(grid_size=20, n_splits=1500, n_workers=4, batch_size=5000):
-    """Benchmark Phase 3: Parallel batch processing."""
+def benchmark_optim3_parallel(grid_size=20, n_splits=1500, n_workers=4, batch_size=5000):
+    """Benchmark Optim 3: Parallel batch processing."""
     print("\n" + "=" * 70)
-    print(f"PHASE 3: Parallel Processing ({n_workers} workers)")
+    print(f"OPTIM 3: Parallel Processing ({n_workers} workers)")
     print("=" * 70)
     
     # Create mesh
@@ -185,7 +185,7 @@ def benchmark_phase3_parallel(grid_size=20, n_splits=1500, n_workers=4, batch_si
     print(f"\nFinal mesh: {len(editor.points)} vertices, {len(editor.triangles)} triangles")
     
     return {
-        'phase': f'Phase 3 (Parallel {n_workers}w)',
+        'optim': f'Optim 3 (Parallel {n_workers}w)',
         'operations': total_ops,
         'time': elapsed,
         'ops_per_sec': ops_per_sec,
@@ -198,45 +198,45 @@ def benchmark_phase3_parallel(grid_size=20, n_splits=1500, n_workers=4, batch_si
     }
 
 
-def compare_phases(phase2_results, phase3_results):
-    """Compare Phase 2 vs Phase 3 results."""
+def compare_opts(optim2_results, optim3_results):
+    """Compare Optim 2 vs Optim 3 results."""
     print("\n" + "=" * 70)
-    print("COMPARISON: Phase 2 vs Phase 3")
+    print("COMPARISON: Optim 2 vs Optim 3")
     print("=" * 70)
     
     print(f"\nThroughput:")
-    print(f"  Phase 2 (sequential): {phase2_results['ops_per_sec']:.1f} ops/sec")
-    print(f"  Phase 3 (parallel):   {phase3_results['ops_per_sec']:.1f} ops/sec")
+    print(f"  Optim 2 (sequential): {optim2_results['ops_per_sec']:.1f} ops/sec")
+    print(f"  Optim 3 (parallel):   {optim3_results['ops_per_sec']:.1f} ops/sec")
     
-    speedup = phase3_results['ops_per_sec'] / phase2_results['ops_per_sec']
+    speedup = optim3_results['ops_per_sec'] / optim2_results['ops_per_sec']
     print(f"  Speedup: {speedup:.2f}x")
     
     if speedup > 1:
-        print(f"  Phase 3 is {speedup:.2f}x FASTER")
+        print(f"  Optim 3 is {speedup:.2f}x FASTER")
     else:
-        print(f"  Phase 3 is {1/speedup:.2f}x SLOWER (overhead too high)")
+        print(f"  Optim 3 is {1/speedup:.2f}x SLOWER (overhead too high)")
     
     print(f"\nPer-Operation Latency:")
-    print(f"  Phase 2: {phase2_results['ms_per_op']:.3f} ms")
-    print(f"  Phase 3: {phase3_results['ms_per_op']:.3f} ms")
-    print(f"  Improvement: {(1 - phase3_results['ms_per_op']/phase2_results['ms_per_op'])*100:.1f}%")
+    print(f"  Optim 2: {optim2_results['ms_per_op']:.3f} ms")
+    print(f"  Optim 3: {optim3_results['ms_per_op']:.3f} ms")
+    print(f"  Improvement: {(1 - optim3_results['ms_per_op']/optim2_results['ms_per_op'])*100:.1f}%")
     
     # Combined speedup calculation
     baseline_ops_per_sec = 343  # From Phase 1 benchmark
     phase1_speedup = 3.76
-    phase2_speedup = phase2_results['ops_per_sec'] / (baseline_ops_per_sec * phase1_speedup)
-    combined_speedup = phase3_results['ops_per_sec'] / baseline_ops_per_sec
+    phase2_speedup = optim2_results['ops_per_sec'] / (baseline_ops_per_sec * phase1_speedup)
+    combined_speedup = optim3_results['ops_per_sec'] / baseline_ops_per_sec
     
     print(f"\nCombined Progress:")
     print(f"  Baseline (normal mode): {baseline_ops_per_sec} ops/sec")
     print(f"  Phase 1 (batch):        {baseline_ops_per_sec * phase1_speedup:.0f} ops/sec (3.76x)")
-    print(f"  Phase 2 (JIT):          {phase2_results['ops_per_sec']:.0f} ops/sec ({phase1_speedup * phase2_speedup:.1f}x)")
-    print(f"  Phase 3 (parallel):     {phase3_results['ops_per_sec']:.0f} ops/sec ({combined_speedup:.1f}x)")
+    print(f"  Phase 2 (JIT):          {optim2_results['ops_per_sec']:.0f} ops/sec ({phase1_speedup * phase2_speedup:.1f}x)")
+    print(f"  Phase 3 (parallel):     {optim3_results['ops_per_sec']:.0f} ops/sec ({combined_speedup:.1f}x)")
     
     # Triangle generation rate (assuming 2 triangles per split)
-    triangles_per_sec = phase3_results['ops_per_sec'] * 2
+    triangles_per_sec = optim3_results['ops_per_sec'] * 2
     print(f"\nTriangle Generation Rate:")
-    print(f"  Phase 3: {triangles_per_sec:.0f} triangles/sec")
+    print(f"  Optim 3: {triangles_per_sec:.0f} triangles/sec")
     print(f"  Per minute: {triangles_per_sec * 60:.0f} triangles")
     
     # Target analysis
@@ -253,22 +253,22 @@ def compare_phases(phase2_results, phase3_results):
     
     # Extrapolation to 1M triangles
     print(f"\nExtrapolation to 1M triangles:")
-    time_phase2 = 1_000_000 / (phase2_results['ops_per_sec'] * 2)
-    time_phase3 = 1_000_000 / (phase3_results['ops_per_sec'] * 2)
+    time_optim2 = 1_000_000 / (optim2_results['ops_per_sec'] * 2)
+    time_optim3 = 1_000_000 / (optim3_results['ops_per_sec'] * 2)
     time_target = 60
     
-    print(f"  Phase 2: {time_phase2:.1f}s ({time_phase2/60:.1f} min)")
-    print(f"  Phase 3: {time_phase3:.1f}s ({time_phase3/60:.1f} min)")
+    print(f"  Optim 2: {time_optim2:.1f}s ({time_optim2/60:.1f} min)")
+    print(f"  Optim 3: {time_optim3:.1f}s ({time_optim3/60:.1f} min)")
     print(f"  Target:  {time_target}s (1.0 min)")
     
-    if time_phase3 <= time_target:
-        print(f"  Phase 3 achieves target ({time_target - time_phase3:.1f}s faster)!")
+    if time_optim3 <= time_target:
+        print(f"  Optim 3 achieves target ({time_target - time_optim3:.1f}s faster)!")
     else:
-        print(f"  Need {time_target / time_phase3:.2f}x more speedup")
+        print(f"  Need {time_target / time_optim3:.2f}x more speedup")
     
     print(f"\nConformity:")
-    print(f"  Phase 2: {'PASS' if phase2_results['conformity'] else '✗ FAIL'}")
-    print(f"  Phase 3: {'PASS' if phase3_results['conformity'] else '✗ FAIL'}")
+    print(f"  Optim 2: {'PASS' if optim2_results['conformity'] else '✗ FAIL'}")
+    print(f"  Optim 3: {'PASS' if optim3_results['conformity'] else '✗ FAIL'}")
 
 
 def main():
@@ -297,25 +297,25 @@ def main():
     
     # Run benchmarks
     if not args.phase3_only:
-        phase2_results = benchmark_phase2_sequential(
+        optim2_results = benchmark_optim2_sequential(
             grid_size=args.grid_size,
             n_splits=args.n_splits,
             batch_size=args.batch_size
         )
-        results['phase2'] = phase2_results
+        results['phase2'] = optim2_results
     
     if not args.phase2_only:
-        phase3_results = benchmark_phase3_parallel(
+        optim3_results = benchmark_optim3_parallel(
             grid_size=args.grid_size,
             n_splits=args.n_splits,
             n_workers=args.n_workers,
             batch_size=args.batch_size
         )
-        results['phase3'] = phase3_results
+        results['phase3'] = optim3_results
     
     # Compare if both ran
     if 'phase2' in results and 'phase3' in results:
-        compare_phases(results['phase2'], results['phase3'])
+        compare_opts(results['phase2'], results['phase3'])
     
     # Save results
     if args.output:

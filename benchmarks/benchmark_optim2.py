@@ -2,8 +2,8 @@
 
 This script compares:
 1. Normal mode (per-operation validation)
-2. Phase 1: Batch mode (deferred validation)
-3. Phase 2: Vectorized + JIT (process many ops at once)
+2. Batch mode (deferred validation)
+3. Vectorized + JIT (process many ops at once)
 """
 
 import numpy as np
@@ -64,10 +64,10 @@ def find_edges_to_split(editor, max_edges=1000):
     return all_edges[:max_edges]
 
 
-def benchmark_phase1_batch(points, triangles, n_splits=1000, batch_size=5000):
-    """Benchmark Phase 1 batch mode."""
+def benchmark_batch_mode(points, triangles, n_splits=1000, batch_size=5000):
+    """Benchmark batch mode."""
     logger.info(f"\n{'='*70}")
-    logger.info("PHASE 1: Batch Mode (deferred validation)")
+    logger.info("OPTIM 1: Batch Mode (deferred validation)")
     logger.info(f"{'='*70}")
     
     editor = PatchBasedMeshEditor(
@@ -105,7 +105,7 @@ def benchmark_phase1_batch(points, triangles, n_splits=1000, batch_size=5000):
     )
     
     results = {
-        'phase': 'Phase 1: Batch',
+        'phase': 'Optim 1: Batch',
         'batch_size': batch_size,
         'n_operations': stats['total_operations'],
         'batches_processed': stats['batches_processed'],
@@ -118,24 +118,24 @@ def benchmark_phase1_batch(points, triangles, n_splits=1000, batch_size=5000):
         'conformity_ok': ok_conf,
     }
     
-    logger.info(f"\nPhase 1 Results:")
+    logger.info(f"\nOptim 1 Results:")
     logger.info(f"  Total time: {total_time:.3f}s")
     logger.info(f"  Rate: {results['ops_per_second']:.1f} ops/sec")
     logger.info(f"  Per-op: {results['ms_per_op']:.3f} ms")
     logger.info(f"  Final: {results['final_vertices']} vertices, {results['final_triangles']} triangles")
-    logger.info(f"  Conformity: {'✓ PASS' if ok_conf else '✗ FAIL'}")
+    logger.info(f"  Conformity: {'PASS' if ok_conf else 'FAIL'}")
     
     return results
 
 
-def benchmark_phase2_vectorized(points, triangles, n_splits=1000, batch_size=1000):
-    """Benchmark Phase 2 vectorized operations."""
+def benchmark_vectorized_mode(points, triangles, n_splits=1000, batch_size=1000):
+    """Benchmark Vectorized + JIT operations."""
     logger.info(f"\n{'='*70}")
-    logger.info(f"PHASE 2: Vectorized + JIT (batch_size={batch_size})")
+    logger.info(f"OPTIM 2: Vectorized + JIT (batch_size={batch_size})")
     logger.info(f"{'='*70}")
     
     if not NUMBA_AVAILABLE:
-        logger.warning("⚠ Numba not available - will be slower than expected")
+        logger.warning(" Numba not available - will be slower than expected")
     
     editor = PatchBasedMeshEditor(
         points.copy(), 
@@ -177,7 +177,7 @@ def benchmark_phase2_vectorized(points, triangles, n_splits=1000, batch_size=100
     )
     
     results = {
-        'phase': 'Phase 2: Vectorized',
+        'phase': 'Optim 2: Vectorized',
         'batch_size': batch_size,
         'numba_available': NUMBA_AVAILABLE,
         'n_operations': stats['total_operations'],
@@ -191,40 +191,40 @@ def benchmark_phase2_vectorized(points, triangles, n_splits=1000, batch_size=100
         'conformity_ok': ok_conf,
     }
     
-    logger.info(f"\nPhase 2 Results:")
+    logger.info(f"\nOptim 2 Results:")
     logger.info(f"  Total time: {total_time:.3f}s")
     logger.info(f"  Rate: {results['ops_per_second']:.1f} ops/sec")
     logger.info(f"  Per-op: {results['ms_per_op']:.3f} ms")
     logger.info(f"  Final: {results['final_vertices']} vertices, {results['final_triangles']} triangles")
-    logger.info(f"  Conformity: {'✓ PASS' if ok_conf else '✗ FAIL'}")
-    logger.info(f"  Numba: {'✓ enabled' if NUMBA_AVAILABLE else '✗ disabled'}")
+    logger.info(f"  Conformity: {'PASS' if ok_conf else 'FAIL'}")
+    logger.info(f"  Numba: {' enabled' if NUMBA_AVAILABLE else ' disabled'}")
     
     return results
 
 
-def compare_phases(phase1_results, phase2_results):
+def compare_phases(optim1_results, optim2_results):
     """Compare Batch vs Vectorized performance."""
     logger.info(f"\n{'='*70}")
     logger.info("BATCH vs VECTORIZED COMPARISON")
     logger.info(f"{'='*70}")
     
-    speedup = phase1_results['total_time'] / phase2_results['total_time']
-    ops_speedup = phase2_results['ops_per_second'] / phase1_results['ops_per_second']
+    speedup = optim1_results['total_time'] / optim2_results['total_time']
+    ops_speedup = optim2_results['ops_per_second'] / optim1_results['ops_per_second']
     
-    logger.info(f"Phase 1 (Batch):")
-    logger.info(f"  Time: {phase1_results['total_time']:.3f}s")
-    logger.info(f"  Rate: {phase1_results['ops_per_second']:.1f} ops/sec")
-    logger.info(f"  Per-op: {phase1_results['ms_per_op']:.3f} ms")
+    logger.info(f"Optim 1 (Batch):")
+    logger.info(f"  Time: {optim1_results['total_time']:.3f}s")
+    logger.info(f"  Rate: {optim1_results['ops_per_second']:.1f} ops/sec")
+    logger.info(f"  Per-op: {optim1_results['ms_per_op']:.3f} ms")
     
-    logger.info(f"\nPhase 2 (Vectorized):")
-    logger.info(f"  Time: {phase2_results['total_time']:.3f}s")
-    logger.info(f"  Rate: {phase2_results['ops_per_second']:.1f} ops/sec")
-    logger.info(f"  Per-op: {phase2_results['ms_per_op']:.3f} ms")
+    logger.info(f"\nOptim 2 (Vectorized):")
+    logger.info(f"  Time: {optim2_results['total_time']:.3f}s")
+    logger.info(f"  Rate: {optim2_results['ops_per_second']:.1f} ops/sec")
+    logger.info(f"  Per-op: {optim2_results['ms_per_op']:.3f} ms")
     
-    logger.info(f"\nPhase 2 Improvement:")
+    logger.info(f"\nOptim 2 Improvement:")
     logger.info(f"  Speedup: {speedup:.2f}x faster")
     logger.info(f"  Throughput: {ops_speedup:.2f}x higher")
-    logger.info(f"  Time saved: {phase1_results['total_time'] - phase2_results['total_time']:.3f}s")
+    logger.info(f"  Time saved: {optim1_results['total_time'] - optim2_results['total_time']:.3f}s")
     
     # Combined improvement from baseline
     # Assume baseline (normal mode) is ~3.76x slower than Phase 1
@@ -239,53 +239,53 @@ def compare_phases(phase1_results, phase2_results):
     
     ops_for_1m = 500_000
     
-    phase1_time_1m = ops_for_1m / phase1_results['ops_per_second']
-    phase2_time_1m = ops_for_1m / phase2_results['ops_per_second']
+    optim1_time_1m = ops_for_1m / optim1_results['ops_per_second']
+    optim2_time_1m = ops_for_1m / optim2_results['ops_per_second']
     
-    logger.info(f"  Phase 1:  {phase1_time_1m:.1f}s ({phase1_time_1m/60:.1f} min)")
-    logger.info(f"  Phase 2:  {phase2_time_1m:.1f}s ({phase2_time_1m/60:.1f} min)")
+    logger.info(f"  Optim 1:  {optim1_time_1m:.1f}s ({optim1_time_1m/60:.1f} min)")
+    logger.info(f"  Optim 2:  {optim2_time_1m:.1f}s ({optim2_time_1m/60:.1f} min)")
     logger.info(f"  Target:   60s (1 min)")
     
-    if phase2_time_1m <= 60:
-        logger.info(f"  TARGET ACHIEVED with Phase 2!")
+    if optim2_time_1m <= 60:
+        logger.info(f"  TARGET ACHIEVED with Optim 2!")
     else:
-        additional_speedup = phase2_time_1m / 60
+        additional_speedup = optim2_time_1m / 60
         logger.info(f"  Need {additional_speedup:.2f}x more speedup")
-        logger.info(f"     (Phase 3: Parallel processing can provide 3-4x)")
+        logger.info(f"     (Optim 3: Parallel processing can provide 3-4x)")
     
     return {
         'speedup': speedup,
         'combined_speedup': combined_speedup,
-        'time_saved': phase1_results['total_time'] - phase2_results['total_time'],
-        'phase1_rate': phase1_results['ops_per_second'],
-        'phase2_rate': phase2_results['ops_per_second'],
-        'extrapolated_1m_phase1': phase1_time_1m,
-        'extrapolated_1m_phase2': phase2_time_1m,
-        'target_achieved': phase2_time_1m <= 60,
+        'time_saved': optim1_results['total_time'] - optim2_results['total_time'],
+        'optim1_rate': optim1_results['ops_per_second'],
+        'optim2_rate': optim2_results['ops_per_second'],
+        'extrapolated_1m_optim1': optim1_time_1m,
+        'extrapolated_1m_optim2': optim2_time_1m,
+        'target_achieved': optim2_time_1m <= 60,
     }
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Benchmark Phase 2 vectorized operations')
+    parser = argparse.ArgumentParser(description='Benchmark vectorized operations')
     parser.add_argument('--grid-size', type=int, default=20,
                        help='Grid size for initial mesh (default: 20)')
     parser.add_argument('--n-splits', type=int, default=2000,
                        help='Number of edge splits to perform (default: 2000)')
-    parser.add_argument('--phase1-batch-size', type=int, default=5000,
-                       help='Batch size for Phase 1 (default: 5000)')
-    parser.add_argument('--phase2-batch-size', type=int, default=1000,
-                       help='Batch size for Phase 2 vectorized (default: 1000)')
-    parser.add_argument('--skip-phase1', action='store_true',
-                       help='Skip Phase 1 benchmark (only run Phase 2)')
+    parser.add_argument('--optim1-batch-size', type=int, default=5000,
+                       help='Batch size for Optim 1 (default: 5000)')
+    parser.add_argument('--optim2-batch-size', type=int, default=1000,
+                       help='Batch size for Optim 2 vectorized (default: 1000)')
+    parser.add_argument('--skip-optim1', action='store_true',
+                       help='Skip Optim 1 benchmark (only run Optim 2)')
     parser.add_argument('--output', type=str, default=None,
                        help='Output JSON file for results')
     
     args = parser.parse_args()
     
     logger.info(f"\n{'='*70}")
-    logger.info("PHASE 2 VECTORIZED OPERATIONS BENCHMARK")
+    logger.info("OPTIM 2 VECTORIZED OPERATIONS BENCHMARK")
     logger.info(f"{'='*70}")
-    logger.info(f"Numba JIT: {'✓ Available' if NUMBA_AVAILABLE else '✗ Not available (slower)'}")
+    logger.info(f"Numba JIT: {' Available' if NUMBA_AVAILABLE else ' Not available (slower)'}")
     logger.info(f"Grid size: {args.grid_size}x{args.grid_size}")
     logger.info(f"Target splits: {args.n_splits}")
     
@@ -295,20 +295,20 @@ def main():
     # Run benchmarks
     results = {}
     
-    if not args.skip_phase1:
-        phase1_results = benchmark_phase1_batch(
-            points, triangles, args.n_splits, args.phase1_batch_size
+    if not args.skip_optim1:
+        phase1_results = benchmark_batch_mode(
+            points, triangles, args.n_splits, args.optim1_batch_size
         )
         results['phase1'] = phase1_results
     
-    phase2_results = benchmark_phase2_vectorized(
-        points, triangles, args.n_splits, args.phase2_batch_size
+    phase2_results = benchmark_vectorized_mode(
+        points, triangles, args.n_splits, args.optim2_batch_size
     )
-    results['phase2'] = phase2_results
+    results['optim2'] = phase2_results
     
     # Compare if we have both
-    if 'phase1' in results:
-        comparison = compare_phases(results['phase1'], results['phase2'])
+    if 'optim1' in results:
+        comparison = compare_phases(results['optim1'], results['optim2'])
         results['comparison'] = comparison
     
     # Save results if requested
