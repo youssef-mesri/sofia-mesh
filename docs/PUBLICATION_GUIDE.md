@@ -1,7 +1,7 @@
-# 📘 SOFIA - Guide Complet de Publication
+# SOFIA - Guide Complet de Publication
 
 **Date de préparation:** 24 octobre 2025  
-**Statut:** ✅ PRÊT POUR PUBLICATION
+**Statut:** PRÊT POUR PUBLICATION
 
 ---
 
@@ -94,7 +94,7 @@ mv *_result.png examples/visualizations/ 2>/dev/null || true
 
 2. **Paramètres du dépôt:**
    - **Repository name:** `sofia`
-   - **Description:** "SOFIA - Smart Optimized Flexible Isotropic/Anisotropic Adaptation: A Modern 2D Triangular Mesh Modification Library"
+   - **Description:** "SOFIA - Scalable Operators for Field-driven Iso/Ani Adaptation: A Modern 2D Triangular Mesh Modification Library"
    - **Visibility:** Public
    - **Initialize:** Ne pas initialiser (déjà fait localement)
 
@@ -235,7 +235,7 @@ import numpy as np
 
 pts, tris = build_random_delaunay(n_points=20, seed=42)
 editor = PatchBasedMeshEditor(pts, tris)
-print(f'✓ Mesh créé: {len(editor.points)} vertices, {np.sum(np.all(editor.triangles != -1, axis=1))} triangles')
+print(f' Mesh created: {len(editor.points)} vertices, {np.sum(np.all(editor.triangles != -1, axis=1))} triangles')
 "
 ```
 
@@ -249,11 +249,11 @@ print(f'✓ Mesh créé: {len(editor.points)} vertices, {np.sum(np.all(editor.tr
 Excited to announce SOFIA v0.1.0! 
 
 A modern Python library for 2D triangular mesh modification:
- Edge split/collapse/flip
- Quality metrics & conformity checks
- Greedy remeshing
- 8 complete examples
- Pure Python, easy to install
+Edge split/collapse/flip
+Quality metrics & conformity checks
+Greedy remeshing
+12 complete examples
+Pure Python, easy to install
 
 pip install sofia-mesh
 
@@ -410,7 +410,5 @@ pip install -e .
 ---
 
 <div align="center">
-
-** Félicitations pour la publication de SOFIA! 🎉**
-
+** Félicitations pour la publication de SOFIA! **
 </div>
