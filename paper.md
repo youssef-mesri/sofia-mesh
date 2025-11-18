@@ -15,16 +15,16 @@ affiliations:
  - name: MINES Paris - PSL, France
    index: 1
 date: 4 November 2025
-#bibliography: paper.bib
+bibliography: paper.bib
 ---
 
 # Summary
 
-Triangular meshes are fundamental data structures in computational science and engineering, serving as the backbone for numerical simulations in fluid dynamics, structural analysis, heat transfer, and many other fields. The quality of a mesh directly impacts the accuracy, stability, and convergence of numerical solutions. `SOFIA` (Scalable Operators for Field-driven Iso/Ani Adaptation) is a Python library that provides robust and efficient tools for 2D triangular mesh modification, refinement, and quality improvement through local topological operations, with particular emphasis on **anisotropic mesh adaptation** and **automatic boundary preservation**.
+Triangular meshes are fundamental data structures in computational science and engineering, serving as the backbone for numerical simulations in fluid dynamics, structural analysis, heat transfer, and many other fields. The quality of a mesh directly impacts the accuracy, stability, and convergence of numerical solutions \cite{Shewchuk1996,Geuzaine2009,Persson2004}. `SOFIA` (Scalable Operators for Field-driven Iso/Ani Adaptation) is a Python library that provides robust and efficient tools for 2D triangular mesh modification, refinement, and quality improvement through local topological operations, with particular emphasis on **anisotropic mesh adaptation** and **automatic boundary preservation**.
 
 # Statement of Need
 
-While several mesh generation tools exist, there is a gap in the Python ecosystem for a lightweight, well-documented library focused specifically on **mesh adaptation** and **local modification operations**. Existing solutions either require complex dependencies (C/C++ bindings), lack comprehensive documentation, or focus primarily on initial mesh generation rather than adaptive refinement during simulation workflows.
+While several mesh generation tools exist \cite{Shewchuk1996,Geuzaine2009,MeshPy,PyMesh}, there is a gap in the Python ecosystem for a lightweight, well-documented library focused specifically on **mesh adaptation** and **local modification operations**. Existing solutions either require complex dependencies (C/C++ bindings), lack comprehensive documentation, or focus primarily on initial mesh generation rather than adaptive refinement during simulation workflows.
 
 `SOFIA` addresses these needs by providing:
 
@@ -52,7 +52,7 @@ The library is designed for computational scientists, researchers, and engineers
 
 ## Anisotropic Mesh Adaptation
 
-A key feature of `SOFIA` is its support for anisotropic mesh adaptation, crucial for capturing directional features:
+A key feature of `SOFIA` is its support for anisotropic mesh adaptation, crucial for capturing directional features \cite{Alauzet2010,Loseille2011,mesri2006continuous,mesri2008dynamic}:
 
 - **Metric tensor field**: User-defined 2×2 symmetric positive-definite tensor field specifying desired mesh resolution and anisotropy
 - **Metric-based edge lengths**: Operations use metric edge length $L_M(e) = \sqrt{(p_2-p_1)^T M (p_2-p_1)}$ instead of Euclidean distance
@@ -69,14 +69,14 @@ Traditional edge collapse operations use the midpoint of the collapsed edge, whi
 3. **Requires no manual vertex protection** - the boundary preservation is built into the operation itself
 4. **Maintains geometric accuracy** with zero deviation from straight boundaries (verified numerically to machine precision)
 
-This innovation is particularly important for anisotropic remeshing, where many edges near boundaries need to be collapsed while maintaining domain geometry.
+This innovation is particularly important for anisotropic remeshing, where many edges near boundaries need to be collapsed while maintaining domain geometry \cite{mesri2006continuous,mesri2008dynamic}.
 
 ### Boundary Layer Insertion and Adaptation
 
 For high-Reynolds number flow simulations and other applications requiring fine resolution near boundaries, `SOFIA` provides sophisticated boundary layer mesh generation capabilities:
 
 - **Structured layer insertion**: Insert vertices at geometric progression distances from boundaries (e.g., $y_i = y_0 \cdot r^i$)
-- **Direction-aware metrics**: Automatically compute normal and tangential directions to boundaries for proper metric alignment
+- **Direction-aware metrics**: Automatically compute normal and tangential directions to boundaries for proper metric alignment \cite{mesri2008dynamic}
 - **Vertex protection**: Optional protection of manually inserted boundary layer vertices during subsequent adaptation
 - **Progressive refinement**: Smooth transition from very fine resolution at walls ($h_\perp \sim 0.05$) to coarse resolution in the interior ($h \sim 0.3$)
 - **High aspect ratios**: Support for extremely stretched elements with aspect ratios exceeding 10:1, as demonstrated in `anisotropic_boundary_adaptation.py`
@@ -162,7 +162,7 @@ The repository includes comprehensive examples demonstrating various use cases:
     - Visualization of metric ellipses showing anisotropy distribution
     - **Application**: CFD preprocessing, viscous boundary layer meshing
 
-Each example includes visualization and quantitative metrics. For instance, the simple anisotropic remeshing achieves perfect boundary preservation (max deviation = 0.00e+00) while reducing approximation error by 3×, demonstrating the effectiveness of automatic boundary detection in edge collapse operations.
+Each example includes visualization and quantitative metrics. For instance, the simple anisotropic remeshing achieves perfect boundary preservation (max deviation = 0.00e+00) while reducing approximation error by 3×, demonstrating the effectiveness of automatic boundary detection in edge collapse operations \cite{manzinali2018adaptive,mesri2012automatic}.
 
 # Performance and Testing
 
@@ -182,7 +182,7 @@ The library handles meshes ranging from tens to thousands of elements efficientl
 
 # Comparison with Existing Tools
 
-`SOFIA` complements and extends existing tools in the Python ecosystem:
+`SOFIA` complements and extends existing tools in the Python ecosystem \cite{Shewchuk1996,MeshPy,PyMesh,Logg2012}:
 
 - **Triangle/MeshPy**: Focused on initial mesh generation; `SOFIA` specializes in adaptation and modification, with anisotropic support
 - **PyMesh**: Requires C++ dependencies; `SOFIA` offers pure Python with optional acceleration
