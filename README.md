@@ -1,4 +1,4 @@
-# SOFIA  - ## Smart Optimized Flexible Isotropic/Anisotropic Adaptation
+# SOFIA  - Smart Optimized Flexible Iso/Aniso Adaptation
 
 <div align="center">
 
