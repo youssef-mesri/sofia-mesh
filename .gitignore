@@ -151,3 +151,6 @@ REORGANIZATION_COMPLETE.md
 # Publication output directories
 publication/
 publications/
+
+# Archive directory (historical runs, large binary outputs)
+archive/
