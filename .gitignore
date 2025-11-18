@@ -149,3 +149,6 @@ ACTION_SUMMARY.md
 FINAL_READINESS_REPORT.md
 PUBLICATION_READINESS_ANALYSIS.md
 REORGANIZATION_COMPLETE.md
+# Publication output directories
+publication/
+publications/
