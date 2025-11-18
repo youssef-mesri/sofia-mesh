@@ -94,7 +94,7 @@ mv *_result.png examples/visualizations/ 2>/dev/null || true
 
 2. **Paramètres du dépôt:**
    - **Repository name:** `sofia`
-   - **Description:** "SOFIA - Smart Optimized Flexible Isotropic Adaptation: A Modern 2D Triangular Mesh Modification Library"
+   - **Description:** "SOFIA - Smart Optimized Flexible Isotropic and Anisotropic Adaptation: A Modern 2D Triangular Mesh Modification Library"
    - **Visibility:** ✅ Public
    - **Initialize:** ❌ Ne pas initialiser (déjà fait localement)
 
