@@ -7,7 +7,7 @@ If you use SOFIA in your research or project, please cite it using one of the fo
 ```bibtex
 @software{sofia2025,
   author = {Mesri, Youssef},
-  title = {SOFIA: Smart Optimized Flexible Isotropic and Anisotropic Adaptation},
+  title = {SOFIA: Smart Optimized Flexible Isotropic/Anisotropic Adaptation},
   year = {2025},
   url = {https://github.com/youssef-mesri/sofia},
   version = {1.0.0},
@@ -17,15 +17,15 @@ If you use SOFIA in your research or project, please cite it using one of the fo
 
 ## APA Style
 
-Mesri, Y. (2025). *SOFIA: Smart Optimized Flexible Isotropic and Anisotropic Adaptation* (Version 1.0.0) [Computer software]. https://github.com/youssef-mesri/sofia
+Mesri, Y. (2025). *SOFIA: Smart Optimized Flexible Isotropic/Anisotropic Adaptation* (Version 1.0.0) [Computer software]. https://github.com/youssef-mesri/sofia
 
 ## Chicago Style
 
-Mesri, Youssef. 2025. "SOFIA: Smart Optimized Flexible Isotropic and Anisotropic Adaptation." Version 1.0.0. https://github.com/youssef-mesri/sofia.
+Mesri, Youssef. 2025. "SOFIA: Smart Optimized Flexible Isotropic/Anisotropic Adaptation." Version 1.0.0. https://github.com/youssef-mesri/sofia.
 
 ## IEEE Style
 
-Y. Mesri, "SOFIA: Smart Optimized Flexible Isotropic and Anisotropic Adaptation," 2025. [Online]. Available: https://github.com/youssef-mesri/sofia
+Y. Mesri, "SOFIA: Smart Optimized Flexible Isotropic/Anisotropic Adaptation," 2025. [Online]. Available: https://github.com/youssef-mesri/sofia
 
 ---
 
