@@ -1,7 +1,6 @@
 """Advanced patch/batch remeshing driver logic.
 
-This module ports the former heavy logic from the legacy `debug_check` file
-into a cleaner, parameterized implementation. It exposes a small surface:
+This module exposes a small surface:
 
   - PatchDriverConfig: configuration dataclass
   - pick_operation_for_patch(editor, patch, rng)

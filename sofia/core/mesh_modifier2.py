@@ -1,4 +1,7 @@
-"""Core patch-based mesh editor (demos moved to demos/mesh_editor_demos)."""
+"""
+Core patch-based mesh editor.
+
+"""
 
 import logging
 import math
@@ -59,15 +62,6 @@ logger = get_logger('sofia.editor')
 # -----------------------
 from .triangulation import retriangulate_patch_strict, retriangulate_star, optimal_star_triangulation
 
-# -----------------------
-# Patch helpers
-# -----------------------
-## moved to helpers: patch_nodes_for_triangles, boundary_polygons_from_patch, select_outer_polygon,
-## detect_empty_pockets, extract_patch_nodes
-
-## moved to geometry.opposite_edge_of_smallest_angle
-
-
 from collections import defaultdict
 # -----------------------
 # Editor class (with conformity check before changes)
@@ -119,7 +113,7 @@ class PatchBasedMeshEditor:
         self.points = points
         self.triangles = triangles
         
-        # Phase 4: Incremental computation structures (optional, for performance)
+        # Incremental computation structures (optional, for performance)
         self.use_incremental_structures = bool(use_incremental_structures) and HAS_INCREMENTAL
         self.incremental_edge_map = None
         self.incremental_conformity = None
@@ -359,7 +353,6 @@ class PatchBasedMeshEditor:
             reject_any_boundary_loops=getattr(self,'reject_any_boundary_loops',False),
             reject_crossing_edges=getattr(self,'reject_crossing_edges',False)
         )
-    # Removed legacy duplicate __init__ (unified above)
 
     # Helpers for dealing with tombstoned triangles
     def active_tri_indices(self):
@@ -393,7 +386,7 @@ class PatchBasedMeshEditor:
         self.v_map = build_vertex_to_tri_map(self.triangles)
         self._maps_maybe_dirty = False
         
-        # Phase 4: Initialize/rebuild incremental structures when maps are rebuilt
+        # Initialize/rebuild incremental structures when maps are rebuilt if enabled
         if self.use_incremental_structures:
             try:
                 self.incremental_edge_map = IncrementalEdgeMap(self.triangles)
@@ -632,7 +625,7 @@ class PatchBasedMeshEditor:
         return mesh_min_angle(self.points, self.triangles)
     
     # -------------------------------------------------------------------------
-    # Phase 4: Incremental computation helper methods
+    # Incremental computation helper methods
     # -------------------------------------------------------------------------
     
     def _sync_incremental_structures(self):
@@ -1174,7 +1167,7 @@ class PatchBasedMeshEditor:
 
 
 # -----------------------
-# Demo / small unit tests
+# Demo / small unit tests to move outside class
 # -----------------------
 def build_random_delaunay(npts=60, seed=0):
     rng = np.random.RandomState(seed)

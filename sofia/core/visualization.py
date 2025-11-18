@@ -1,6 +1,5 @@
 """Visualization helpers for the remeshing driver.
-
-Separated from `remesh_driver` to keep the core driver logic lean.
+Provides functions to plot the mesh with various overlays for diagnostics.
 """
 from __future__ import annotations
 

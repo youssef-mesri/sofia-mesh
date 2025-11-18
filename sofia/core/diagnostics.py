@@ -1,10 +1,6 @@
 """Diagnostics helpers for mesh remeshing driver.
 
-Extracted from the former `debug_check.py` to reduce the size of
-`remesh_driver` and separate visualization / diagnostics concerns.
-
-Functions here intentionally avoid importing `remesh_driver` to prevent
-cycles. They operate on raw numpy arrays or a PatchBasedMeshEditor-like
+Functions operate on raw numpy arrays or a PatchBasedMeshEditor like
 object passed in.
 """
 from __future__ import annotations

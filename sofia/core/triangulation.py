@@ -1,4 +1,7 @@
-"""Triangulation utilities extracted from mesh_modifier2 for modular reuse."""
+"""Triangulation utilities and strategies for polygon retriangulation.
+Provides star triangulation selection methods, ear-clipping, and polygon
+with-holes triangulation.
+"""
 from __future__ import annotations
 import numpy as np
 import logging

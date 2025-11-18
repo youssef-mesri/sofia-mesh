@@ -26,9 +26,9 @@ if ls *.png 1> /dev/null 2>&1; then
     mkdir -p examples/visualizations
     count=$(ls *.png 2>/dev/null | wc -l)
     mv *.png examples/visualizations/
-    echo -e "${GREEN}✓ Moved $count PNG files to examples/visualizations/${NC}"
+    echo -e "${GREEN}OK Moved $count PNG files to examples/visualizations/${NC}"
 else
-    echo -e "${GREEN}✓ No PNG files at root (already moved)${NC}"
+    echo -e "${GREEN}OK No PNG files at root (already moved)${NC}"
 fi
 echo ""
 
@@ -52,7 +52,7 @@ if ls *.json 1> /dev/null 2>&1; then
         fi
     done
 else
-    echo -e "${GREEN}✓ No JSON config files at root${NC}"
+    echo -e "${GREEN}OK No JSON config files at root${NC}"
 fi
 echo ""
 
@@ -76,9 +76,9 @@ build/
 .idea/
 
 EOF
-    echo -e "${GREEN}✓ Updated .gitignore${NC}"
+    echo -e "${GREEN}OK Updated .gitignore${NC}"
 else
-    echo -e "${GREEN}✓ .gitignore already up to date${NC}"
+    echo -e "${GREEN}OK .gitignore already up to date${NC}"
 fi
 echo ""
 
@@ -86,7 +86,7 @@ echo ""
 echo -e "${BLUE}[4/6] Checking README for placeholders...${NC}"
 if grep -q "XXXX" README.md; then
     line=$(grep -n "XXXX" README.md | cut -d: -f1)
-    echo -e "${YELLOW}⚠ Found placeholder at line $line${NC}"
+    echo -e "${YELLOW}WARNING Found placeholder at line $line${NC}"
     echo -e "${YELLOW}  Manual action needed: Edit README.md to fix ORCID${NC}"
     echo ""
     echo "Options:"
@@ -97,7 +97,7 @@ if grep -q "XXXX" README.md; then
     echo "To remove the line:"
     echo "  sed -i '/ORCID.*XXXX/d' README.md"
 else
-    echo -e "${GREEN}✓ No placeholders found in README${NC}"
+    echo -e "${GREEN}OK No placeholders found in README${NC}"
 fi
 echo ""
 
@@ -110,14 +110,14 @@ if [ -f scripts/verify_publication.py ]; then
     warnings=$(grep -c "warning" /tmp/verify_output.txt || true)
     
     if [ $warnings -eq 0 ]; then
-        echo -e "${GREEN}✓ All verification checks passed!${NC}"
+        echo -e "${GREEN}OK All verification checks passed!${NC}"
     else
-        echo -e "${YELLOW}⚠ Verification completed with $warnings warning(s)${NC}"
+        echo -e "${YELLOW}WARNING Verification completed with $warnings warning(s)${NC}"
         echo "See full output:"
         echo "  cat /tmp/verify_output.txt"
     fi
 else
-    echo -e "${RED}✗ Verification script not found${NC}"
+    echo -e "${RED}ERROR Verification script not found${NC}"
 fi
 echo ""
 
@@ -125,9 +125,9 @@ echo ""
 echo -e "${BLUE}[6/6] Git status summary...${NC}"
 uncommitted=$(git status --short | wc -l)
 if [ $uncommitted -eq 0 ]; then
-    echo -e "${GREEN}✓ No uncommitted changes${NC}"
+    echo -e "${GREEN}OK No uncommitted changes${NC}"
 else
-    echo -e "${YELLOW}⚠ $uncommitted files with changes:${NC}"
+    echo -e "${YELLOW}WARNING $uncommitted files with changes:${NC}"
     git status --short | head -10
     if [ $uncommitted -gt 10 ]; then
         echo "  ... and $((uncommitted - 10)) more"
@@ -138,7 +138,7 @@ else
     echo ""
     echo "To commit all changes:"
     echo "  git add -A"
-    echo "  git commit -m 'chore: Final cleanup for publication'"
+    echo "  git commit -m 'Final cleanup for publication'"
 fi
 echo ""
 
@@ -150,16 +150,16 @@ echo ""
 
 if [ -f /tmp/verify_output.txt ]; then
     if grep -q "All critical checks passed" /tmp/verify_output.txt; then
-        echo -e "${GREEN}✓ Critical checks: PASSED${NC}"
+        echo -e "${GREEN}OK Critical checks: PASSED${NC}"
     else
-        echo -e "${RED}✗ Critical checks: FAILED${NC}"
+        echo -e "${RED}ERROR Critical checks: FAILED${NC}"
     fi
     
     warning_count=$(grep "warning(s):" /tmp/verify_output.txt | sed 's/.*(\([0-9]*\) warning.*/\1/' || echo "0")
     if [ "$warning_count" = "0" ]; then
-        echo -e "${GREEN}✓ Warnings: 0${NC}"
+        echo -e "${GREEN}OK Warnings: 0${NC}"
     else
-        echo -e "${YELLOW}⚠ Warnings: $warning_count${NC}"
+        echo -e "${YELLOW}WARNING Warnings: $warning_count${NC}"
     fi
 fi
 

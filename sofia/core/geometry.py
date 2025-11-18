@@ -1,8 +1,5 @@
 """Geometry primitives and tolerances (package internal copy).
-
-Original module relocated from repository root. This is now the canonical
-implementation; a root-level shim will re-export and emit a deprecation
-warning until the next major release.
+Provides low-level geometric computations used throughout the library.
 """
 from __future__ import annotations
 import math

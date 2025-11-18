@@ -1,8 +1,6 @@
 """Operation statistics data structures and presentation utilities.
-
-Centralizes the OpStats dataclass and helpers that were previously
-implemented inside `mesh_modifier2.PatchBasedMeshEditor` so that the
-editor file can focus on orchestration logic only.
+Provides OpStats dataclass to accumulate per-operation statistics,
+and functions to format and print human-readable summaries.
 """
 from __future__ import annotations
 from dataclasses import dataclass

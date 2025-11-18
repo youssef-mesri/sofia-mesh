@@ -1,6 +1,6 @@
 """Incremental mesh conformity validator - all 7 checks incrementally.
 
-This module provides a comprehensive incremental validator that performs ALL checks
+This module provides an incremental validator that performs ALL checks
 from check_mesh_conformity, but only revalidates modified triangles and their neighbors.
 
 Checks performed (same as check_mesh_conformity):

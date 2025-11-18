@@ -30,15 +30,15 @@ check_file() {
 # Function to check file contains text
 check_content() {
     if grep -q "$2" "$1" 2>/dev/null; then
-        echo -e "${GREEN}✓${NC} $3"
+        echo -e "${GREEN}OK${NC} $3"
     else
-        echo -e "${YELLOW}⚠${NC} $3"
+        echo -e "${YELLOW}WARNING${NC} $3"
         ((WARNINGS++))
     fi
 }
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📄 REQUIRED FILES"
+echo " REQUIRED FILES"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 check_file "paper.md" "paper.md exists"
@@ -49,7 +49,7 @@ check_file "CITATION.cff" "CITATION.cff exists"
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📝 PAPER CONTENT"
+echo " PAPER CONTENT"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 check_content "paper.md" "^title:" "Title field present"
@@ -62,15 +62,15 @@ check_content "paper.md" "# Statement of Need" "Statement of Need section presen
 
 # Check ORCID placeholder
 if grep -q "0000-0000-0000-0000" "paper.md" 2>/dev/null; then
-    echo -e "${YELLOW}⚠${NC} ORCID is placeholder - UPDATE REQUIRED"
+    echo -e "${YELLOW}WARNING${NC} ORCID is placeholder - UPDATE REQUIRED"
     ((WARNINGS++))
 else
-    echo -e "${GREEN}✓${NC} ORCID appears to be set"
+    echo -e "${GREEN}OK${NC} ORCID appears to be set"
 fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📚 REPOSITORY STRUCTURE"
+echo " REPOSITORY STRUCTURE"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 check_file "setup.py" "setup.py exists (or pyproject.toml)"
@@ -78,25 +78,25 @@ check_file "requirements.txt" "requirements.txt exists"
 
 # Check for examples
 if [ -d "examples" ] && [ "$(ls -A examples/*.py 2>/dev/null)" ]; then
-    echo -e "${GREEN}✓${NC} Examples directory with Python files"
+    echo -e "${GREEN}OK${NC} Examples directory with Python files"
 else
-    echo -e "${YELLOW}⚠${NC} Examples directory not found or empty"
+    echo -e "${YELLOW}WARNING${NC} Examples directory not found or empty"
     ((WARNINGS++))
 fi
 
 # Check for tests
 if [ -d "tests" ] || [ -d "sofia/tests" ]; then
-    echo -e "${GREEN}✓${NC} Tests directory exists"
+    echo -e "${GREEN}OK${NC} Tests directory exists"
 else
-    echo -e "${RED}✗${NC} Tests directory not found"
+    echo -e "${RED}ERROR${NC} Tests directory not found"
     ((ERRORS++))
 fi
 
 # Check for documentation
 if [ -d "docs" ] && [ "$(ls -A docs/*.md 2>/dev/null)" ]; then
-    echo -e "${GREEN}✓${NC} Documentation directory with markdown files"
+    echo -e "${GREEN}OK${NC} Documentation directory with markdown files"
 else
-    echo -e "${YELLOW}⚠${NC} Documentation directory not found or empty"
+    echo -e "${YELLOW}WARNING${NC} Documentation directory not found or empty"
     ((WARNINGS++))
 fi
 
@@ -107,46 +107,46 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 # Check if git repository
 if git rev-parse --git-dir > /dev/null 2>&1; then
-    echo -e "${GREEN}✓${NC} Git repository"
+    echo -e "${GREEN}OK${NC} Git repository"
     
     # Check for uncommitted changes
     if [ -z "$(git status --porcelain)" ]; then
-        echo -e "${GREEN}✓${NC} No uncommitted changes"
+        echo -e "${GREEN}OK${NC} No uncommitted changes"
     else
-        echo -e "${YELLOW}⚠${NC} Uncommitted changes present"
+        echo -e "${YELLOW}WARNING${NC} Uncommitted changes present"
         ((WARNINGS++))
     fi
     
     # Check for remote
     if git remote -v | grep -q "github.com"; then
-        echo -e "${GREEN}✓${NC} GitHub remote configured"
+        echo -e "${GREEN}OK${NC} GitHub remote configured"
     else
-        echo -e "${RED}✗${NC} No GitHub remote found"
+        echo -e "${RED}ERROR${NC} No GitHub remote found"
         ((ERRORS++))
     fi
     
     # Check for tags
     if git tag | grep -q "v0.1.0"; then
-        echo -e "${GREEN}✓${NC} Version tag v0.1.0 exists"
+        echo -e "${GREEN}OK${NC} Version tag v0.1.0 exists"
     else
-        echo -e "${YELLOW}⚠${NC} Version tag v0.1.0 not found - create GitHub release"
+        echo -e "${YELLOW}WARNING${NC} Version tag v0.1.0 not found - create GitHub release"
         ((WARNINGS++))
     fi
 else
-    echo -e "${RED}✗${NC} Not a git repository"
+    echo -e "${RED}ERROR${NC} Not a git repository"
     ((ERRORS++))
 fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📊 SUMMARY"
+echo " SUMMARY"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 echo ""
 if [ $ERRORS -eq 0 ] && [ $WARNINGS -eq 0 ]; then
-    echo -e "${GREEN}✅ PERFECT! All checks passed!${NC}"
+    echo -e "${GREEN}OK PERFECT! All checks passed!${NC}"
     echo ""
-    echo "You are ready to submit to JOSS! 🚀"
+    echo "You are ready to submit to JOSS! "
     echo ""
     echo "Next steps:"
     echo "  1. Update ORCID in paper.md if needed"
@@ -154,12 +154,12 @@ if [ $ERRORS -eq 0 ] && [ $WARNINGS -eq 0 ]; then
     echo "  3. Create GitHub release v0.1.0"
     echo "  4. Submit at: https://joss.theoj.org/papers/new"
 elif [ $ERRORS -eq 0 ]; then
-    echo -e "${YELLOW}⚠ GOOD with warnings (${WARNINGS} warnings)${NC}"
+    echo -e "${YELLOW}WARNING GOOD with warnings (${WARNINGS} warnings)${NC}"
     echo ""
     echo "You can submit, but consider addressing warnings first."
     echo "See JOSS_SUBMISSION_GUIDE.md for details."
 else
-    echo -e "${RED}✗ ISSUES FOUND (${ERRORS} errors, ${WARNINGS} warnings)${NC}"
+    echo -e "${RED}ERROR ISSUES FOUND (${ERRORS} errors, ${WARNINGS} warnings)${NC}"
     echo ""
     echo "Please fix errors before submitting to JOSS."
     echo "See JOSS_SUBMISSION_GUIDE.md for help."

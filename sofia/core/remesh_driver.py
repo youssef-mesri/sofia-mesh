@@ -7,11 +7,6 @@ metric (triangle min-angle) while enforcing a series of geometric / topological
 invariants (conformity, positive area, pocket avoidance, no new holes, optional
 min-angle rejection, etc.).
 
-This file was previously named `debug_check.py` but has been renamed to
-`remesh_driver.py` to better reflect its role as an executable driver rather
-than an internal debug helper. The legacy module name still exists as a
-deprecated shim for backward compatibility.
-
 Key Responsibilities (high-level):
   * CLI argument parsing and run orchestration (`main`).
   * Patch construction and batching (delegates to `patch_batching`).
@@ -20,20 +15,8 @@ Key Responsibilities (high-level):
   * Mesh compaction utilities for diagnostics (`compact_copy`).
   * Visual / CSV diagnostics (plotting, per-iteration logging).
 
-Suggested Future Modularization (TODO):
-  1. Extract plotting routines into `visualization.py` (plot_mesh, plot_patches_map).
-  2. Move low-level geometric helpers (count_boundary_loops, find_inverted_triangles, pocket detection) into a `diagnostics.py`.
-  3. Isolate operation acceptance policy (improvement, rejection thresholds, pocket autofill) into a strategy object so alternative policies are easy to test.
-  4. Replace extensive in-function rollback logic with a context manager that snapshots editor state and auto-rolls back on failure.
-  5. Provide a slimmer public API surface (export only driver entrypoints, keep implementation details private with leading underscore).
-
-The code below is intentionally copied verbatim from the former module except
-for docstring / logger naming tweaks and an added `__all__` to define the
-export surface.
 """
 
-# NOTE: The original implementation lives below without substantive changes
-# except for renaming the logger to 'remesh_driver'.
 
 import argparse
 import logging
@@ -81,8 +64,6 @@ from .patch_driver import (
 from .logging_utils import get_logger, configure_logging
 
 logger = get_logger('sofia.driver')
-
-# (All remaining contents copied from former debug_check.py)
 
 # Legacy globals (deprecated). Kept for API skin but not used by drivers.
 MIN_TRI_AREA = EPS_AREA
@@ -973,51 +954,79 @@ def main(argv=None):  # pragma: no cover
         def _patch_body():
             pts, tris = build_random_delaunay(npts=args.npts, seed=args.seed)
             editor = PatchBasedMeshEditor(pts.copy(), tris.copy())
-        if args.config_json:
-            try:
-                with open(args.config_json, 'r') as f:
-                    patch_payload = json.load(f)
-                cfg_dict = patch_payload.get('config', patch_payload)
-                allowed = set(PatchDriverConfig().__dict__.keys())
-                filtered = {k: v for k, v in cfg_dict.items() if k in allowed}
-                # Provide defaults for fields not present in JSON using CLI values (so user can override just a subset)
-                defaults_from_cli = dict(
-                    threshold=args.threshold,
-                    max_iterations=args.max_iterations,
-                    patch_radius=args.patch_radius,
-                    top_k=args.top_k,
-                    disjoint_on=args.disjoint_on,
-                    allow_overlap=args.allow_overlap,
-                    batch_attempts=args.batch_attempts,
-                    min_triangle_area=args.min_triangle_area,
-                    min_triangle_area_fraction=args.min_triangle_area_fraction,
-                    reject_min_angle_deg=args.reject_min_angle,
-                    reject_new_loops=args.reject_new_loops or args.strict,
-                    reject_crossings=args.reject_crossings or args.strict,
-                    autofill_min_triangle_area=args.autofill_min_triangle_area,
-                    autofill_reject_min_angle_deg=args.autofill_reject_min_angle,
-                    angle_unit=args.angle_unit,
-                    log_dir=args.log_dir,
-                    out_prefix=args.out_prefix,
-                    plot_every=args.plot_every,
-                    use_greedy_remesh=args.use_greedy_remesh,
-                    greedy_vertex_passes=args.greedy_vertex_passes,
-                    greedy_edge_passes=args.greedy_edge_passes,
-                    gif_capture=bool(getattr(args, 'gif_out', None)),
-                    gif_dir='patch_frames',
-                    gif_out=os.path.basename(args.gif_out) if getattr(args, 'gif_out', None) else 'patch_run.gif',
-                    gif_fps=getattr(args, 'gif_fps', 4),
-                )
-                for k, v in defaults_from_cli.items():
-                    filtered.setdefault(k, v)
-                # --strict overrides JSON for guards
-                if args.strict:
-                    filtered['reject_new_loops'] = True
-                    filtered['reject_crossings'] = True
-                cfg = PatchDriverConfig(**filtered)
-                p_logger.info('Loaded patch config from %s', args.config_json)
-            except Exception as e:
-                p_logger.error('Failed to load patch config JSON (%s); falling back to CLI args', e)
+            if args.config_json:
+                try:
+                    with open(args.config_json, 'r') as f:
+                        patch_payload = json.load(f)
+                    cfg_dict = patch_payload.get('config', patch_payload)
+                    allowed = set(PatchDriverConfig().__dict__.keys())
+                    filtered = {k: v for k, v in cfg_dict.items() if k in allowed}
+                    # Provide defaults for fields not present in JSON using CLI values (so user can override just a subset)
+                    defaults_from_cli = dict(
+                        threshold=args.threshold,
+                        max_iterations=args.max_iterations,
+                        patch_radius=args.patch_radius,
+                        top_k=args.top_k,
+                        disjoint_on=args.disjoint_on,
+                        allow_overlap=args.allow_overlap,
+                        batch_attempts=args.batch_attempts,
+                        min_triangle_area=args.min_triangle_area,
+                        min_triangle_area_fraction=args.min_triangle_area_fraction,
+                        reject_min_angle_deg=args.reject_min_angle,
+                        reject_new_loops=args.reject_new_loops or args.strict,
+                        reject_crossings=args.reject_crossings or args.strict,
+                        autofill_min_triangle_area=args.autofill_min_triangle_area,
+                        autofill_reject_min_angle_deg=args.autofill_reject_min_angle,
+                        angle_unit=args.angle_unit,
+                        log_dir=args.log_dir,
+                        out_prefix=args.out_prefix,
+                        plot_every=args.plot_every,
+                        use_greedy_remesh=args.use_greedy_remesh,
+                        greedy_vertex_passes=args.greedy_vertex_passes,
+                        greedy_edge_passes=args.greedy_edge_passes,
+                        gif_capture=bool(getattr(args, 'gif_out', None)),
+                        gif_dir='patch_frames',
+                        gif_out=os.path.basename(args.gif_out) if getattr(args, 'gif_out', None) else 'patch_run.gif',
+                        gif_fps=getattr(args, 'gif_fps', 4),
+                    )
+                    for k, v in defaults_from_cli.items():
+                        filtered.setdefault(k, v)
+                    # --strict overrides JSON for guards
+                    if args.strict:
+                        filtered['reject_new_loops'] = True
+                        filtered['reject_crossings'] = True
+                    cfg = PatchDriverConfig(**filtered)
+                    p_logger.info('Loaded patch config from %s', args.config_json)
+                except Exception as e:
+                    p_logger.error('Failed to load patch config JSON (%s); falling back to CLI args', e)
+                    cfg = PatchDriverConfig(
+                        threshold=args.threshold,
+                        max_iterations=args.max_iterations,
+                        patch_radius=args.patch_radius,
+                        top_k=args.top_k,
+                        disjoint_on=args.disjoint_on,
+                        allow_overlap=args.allow_overlap,
+                        batch_attempts=args.batch_attempts,
+                        min_triangle_area=args.min_triangle_area,
+                        min_triangle_area_fraction=args.min_triangle_area_fraction,
+                        reject_min_angle_deg=args.reject_min_angle,
+                        reject_new_loops=args.reject_new_loops or args.strict,
+                        reject_crossings=args.reject_crossings or args.strict,
+                        autofill_min_triangle_area=args.autofill_min_triangle_area,
+                        autofill_reject_min_angle_deg=args.autofill_reject_min_angle,
+                        angle_unit=args.angle_unit,
+                        log_dir=args.log_dir,
+                        out_prefix=args.out_prefix,
+                        plot_every=args.plot_every,
+                        use_greedy_remesh=args.use_greedy_remesh,
+                        greedy_vertex_passes=args.greedy_vertex_passes,
+                        greedy_edge_passes=args.greedy_edge_passes,
+                        gif_capture=bool(getattr(args, 'gif_out', None)),
+                        gif_dir='patch_frames',
+                        gif_out=os.path.basename(args.gif_out) if getattr(args, 'gif_out', None) else 'patch_run.gif',
+                        gif_fps=getattr(args, 'gif_fps', 4),
+            )
+            else:
                 cfg = PatchDriverConfig(
                     threshold=args.threshold,
                     max_iterations=args.max_iterations,
@@ -1044,48 +1053,20 @@ def main(argv=None):  # pragma: no cover
                     gif_dir='patch_frames',
                     gif_out=os.path.basename(args.gif_out) if getattr(args, 'gif_out', None) else 'patch_run.gif',
                     gif_fps=getattr(args, 'gif_fps', 4),
-        )
-        else:
-            cfg = PatchDriverConfig(
-                threshold=args.threshold,
-                max_iterations=args.max_iterations,
-                patch_radius=args.patch_radius,
-                top_k=args.top_k,
-                disjoint_on=args.disjoint_on,
-                allow_overlap=args.allow_overlap,
-                batch_attempts=args.batch_attempts,
-                min_triangle_area=args.min_triangle_area,
-                min_triangle_area_fraction=args.min_triangle_area_fraction,
-                reject_min_angle_deg=args.reject_min_angle,
-                reject_new_loops=args.reject_new_loops or args.strict,
-                reject_crossings=args.reject_crossings or args.strict,
-                autofill_min_triangle_area=args.autofill_min_triangle_area,
-                autofill_reject_min_angle_deg=args.autofill_reject_min_angle,
-                angle_unit=args.angle_unit,
-                log_dir=args.log_dir,
-                out_prefix=args.out_prefix,
-                plot_every=args.plot_every,
-                use_greedy_remesh=args.use_greedy_remesh,
-                greedy_vertex_passes=args.greedy_vertex_passes,
-                greedy_edge_passes=args.greedy_edge_passes,
-                gif_capture=bool(getattr(args, 'gif_out', None)),
-                gif_dir='patch_frames',
-                gif_out=os.path.basename(args.gif_out) if getattr(args, 'gif_out', None) else 'patch_run.gif',
-                gif_fps=getattr(args, 'gif_fps', 4),
-            )
-        p_logger.info('Patch driver config: %s', cfg)
-        remesh_cfg = RemeshConfig.from_patch_config(cfg)
-        # Wrap plot_mesh to inject visualization flags
-        def _plot(editor_inst, outname):
-            from .visualization import plot_mesh as _pm
-            return _pm(
-                editor_inst,
-                outname=outname,
-                highlight_boundary_loops=not args.no_boundary_highlight,
-                highlight_crossings=not args.no_crossing_highlight,
-                loop_color_mode=getattr(args, 'loop_color_mode', 'per-loop'),
-                loop_vertex_labels=bool(getattr(args, 'loop_vertex_labels', False)),
-            )
+                )
+            p_logger.info('Patch driver config: %s', cfg)
+            remesh_cfg = RemeshConfig.from_patch_config(cfg)
+            # Wrap plot_mesh to inject visualization flags
+            def _plot(editor_inst, outname):
+                from .visualization import plot_mesh as _pm
+                return _pm(
+                    editor_inst,
+                    outname=outname,
+                    highlight_boundary_loops=not args.no_boundary_highlight,
+                    highlight_crossings=not args.no_crossing_highlight,
+                    loop_color_mode=getattr(args, 'loop_color_mode', 'per-loop'),
+                    loop_vertex_labels=bool(getattr(args, 'loop_vertex_labels', False)),
+                )
             result = run_patch_batch_driver(
                 editor,
                 cfg,
@@ -1097,6 +1078,7 @@ def main(argv=None):  # pragma: no cover
                 remesh_config=remesh_cfg,
                 rejected_log_path=args.rejected_log,
             )
+            editor.compact_triangle_indices()
             p_logger.info('Patch driver finished: %s', result)
 
         if getattr(args, 'profile', False):

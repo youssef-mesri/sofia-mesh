@@ -11,7 +11,7 @@ Key Strategy:
 
 Expected Performance:
 - 3-4x speedup on 4-8 core systems
-- Combined with Phase 1+2: ~25x speedup vs baseline
+- Combined with Phase batch + JIT Vec: ~25x speedup vs baseline
 - Target: 16,000+ triangles/second (1M triangles in <60 seconds)
 """
 from __future__ import annotations

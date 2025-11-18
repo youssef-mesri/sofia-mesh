@@ -1,6 +1,6 @@
 """Patch-building and greedy MIS batching utilities for mesh patches.
-
-Internal canonical location (migrated from repository root).
+Helper functions to build patches from triangle metrics or seed triangles, and
+partition them into disjoint batches for parallel processing.
 """
 from collections import defaultdict
 from typing import List, Dict, Set, Tuple, Optional

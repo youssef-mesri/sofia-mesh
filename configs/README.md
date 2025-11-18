@@ -5,17 +5,29 @@ Both files follow the same pattern used by `remesh_driver`: you can either
 wrap the configuration under a `{"type": ..., "config": { ... }}` envelope
 or provide the raw config object directly.
 
+
 ## Files
 
-- `greedy_config.json` — Example config for the greedy smoother used in the
-  partitioned demo (greedy mode). Keys mirror `GreedyConfig`.
-- `patch_config.json` — Example config for the patch/batch driver (topology
-  mode in the partition demo). Keys mirror `PatchDriverConfig`.
-- `refinement_scenario.json` — A small scenario to refine a mesh by adding
-  a node at a triangle centroid and splitting an edge; used by
-  `demos/refinement_scenario.py`.
-- `refinement_scenario_h2.json` — Drives the mesh size h to h/2 using the
-  simplified refinement loop.
+- `coarsening_scenario.json` — A small scenario to coarsen a mesh by remove a node  or collapsing an edge; used by `demos/coarsening_scenario.py`.
+- `coarsening_scenario2_h2.json`
+- `coarsening_scenario_h2.json`
+- `coarsening_scenario_h4.json`
+- `generate_scenario_h_quad.json` — A small scenario to generate a mesh from boundary ploygons by fill_pocket and edge_split; used by `demos/generate_scenario.py`.
+- `letter_o_scenario.json` — A letter O polygon shape to triangulate
+- `sample_polygon_pentagon.json` — A pentagon shape to triangulate
+- `sample_polygon_square.json` — A square shape to triangulate
+- `o_polygon.json` — A O shape to triangulate
+- `s_polygon.json` — A S shape to triangulate
+- `u_polygon.json` — A U shape to triangulate
+- `patch_cfg.json`
+- `patch_config.json` — Example config for the patch/batch driver (topology mode in the partition demo). Keys mirror `PatchDriverConfig`.
+- `refinement_scenario.json` — A small scenario to refine a mesh by adding a node at a triangle centroid and splitting an edge; used by `demos/refinement_scenario.py`.
+- `refinement_scenario_h2.json` — Drives the mesh size h to h/2 using the simplified refinement loop.
+- `refinement_scenario_h2_quad.json`
+- `refinement_scenario_h2_smooth.json`
+- `greedy_config.json` — Example config for the greedy smoother used in the partitioned demo (greedy mode). Keys mirror `GreedyConfig`.
+- `greedy_cfg.json`
+
 
 ## Using with the partition demo
 

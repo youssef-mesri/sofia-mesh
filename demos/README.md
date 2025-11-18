@@ -24,13 +24,19 @@ run_patch_diagnose(npts=60, seed=3)
 | Module | Function(s) | Purpose |
 |--------|-------------|---------|
 | mesh_editor_demos.py | test_random_mesh, test_non_convex_cavity_star, ... | Basic mesh operation showcases |
-| patch_diagnose.py | run_patch_diagnose | Label patch boundary loops & seeds |
+| adapt_before_after.py | visualize adaptation before/after |
+| adapt_scenario.py | scenario-based adaptation demo |
+| anisotropic_adaptation_naca0012.py | advanced NACA0012 anisotropic adaptation |
+| boundary_split_demo.py | boundary split operations demo |
+| coarsening_scenario.py | mesh coarsening scenario demo |
+| coarsening_scenario2.py | alternative coarsening scenario demo |
+| edge_collapse_demo.py | edge collapse operation demo |
+| generate_scenario.py | scenario mesh generation demo |
+| mesh_editor_demos.py | test_random_mesh, test_non_convex_cavity_star, ... | Basic mesh operation showcases |
+| parallel_patch.py | parallel patch demo |
+| partition_parallel.py | partitioning demo |
 | patch_batches.py | run_patch_batches | Color node-centered patches |
-| patch_centering_check.py | run_patch_centering_check | Validate seed centering invariants |
-| patch_stats_debug.py | run_patch_stats_debug | Print patch metric summaries |
-| patch_boundary_report.py | run_patch_boundary_report | CSV + explicit boundary visualization |
-| patch_visual_labels.py | run_patch_visual_labels | Patch IDs and per-patch zoom PNGs |
-| inspect_patch0_nodes.py | run_inspect_patch0_nodes | Inspect interior vs boundary nodes for patch 0 |
+| refinement_scenario.py | mesh refinement scenario demo |
 
 ## Output Artifacts
 

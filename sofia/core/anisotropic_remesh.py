@@ -1,7 +1,7 @@
 """Anisotropic local remeshing driver.
 
 Provides `anisotropic_local_remesh(editor, metric_fn, alpha_split, beta_collapse, tol, max_iter, ...)`
-which implements a practical variant of the provided pseudocode using existing
+which implements a metric-based mesh optimization procedure using a PatchBasedMeshEditor and
 editor operations (split_edge, edge_collapse, flip_edge, move_vertices_to_barycenter).
 
 The metric_fn is a callable M(x: (2,)) -> (2,2) symmetric positive-def matrix.
