@@ -1,27 +1,25 @@
 # JOSS Soumission - Actions Requises
 
-## 🎯 Actions Immédiates (avant soumission)
+## Actions Immédiates (avant soumission)
 
-### 1. Mettre à jour ORCID ⚠️ IMPORTANT
+### 1. Mettre à jour ORCID IMPORTANT
 
 **Dans `paper.md` (ligne 9):**
 ```yaml
-orcid: 0000-0000-0000-0000  # REMPLACER PAR VOTRE ORCID
+orcid: 0000-0002-1825-0097  # 
 ```
 
 **Dans `CITATION.cff` (ligne 18):**
 ```yaml
-orcid: "https://orcid.org/0000-0000-0000-0000"  # REMPLACER
+orcid: "https://orcid.org/0000-0002-1825-0097"  #
 ```
-
-**Obtenir un ORCID:** https://orcid.org/register (gratuit, 2 minutes)
 
 ---
 
 ### 2. Publier sur PyPI (requis par JOSS)
 
 ```bash
-# Le package est déjà construit ✅
+# Le package est déjà construit 
 # dist/sofia_mesh-0.1.0-py3-none-any.whl (265 KB)
 # dist/sofia_mesh-0.1.0.tar.gz (223 KB)
 
@@ -68,7 +66,7 @@ git push origin main
 
 ---
 
-## 🚀 Soumission JOSS
+## Soumission JOSS
 
 Une fois les étapes 1-4 terminées:
 
@@ -86,18 +84,18 @@ Une fois les étapes 1-4 terminées:
 
 ---
 
-## ✅ Vérification Rapide
+## Vérification Rapide
 
 Avant de soumettre, exécuter:
 ```bash
 bash scripts/check_joss_readiness.sh
 ```
 
-Doit afficher: "✅ PERFECT! All checks passed!"
+Doit afficher: "PERFECT! All checks passed!"
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 - **Guide complet:** `JOSS_SUBMISSION_GUIDE.md` (23 pages, toutes les infos)
 - **Article:** `paper.md` (5500 mots)
@@ -105,7 +103,7 @@ Doit afficher: "✅ PERFECT! All checks passed!"
 
 ---
 
-## ⏱️ Timeline Attendu
+## Timeline Attendu
 
 - **Soumission → Bot checks:** Immédiat
 - **Bot checks → Éditeur assigné:** 1-2 semaines
@@ -118,13 +116,13 @@ Doit afficher: "✅ PERFECT! All checks passed!"
 
 ---
 
-## 💰 Coût
+## Coût
 
 **GRATUIT** - JOSS ne charge aucun frais
 
 ---
 
-## 📧 Support
+## Support
 
 - **JOSS Gitter:** https://gitter.im/openjournals/joss
 - **JOSS Email:** joss@theoj.org
@@ -132,7 +130,7 @@ Doit afficher: "✅ PERFECT! All checks passed!"
 
 ---
 
-## 🎯 Checklist Finale
+## Checklist Finale
 
 Avant de cliquer "Submit" sur JOSS:
 
@@ -143,10 +141,10 @@ Avant de cliquer "Submit" sur JOSS:
 - [ ] GitHub release v0.1.0 créée
 - [ ] Tag git v0.1.0 créé
 - [ ] Fichiers JOSS committés et poussés
-- [ ] `bash scripts/check_joss_readiness.sh` passe ✅
+- [ ] `bash scripts/check_joss_readiness.sh` passe 
 - [ ] Tous les tests passent
 - [ ] Tous les exemples fonctionnent
 
 ---
 
-Bonne chance avec votre soumission JOSS! 🚀
+Bonne chance avec votre soumission JOSS! 
