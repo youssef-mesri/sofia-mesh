@@ -96,6 +96,8 @@ Thumbs.db
 *.pdf
 *.log
 
+# dev docs
+docs/dev
 # Allow documentation images to be tracked
 !docs/**/*.png
 !docs/*.png
@@ -148,4 +150,8 @@ publication/
 publications/
 
 # Archive directory (historical runs, large binary outputs)
-archive/*
+archive/
+
+# Development docs (local/dev-only documentation)
+doc/dev
+docs/dev
