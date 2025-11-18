@@ -5,24 +5,24 @@
 
 ---
 
-## 🎯 Vue d'ensemble
+## Vue d'ensemble
 
 Ce guide vous accompagne étape par étape pour publier SOFIA sur GitHub et PyPI.
 
 ### Ce qui est prêt
 
-✅ **8 exemples complets** (2144 lignes de code)  
-✅ **Documentation complète** (README_NEW.md, 230 lignes)  
-✅ **Tests automatisés** (GitHub Actions configuré)  
-✅ **Citations académiques** (CITATION.cff + CITATION.md)  
-✅ **Fichiers de packaging** (pyproject.toml, setup.py)  
-✅ **Visualisations** (8 PNG, 2.4 MB)  
-✅ **Code of Conduct** (CODE_OF_CONDUCT.md)  
-✅ **Guide de contribution** (CONTRIBUTING.md)
+**8 exemples complets** (2144 lignes de code)  
+**Documentation complète** (README_NEW.md, 230 lignes)  
+**Tests automatisés** (GitHub Actions configuré)  
+**Citations académiques** (CITATION.cff + CITATION.md)  
+**Fichiers de packaging** (pyproject.toml, setup.py)  
+**Visualisations** (8 PNG, 2.4 MB)  
+**Code of Conduct** (CODE_OF_CONDUCT.md)  
+**Guide de contribution** (CONTRIBUTING.md)
 
 ---
 
-## 📋 Checklist Avant Publication
+## Checklist Avant Publication
 
 ### 1. Vérifications Finales
 
@@ -43,7 +43,7 @@ Ce guide vous accompagne étape par étape pour publier SOFIA sur GitHub et PyPI
   cd /home/ymesri/Sofia/publication_prep
   for example in examples/*.py; do
     echo "Testing $example..."
-    python "$example" || echo "❌ Failed: $example"
+    python "$example" || echo " Failed: $example"
   done
   ```
 
@@ -86,7 +86,7 @@ mv *_result.png examples/visualizations/ 2>/dev/null || true
 
 ---
 
-## 🚀 Publication sur GitHub
+## Publication sur GitHub
 
 ### Étape 1: Créer le dépôt public
 
@@ -95,8 +95,8 @@ mv *_result.png examples/visualizations/ 2>/dev/null || true
 2. **Paramètres du dépôt:**
    - **Repository name:** `sofia`
    - **Description:** "SOFIA - Smart Optimized Flexible Isotropic/Anisotropic Adaptation: A Modern 2D Triangular Mesh Modification Library"
-   - **Visibility:** ✅ Public
-   - **Initialize:** ❌ Ne pas initialiser (déjà fait localement)
+   - **Visibility:** Public
+   - **Initialize:** Ne pas initialiser (déjà fait localement)
 
 3. **Cliquer sur "Create repository"**
 
@@ -141,7 +141,7 @@ git push public --tags
 
 ---
 
-## 📦 Publication sur PyPI
+## Publication sur PyPI
 
 ### Préparation
 
@@ -241,23 +241,23 @@ print(f'✓ Mesh créé: {len(editor.points)} vertices, {np.sum(np.all(editor.tr
 
 ---
 
-## 📣 Annonce de la Publication
+## Annonce de la Publication
 
 ### 1. Tweet/Post sur les réseaux
 
 ```
-🎉 Excited to announce SOFIA v0.1.0! 
+Excited to announce SOFIA v0.1.0! 
 
 A modern Python library for 2D triangular mesh modification:
-✅ Edge split/collapse/flip
-✅ Quality metrics & conformity checks
-✅ Greedy remeshing
-✅ 8 complete examples
-✅ Pure Python, easy to install
+ Edge split/collapse/flip
+ Quality metrics & conformity checks
+ Greedy remeshing
+ 8 complete examples
+ Pure Python, easy to install
 
 pip install sofia-mesh
 
-🔗 github.com/youssef-mesri/sofia
+ github.com/youssef-mesri/sofia
 
 #Python #MeshGeneration #ScientificComputing
 ```
@@ -278,7 +278,7 @@ pip install sofia-mesh
 
 ---
 
-## 🔧 Maintenance Post-Publication
+## Maintenance Post-Publication
 
 ### Surveiller
 
@@ -314,7 +314,7 @@ twine upload dist/*
 
 ---
 
-## 📊 Statistiques de Publication
+## Statistiques de Publication
 
 ### Code
 - **Total lignes de code Python:** ~15,000 lignes (sofia/)
@@ -336,7 +336,7 @@ twine upload dist/*
 
 ---
 
-## ✅ Checklist Finale
+## Checklist Finale
 
 ### Avant de publier sur GitHub
 - [ ] README_NEW.md → README.md
@@ -362,7 +362,7 @@ twine upload dist/*
 
 ---
 
-## 🆘 Aide et Support
+## Aide et Support
 
 ### Si quelque chose ne marche pas
 
@@ -400,7 +400,7 @@ pip install -e .
 
 ---
 
-## 📚 Ressources Supplémentaires
+## Ressources Supplémentaires
 
 - **Packaging Python:** https://packaging.python.org/
 - **PyPI Guide:** https://packaging.python.org/tutorials/packaging-projects/
@@ -411,6 +411,6 @@ pip install -e .
 
 <div align="center">
 
-**🎉 Félicitations pour la publication de SOFIA! 🎉**
+** Félicitations pour la publication de SOFIA! 🎉**
 
 </div>

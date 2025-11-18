@@ -1,4 +1,4 @@
-# SOFIA  - Smart Optimized Flexible Iso/Aniso Adaptation
+# SOFIA - Scalable Operators for Field-driven Iso/Ani Adaptation
 
 <div align="center">
 
@@ -179,7 +179,7 @@ If you use SOFIA in your research, please cite:
 ```bibtex
 @software{sofia2025,
   author = {Mesri, Youssef},
-    title = {SOFIA: Smart Optimized Flexible Isotropic/Anisotropic Adaptation},
+    title = {SOFIA: Scalable Operators for Field-driven Iso/Ani Adaptation},
   year = {2025},
   url = {https://github.com/youssef-mesri/sofia},
   version = {1.0.0}
