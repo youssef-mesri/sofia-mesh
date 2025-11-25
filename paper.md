@@ -146,11 +146,6 @@ Key differentiators:
 - **Pure Python flexibility** with optional C++ performance
 - **Educational value** with clear, readable implementations
 
-# Future Development
-
-Ongoing and planned enhancements include:
-- **3D tetrahedral mesh support**: Extend core operations to 3D meshes
-
 # Acknowledgements
 
 We acknowledge contributions from the computational geometry and mesh generation communities, and thank the reviewers for their valuable feedback.
