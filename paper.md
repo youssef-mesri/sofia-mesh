@@ -9,7 +9,7 @@ tags:
   - finite element method
 authors:
   - name: Youssef Mesri
-    orcid: https://orcid.org/0000-0002-5136-5435
+    orcid: 0000-0002-5136-5435
     affiliation: 1
 affiliations:
  - name: MINES Paris - PSL, France
