@@ -586,7 +586,6 @@ plt.show()  # Display interactively instead of just saving
 ## Further Reading
 
 - [SOFIA Documentation](../docs/)
-- [API Reference](../docs/API.md)
 - [Contributing Guide](../CONTRIBUTING.md)
 - [Demos Directory](../demos/) - Additional visualization tools
 
@@ -646,7 +645,6 @@ Feel free to modify these examples:
 
 ## Need Help?
 
-- **API Reference:** See `docs/API_REFERENCE.md`
 - **Discussions:** https://github.com/youssef-mesri/sofia/discussions
 - **Issues:** https://github.com/youssef-mesri/sofia/issues
 

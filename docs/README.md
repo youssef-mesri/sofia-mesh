@@ -16,4 +16,3 @@ The `images/` directory contains all documentation images and demos.
 
 - **Examples:** See `../examples/README.md`
 - **Benchmarks:** See `../benchmarks/README.md`
-- **Experiments:** See `../experiments/README.md`
