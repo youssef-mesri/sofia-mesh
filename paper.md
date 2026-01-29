@@ -22,19 +22,21 @@ bibliography: paper.bib
 
 Triangular meshes are fundamental data structures in computational science and engineering, serving as the backbone for numerical simulations in fluid dynamics, structural analysis, heat transfer, and many other fields. The quality of a mesh directly impacts the accuracy, stability, and convergence of numerical solutions [@mesri2008dynamic;@manzinali2018adaptive;@Persson2004]. `SOFIA` (Scalable Operators for Field-driven Iso/Ani Adaptation) is a Python library that provides robust and efficient tools for 2D triangular mesh modification, refinement, and quality improvement through local topological operations, with particular emphasis on **anisotropic mesh adaptation** and **automatic boundary preservation**.
 
+In its current version, `SOFIA` focuses on **mesh topology modification (h-adaptation)**. That is, it changes the mesh by locally splitting/collapsing/flipping edges and inserting/removing vertices to refine or coarsen the discretisation. Limited vertex relocation is available through smoothing to improve element quality, but `SOFIA` does not currently implement full **mesh movement (r-adaptation)** driven by a PDE-based moving mesh method; such r-adaptation workflows are left to external solvers or future work.
+
 # Statement of Need
 
 While several mesh generation tools exist [@Shewchuk1996;@Geuzaine2009;@MeshPy;@PyMesh], there is a gap in the Python ecosystem for a lightweight, well-documented library focused specifically on **mesh adaptation** and **local modification operations**. Existing solutions either require complex dependencies (C/C++ bindings), lack comprehensive documentation, or focus primarily on initial mesh generation rather than adaptive remeshing during simulation workflows.
 
-`SOFIA` addresses these needs by providing:
+`SOFIA` addresses these needs by providing a **pure Python** implementation of:
 
-1. **Pure Python implementation with optional C++ acceleration**: Easy to install and modify, with optional C++ backend for performance-critical operations
-2. **Local topological operations**: Fine-grained control over mesh modification through fundamental operations (split, collapse, flip, add, remove)
-3. **Anisotropic mesh adaptation**: Metric-based adaptation with automatic handling of highly stretched elements near features (boundary layers, shocks, fronts)
-4. **Automatic boundary preservation**: Edge collapse that automatically detects and preserves domain boundaries
-5. **Quality-driven adaptation**: Built-in quality metrics and optimization strategies handling both isotropic/anisotropic meshes
-6. **Boundary-aware operations**: Safe manipulation of mesh boundaries with conformity preservation
-7. **Production-ready reliability**: Extensive test suite (100+ unit tests) ensuring robustness
+1. **Local topological operations** (split, collapse, flip, insert, remove) enabling fine-grained mesh modification
+2. **Metric-based anisotropic h-adaptation** driven by a user-supplied tensor field (see below)
+3. **Automatic boundary preservation** built into edge collapse, so boundary conformity can be maintained without manual vertex “locking”
+4. **Quality management** with metrics and optimisation strategies for isotropic and anisotropic meshes
+5. **Reliability** supported by an extensive unit test suite
+
+The repository README mentions a future C++ backend; however, the current release is a pure Python package and this paper describes functionality available in the present version.
 
 The library is designed for computational scientists, researchers, and engineers who need to adaptively refine/coarsen meshes during simulations, optimize existing meshes, implement custom mesh adaptation strategies, or generate boundary layer meshes for high-Reynolds number flows.
 
@@ -48,25 +50,24 @@ The library is designed for computational scientists, researchers, and engineers
 - **Vertex operations**: Insert and remove vertices using cavity re-triangulation
 - **Pocket filling**: Fill holes in meshes after vertex removal or other operations
 - **Boundary operations**: Safely manipulate boundary edges and vertices while maintaining domain conformity
-- **Automatic boundary detection**: Edge collapse automatically detect boundary vertices and preserve domain geometry.
+- **Automatic boundary detection**: Edge collapse operations automatically detect boundary vertices and preserve domain geometry.
 
 ## Anisotropic Mesh Adaptation
 
 A key feature of `SOFIA` is its support for anisotropic mesh adaptation, crucial for capturing directional features [@mesri2006continuous;@mesri2008dynamic;@Alauzet2010;@Loseille2011;@mesri2016optimal]:
 
+![Example of an anisotropic adapted triangular mesh produced with `SOFIA`. The adaptation is driven by a user-supplied metric tensor field, resulting in strongly stretched elements aligned with the target features while preserving the domain boundary.](docs/images/anisotropic_remeshing_result.png)
+
 - **Metric tensor field**: User-defined symmetric positive-definite tensor field specifying desired mesh resolution and anisotropy
 - **Metric-based edge lengths**: Operations use metric edge length $L_M(e) = \sqrt{(p_2-p_1)^T M (p_2-p_1)}$ instead of Euclidean distance
-- **Boundary layer support**: Natural support for highly anisotropic elements near boundaries (aspect ratios up to 10:1 or higher)
+- **Boundary layer support**: Natural support for highly anisotropic elements near boundaries (high aspect ratios)
 - **Smooth transitions**: Metric fields can specify smooth transitions from anisotropic to isotropic regions
+
+Here, $p_1$ and $p_2$ are the endpoints of an edge $e$ in physical coordinates, $M$ is the symmetric positive-definite metric tensor (or a suitable edge-averaged metric), and $L_M(e)$ is the target length measure used to decide whether an edge should be split or collapsed. This is a **metric-based h-adaptation** approach (in the spirit of local mesh modification governed by a metric) rather than a hierarchical refinement strategy.
 
 ### Key Innovation: Boundary-aware Edge Collapse
 
-Traditional edge collapse operations use the midpoint of the collapsed edge, which can deform domain boundaries. `SOFIA` implements an edge collapse that:
-
-1. **Automatically detects boundary vertices** using topological information (edges with only one incident triangle)
-2. **Preserves boundaries** by collapsing to the boundary vertex instead of the midpoint when one or both endpoints lie on the boundary
-3. **Requires no manual vertex protection** the boundary preservation is built into the operation itself
-4. **Maintains geometric accuracy** with zero deviation from straight boundaries
+Traditional edge collapse operations often collapse to the midpoint of an edge, which can deform domain boundaries. In `SOFIA`, boundary preservation is built into the collapse decision: boundary vertices are detected from topology (boundary edges have only one incident triangle), and when collapsing an edge touching the boundary the operation collapses to the boundary vertex instead of the midpoint. This avoids manual boundary “protection” and helps maintain geometric fidelity during aggressive coarsening near boundaries [@mesri2012automatic].
 
 This innovation is particularly important for anisotropic remeshing, where many edges near boundaries need to be collapsed while maintaining domain geometry [@mesri2012automatic].
 
@@ -78,7 +79,7 @@ For high-Reynolds number flow simulations and other applications requiring fine 
 - **Direction-aware metrics**: Compute normal and tangential directions to boundaries for proper metric alignment 
 - **Progressive refinement**: Smooth transition from very fine resolution at walls to coarse resolution elsewhere
 
-The workflow combines explicit boundary layer construction with metric-driven adaptation for High fedility simulations.
+The workflow combines explicit boundary layer construction with metric-driven adaptation for high-fidelity simulations.
 
 ## Quality Management
 
@@ -124,27 +125,18 @@ The repository includes comprehensive examples demonstrating various use cases. 
 - **Topology verification**: Built-in checks for mesh conformity and validity
 - **Benchmarking**: Performance tests for batch operations and large-scale refinement
 
-The library handles meshes ranging from tens to thousands of elements efficiently. For anisotropic remeshing, typical performance on a 1000-element mesh:
-- 10-20 iterations to convergence
-- ~300-400 split operations (long edges in metric space)
-- ~200-300 collapse operations (short edges, with automatic boundary preservation)
-- Total execution time: <5 seconds on modern hardware
+The library handles meshes ranging from tens to thousands of elements. The repository also includes benchmarks focused on the split/collapse/flip kernels used during anisotropic remeshing.
 
-# Comparison with Existing Tools
+# State of the Field and Comparison
 
 `SOFIA` complements and extends existing tools in the Python ecosystem [@Shewchuk1996;@MeshPy;@PyMesh;@Logg2012]:
 
-- **Triangle/MeshPy**: Focused on initial mesh generation; `SOFIA` specializes in adaptation and modification, with anisotropic support
-- **PyMesh**: Requires C++ dependencies; `SOFIA` offers pure Python with optional acceleration
-- **CGAL bindings**: Complex API; `SOFIA` provides simpler, Pythonic interface
-- **FEniCS/Firedrake mesh tools**: Tightly coupled to FEM frameworks; `SOFIA` is framework-agnostic
-- **MMG/BAMG**: C/Fortran anisotropic remeshers; `SOFIA` offers Python integration and automatic boundary preservation
+- **Triangle/MeshPy** [@Shewchuk1996;@MeshPy]: Focused on initial mesh generation; `SOFIA` specialises in adaptation and modification, including anisotropy.
+- **PyMesh** [@PyMesh]: Requires substantial C++ dependencies; `SOFIA` aims to remain lightweight and hackable in pure Python.
+- **FEniCS/Firedrake mesh tools** [@Logg2012]: Useful within FEM frameworks; for metric-based adaptation workflows connected to Firedrake via PETSc/ParMmg see e.g. [@wallwork2022parmmsg]. `SOFIA` remains framework-agnostic and can be used upstream of different PDE codes.
+- **MMG/BAMG and related remeshers** [@MMG;@BAMG]: High-performance anisotropic remeshers; `SOFIA` provides a Python-native workflow and emphasises boundary-aware collapse.
 
-Key differentiators:
-- **Automatic boundary preservation** in edge collapse (unique feature)
-- **Adaptive quality checking** (different criteria for isotropic vs anisotropic)
-- **Pure Python flexibility** with optional C++ performance
-- **Educational value** with clear, readable implementations
+`SOFIA`’s main differentiators are automatic boundary preservation during edge collapse, quality-driven operations with anisotropic-aware checks, and a readable pure-Python codebase that is easy to extend for research and teaching.
 
 # Acknowledgements
 
