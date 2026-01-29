@@ -56,7 +56,7 @@ The library is designed for computational scientists, researchers, and engineers
 
 A key feature of `SOFIA` is its support for anisotropic mesh adaptation, crucial for capturing directional features [@mesri2006continuous;@mesri2008dynamic;@Alauzet2010;@Loseille2011;@mesri2016optimal]:
 
-![Example of an anisotropic adapted triangular mesh produced with `SOFIA`. The adaptation is driven by a user-supplied metric tensor field, resulting in strongly stretched elements aligned with the target features while preserving the domain boundary.](docs/images/anisotropic_remeshing_result.png)
+![Example of an anisotropic adapted triangular mesh produced with `SOFIA`. The adaptation is driven by a user-supplied metric tensor field, resulting in strongly stretched elements aligned with the target features while preserving the domain boundary.](docs/images/anisotropic_remeshing_levelset.png)
 
 - **Metric tensor field**: User-defined symmetric positive-definite tensor field specifying desired mesh resolution and anisotropy
 - **Metric-based edge lengths**: Operations use metric edge length $L_M(e) = \sqrt{(p_2-p_1)^T M (p_2-p_1)}$ instead of Euclidean distance
