@@ -81,6 +81,8 @@ For high-Reynolds number flow simulations and other applications requiring fine 
 
 The workflow combines explicit boundary layer construction with metric-driven adaptation for high-fidelity simulations.
 
+![Anisotropic mesh adaptation with boundary layer insertion. Panel (a) shows the initial mesh with 106 triangles, while panel (b) demonstrates the adapted mesh with 522 triangles after inserting 4 boundary layers and performing metric-based adaptation. The boundary layers use a geometric progression with first layer height of 0.015 and growth ratio of 1.4, creating highly anisotropic elements near the boundary while maintaining smooth transitions to isotropic regions in the interior.](docs/images/paper_figure_anisotropic_adaptation_v2.png)
+
 ## Quality Management
 
 The library provides quality assessment and improvement tools with separate handling for isotropic/anisotropic meshes:
