@@ -129,7 +129,7 @@ The library handles meshes ranging from tens to thousands of elements. The repos
 
 # State of the Field and Comparison
 
-`SOFIA` complements and extends existing tools in the Python ecosystem [@Shewchuk1996;@MeshPy;@PyMesh;@Logg2012]:
+`SOFIA` complements and extends existing tools in the Python ecosystem:
 
 - **Triangle/MeshPy** [@Shewchuk1996;@MeshPy]: Focused on initial mesh generation; `SOFIA` specialises in adaptation and modification, including anisotropy.
 - **PyMesh** [@PyMesh]: Requires substantial C++ dependencies; `SOFIA` aims to remain lightweight and hackable in pure Python.
