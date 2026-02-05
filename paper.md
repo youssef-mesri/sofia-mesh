@@ -138,7 +138,11 @@ The library handles meshes ranging from tens to thousands of elements. The repos
 - **FEniCS/Firedrake mesh tools** [@Logg2012]: Useful within FEM frameworks; for metric-based adaptation workflows connected to Firedrake via PETSc/ParMmg see e.g. [@wallwork2022parmmsg]. `SOFIA` remains framework-agnostic and can be used upstream of different PDE codes.
 - **MMG/BAMG and related remeshers** [@MMG;@BAMG]: High-performance anisotropic remeshers; `SOFIA` provides a Python-native workflow and emphasises boundary-aware collapse.
 
-`SOFIA`’s main differentiators are automatic boundary preservation during edge collapse, quality-driven operations with anisotropic-aware checks, and a readable pure-Python codebase that is easy to extend for research and teaching.
+`SOFIA`'s main differentiators are automatic boundary preservation during edge collapse, quality-driven operations with anisotropic-aware checks, and a readable pure-Python codebase that is easy to extend for research and teaching.
+
+# Availability
+
+The source code for `SOFIA` is available on GitHub at [https://github.com/youssef-mesri/sofia-mesh](https://github.com/youssef-mesri/sofia-mesh) and is archived on Zenodo [@sofia2024] with DOI: [10.5281/zenodo.18492172](https://doi.org/10.5281/zenodo.18492172).
 
 # Acknowledgements
 
