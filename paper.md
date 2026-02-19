@@ -26,7 +26,7 @@ In its current version, `SOFIA` focuses on **mesh topology modification (h-adapt
 
 # Statement of Need
 
-While several mesh generation tools exist [@Shewchuk1996;@Geuzaine2009;@MeshPy;@PyMesh], there is a gap in the Python ecosystem for a lightweight, well-documented library focused specifically on **mesh adaptation** and **local modification operations**. Existing solutions either require complex dependencies (C/C++ bindings), lack comprehensive documentation, or focus primarily on initial mesh generation rather than adaptive remeshing during simulation workflows.
+While several mesh generation tools exist [@Shewchuk1996;@Geuzaine2009;@MeshPy;@PyMesh], there is a gap in the Python ecosystem for a lightweight, well-documented library focused specifically on **mesh adaptation** and **local modification operations**. Existing solutions like Triangle (wrapped by MeshPy) offer refinement capabilities but are primarily oriented toward initial mesh generation with Delaunay triangulation. `SOFIA` instead emphasizes **metric-based anisotropic adaptation** during simulation workflows, providing fine-grained control over mesh topology modification.
 
 `SOFIA` addresses these needs by providing a **pure Python** implementation of:
 
@@ -133,8 +133,8 @@ The library handles meshes ranging from tens to thousands of elements. The repos
 
 `SOFIA` complements and extends existing tools in the Python ecosystem:
 
-- **Triangle/MeshPy** [@Shewchuk1996;@MeshPy]: Focused on initial mesh generation; `SOFIA` specialises in adaptation and modification, including anisotropy.
-- **PyMesh** [@PyMesh]: Requires substantial C++ dependencies; `SOFIA` aims to remain lightweight and hackable in pure Python.
+- **Triangle/MeshPy** [@Shewchuk1996;@MeshPy]: Provides Delaunay triangulation and refinement; `SOFIA` specialises in metric-based anisotropic adaptation and modification with automatic boundary preservation.
+- **PyMesh** [@PyMesh]: Requires substantial C++ dependencies; `SOFIA` aims to remain lightweight with a pure-Python implementation that is easily extensible for research and prototyping.
 - **FEniCS/Firedrake mesh tools** [@Logg2012]: Useful within FEM frameworks; for metric-based adaptation workflows connected to Firedrake via PETSc/ParMmg see e.g. [@wallwork2022parmmsg]. `SOFIA` remains framework-agnostic and can be used upstream of different PDE codes.
 - **MMG/BAMG and related remeshers** [@MMG;@BAMG]: High-performance anisotropic remeshers; `SOFIA` provides a Python-native workflow and emphasises boundary-aware collapse.
 
@@ -146,6 +146,6 @@ The source code for `SOFIA` is available on GitHub at [https://github.com/yousse
 
 # Acknowledgements
 
-We acknowledge contributions from the computational geometry and mesh generation communities, and thank the reviewers for their valuable feedback.
+We thank the JOSS reviewers for their detailed feedback and constructive suggestions that improved this paper. Development of `SOFIA` has benefited from discussions within the mesh adaptation research community, particularly regarding metric-based anisotropic methods.
 
 # References
