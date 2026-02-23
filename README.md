@@ -152,7 +152,7 @@ Check out the `examples/` directory for more:
 
 ## Roadmap
 
-### Current (v1.0) - Python Implementation
+### Current (v0.1.0) - Python Implementation
 - Pure Python implementation
 - All core features working
 - Suitable for meshes up to ~10K triangles
