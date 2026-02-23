@@ -12,7 +12,7 @@
 [Features](#-features) •
 [Installation](#-installation) •
 [Quick Start](#-quick-start) •
-[Documentation](#-documentation) •
+[API Documentation](docs/API.md) •
 [Examples](#-examples) •
 [Roadmap](#-roadmap)
 
@@ -133,10 +133,9 @@ print(f"Final quality: {improved_editor.mesh_min_angle():.2f}°")
 
 ## Documentation
 
-- **[API Reference](docs/API_REFERENCE.md)** - Complete API documentation
+- **[API Reference](docs/API.md)** - Complete API documentation
 - **[Examples](examples/)** - Practical usage examples
-- **[Contributing](CONTRIBUTING.md)** - How to contribute
-- **[Publication Strategy](docs/PUBLICATION_STRATEGY.md)** - Development roadmap
+- **[Contributing](docs/CONTRIBUTING.md)** - How to contribute
 
 ---
 
