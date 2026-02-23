@@ -25,7 +25,8 @@ Learn the fundamental mesh operations:
 - Collapse edges to simplify
 - Check mesh quality metrics
 - VisuaComplete Workflow (15 min)
-     **Track 4 - Anisotropic Adaptation (Advanced to Expert):**
+
+**Track 4 - Anisotropic Adaptation (Advanced to Expert):**
 11. Anisotropic Level-Set Adaptation → 
 12. Anisotropic Remeshing with Normalization [Expert] → 10. Anisotropic Boundary Adaptation
          
@@ -587,14 +588,14 @@ plt.show()  # Display interactively instead of just saving
 ## Further Reading
 
 - [SOFIA Documentation](../docs/)
-- [Contributing Guide](../CONTRIBUTING.md)
+- [Contributing Guide](../docs/CONTRIBUTING.md)
 - [Demos Directory](../demos/) - Additional visualization tools
 
 ---
 
 ## Contributing
 
-Have a new example idea? See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines on:
+Have a new example idea? See [CONTRIBUTING.md](../docs/CONTRIBUTING.md) for guidelines on:
 - Adding new examples
 - Writing clear documentation
 - Including test cases
@@ -660,4 +661,4 @@ Have a cool example? Please contribute!
 3. Test it works from scratch
 4. Submit a pull request
 
-See `CONTRIBUTING.md` for details.
+See `docs/CONTRIBUTING.md` for details.
