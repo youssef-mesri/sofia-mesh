@@ -293,8 +293,12 @@ def main():
         for e in initial_boundary_edges]
     final_lengths = [compute_edge_length(editor, e) for e in refined_boundary_edges]
     
-    ax.hist(initial_lengths, bins=15, alpha=0.6, label='Initial', color='blue', edgecolor='black')
-    ax.hist(final_lengths, bins=15, alpha=0.6, label='Refined', color='green', edgecolor='black')
+    all_lengths = list(initial_lengths) + list(final_lengths)
+    lo, hi = min(all_lengths), max(all_lengths)
+    if abs(hi - lo) < 1e-10:
+        hi = lo + max(abs(lo) * 0.1, 0.01)
+    ax.hist(initial_lengths, bins=15, range=(lo, hi), alpha=0.6, label='Initial', color='blue', edgecolor='black')
+    ax.hist(final_lengths, bins=15, range=(lo, hi), alpha=0.6, label='Refined', color='green', edgecolor='black')
     ax.axvline(max_length, color='red', linestyle='--', linewidth=2, 
                label=f'Target: {max_length}')
     ax.set_xlabel('Boundary Edge Length')
