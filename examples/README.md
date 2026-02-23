@@ -26,9 +26,8 @@ Learn the fundamental mesh operations:
 - Check mesh quality metrics
 - VisuaComplete Workflow (15 min)
      **Track 4 - Anisotropic Adaptation (Advanced to Expert):**
-9. Anisotropic Remeshing → 11. Anisotropic Level-Set Adaptation → 
-12. Anisotropic Remeshing with Normalization [Expert] → 10. Anisotropic Boundary Adaptation ↓
-Anisotropic Remeshing (15 min)
+11. Anisotropic Level-Set Adaptation → 
+12. Anisotropic Remeshing with Normalization [Expert] → 10. Anisotropic Boundary Adaptation
          
 Anisotropic Level-Set Adaptation (20 min)
          
@@ -556,8 +555,10 @@ Anisotropic Boundary Adaptation (15 min)
 5. Mesh Coarsening -> 6. Complete Workflow
 
 **Track 4 - Anisotropic Adaptation (Advanced to Expert):**
-9. Anisotropic Remeshing -> 11. Simple Anisotropic Remeshing → 
-12. Anisotropic Remeshing with Normalization [Expert] -> 10. Anisotropic Boundary Adaptation
+11. Anisotropic Level-Set Adaptation → 
+12. Anisotropic Remeshing with Normalization [Expert] → 10. Anisotropic Boundary Adaptation
+
+**Note:** Example 9 (Anisotropic Remeshing) was removed in favor of the more comprehensive `anisotropic_remeshing_normalized.py` (Example 12) which demonstrates both basic anisotropic remeshing and metric normalization.
 
 ---
 
