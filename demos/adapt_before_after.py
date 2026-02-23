@@ -77,7 +77,7 @@ def main(argv=None):
     parser.add_argument('--npts', type=int, default=60, help='Number of random points for base mesh')
     parser.add_argument('--seed', type=int, default=5, help='Random seed')
     parser.add_argument('--iters', type=int, default=3, help='Anisotropic remesh iterations')
-    parser.add_argument('--out', type=str, default='demos/adapt_pair.png', help='Output side-by-side image path')
+    parser.add_argument('--out', type=str, default='adapt_pair.png', help='Output side-by-side image path')
     parser.add_argument('--alpha', type=float, default=1.5, help='alpha_split metric threshold')
     parser.add_argument('--beta', type=float, default=0.5, help='beta_collapse metric threshold')
     parser.add_argument('--tol', type=float, default=0.05, help='convergence tolerance')
@@ -111,6 +111,10 @@ def main(argv=None):
     if args.save_individual:
         before_path = os.path.splitext(args.out)[0] + '_before.png'
         after_path = os.path.splitext(args.out)[0] + '_after.png'
+        # Ensure output directory exists
+        out_dir = os.path.dirname(args.out)
+        if out_dir and not os.path.exists(out_dir):
+            os.makedirs(out_dir, exist_ok=True)
         try:
             plot_mesh(editor0, outname=before_path)
             plot_mesh(editor, outname=after_path)
@@ -125,6 +129,10 @@ def main(argv=None):
             fig_i.savefig(os.path.splitext(args.out)[0] + '_before_after.png', dpi=160)
 
     # Combined side-by-side figure
+    # Ensure output directory exists
+    out_dir = os.path.dirname(args.out)
+    if out_dir and not os.path.exists(out_dir):
+        os.makedirs(out_dir, exist_ok=True)
     fig, axs = plt.subplots(1, 2, figsize=(10, 5))
     triplot_editor(axs[0], editor0, title='Before')
     triplot_editor(axs[1], editor, title='After')

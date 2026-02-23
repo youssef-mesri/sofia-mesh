@@ -275,8 +275,8 @@ def main():
     print("=" * 70)
     
     # 1. Load mesh
-    print("\n1. Loading mesh from naca0012_ultra_coarse.msh...")
-    points, triangles = read_msh('naca0012_ultra_coarse.msh', verbose=True)
+    print("\n1. Loading mesh from naca0012.msh...")
+    points, triangles = read_msh('naca0012.msh', verbose=True)
     print(f"   Loaded: {len(points)} vertices, {len(triangles)} triangles")
     
     editor = PatchBasedMeshEditor(points, triangles)
@@ -566,7 +566,7 @@ def main():
     print("SOFIA: Anisotropic Adaptation on NACA0012 Airfoil")
     print("="*70)
     
-    print("\n1. Loading mesh from meshes/naca0012_ultra_coarse.msh...")
+    print(f"\n1. Loading mesh from {msh_file}...")
     points, triangles = read_msh(msh_file, verbose=True)
     print(f"   Loaded: {len(points)} vertices, {len(triangles)} triangles")
     

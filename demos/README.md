@@ -4,50 +4,56 @@ This directory contains visualization and diagnostic helpers for the patch-based
 
 ## Quick Start
 
-Run any demo with the module flag:
+Run demos directly as Python scripts from the project root:
 
 ```bash
-python -m demos.patch_diagnose
-python -m demos.patch_batches
-python -m demos.patch_visual_labels
+python demos/adapt_before_after.py
+python demos/adapt_scenario.py
+python demos/boundary_split_demo.py
+python demos/coarsening_scenario.py
+python demos/edge_collapse_demo.py
+python demos/refinement_scenario.py
 ```
 
-Or invoke a function from Python:
+Or invoke functions from Python:
 
 ```python
-from demos import run_patch_diagnose
-run_patch_diagnose(npts=60, seed=3)
+from demos import test_random_mesh, run_patch_batches
+
+test_random_mesh(npts=60)
+run_patch_batches(npts=80, seed=5)
 ```
 
-## Modules
+## Available Demos
 
-| Module | Function(s) | Purpose |
-|--------|-------------|---------|
-| mesh_editor_demos.py | test_random_mesh, test_non_convex_cavity_star, ... | Basic mesh operation showcases |
-| adapt_before_after.py | visualize adaptation before/after |
-| adapt_scenario.py | scenario-based adaptation demo |
-| anisotropic_adaptation_naca0012.py | advanced NACA0012 anisotropic adaptation |
-| boundary_split_demo.py | boundary split operations demo |
-| coarsening_scenario.py | mesh coarsening scenario demo |
-| coarsening_scenario2.py | alternative coarsening scenario demo |
-| edge_collapse_demo.py | edge collapse operation demo |
-| generate_scenario.py | scenario mesh generation demo |
-| mesh_editor_demos.py | test_random_mesh, test_non_convex_cavity_star, ... | Basic mesh operation showcases |
-| parallel_patch.py | parallel patch demo |
-| partition_parallel.py | partitioning demo |
-| patch_batches.py | run_patch_batches | Color node-centered patches |
-| refinement_scenario.py | mesh refinement scenario demo |
+| Script | Purpose | Notes |
+|--------|---------|-------|
+| mesh_editor_demos.py | Basic mesh operation showcases | Contains test_random_mesh, test_non_convex_cavity_star, etc. |
+| adapt_before_after.py | Visualize adaptation before/after | Generates adapt_pair.png |
+| adapt_scenario.py | Scenario-based adaptation demo | |
+| anisotropic_adaptation_naca0012.py | NACA0012 anisotropic adaptation | Requires naca0012.msh file |
+| boundary_split_demo.py | Boundary split operations | |
+| coarsening_scenario.py | Mesh coarsening scenario | |
+| coarsening_scenario2.py | Alternative coarsening scenario | |
+| edge_collapse_demo.py | Edge collapse operation | |
+| generate_scenario.py | Scenario mesh generation | |
+| parallel_patch.py | Parallel patch processing | |
+| partition_parallel.py | Mesh partitioning | |
+| patch_batches.py | Color node-centered patches | run_patch_batches() function |
+| refinement_scenario.py | Mesh refinement scenario | |
 
 ## Output Artifacts
 
-Most demos write PNG (and sometimes CSV) files to the project root so they are easy to locate:
-* patch_diagnose.png
-* patch_batches.png
-* patch_boundaries_*.png
-* patch_boundary_report.csv
-* patch_zoom_<id>.png
+Most demos write PNG files to the current directory:
+* adapt_pair.png (from adapt_before_after.py)
+* Various scenario output images
 
 ## Notes
 
-These demos are excluded from test coverage (they are visualization-only) and should not be imported by production code paths. Their APIs are stable at the function level (`run_*`).
+These demos are visualization-focused and excluded from test coverage. Their APIs are stable at the function level (`run_*` functions exported in `__init__.py`).
+
+To use these demos as a library, import functions from the demos package:
+```python
+from demos import test_random_mesh, run_patch_batches
+```
  
