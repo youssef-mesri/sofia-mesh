@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 SOFIA Example 10: Anisotropic Boundary Adaptation
 
@@ -133,7 +134,7 @@ def create_unit_square_mesh(n_boundary=20, n_interior=30, seed=42):
     # Delaunay triangulation
     tri = Delaunay(all_pts)
     
-    editor = PatchBasedMeshEditor(all_pts, tri.simplices, use_cpp_core=False)
+    editor = PatchBasedMeshEditor(all_pts, tri.simplices)
     
     return editor, n_bnd_pts
 
@@ -461,7 +462,7 @@ def plot_mesh_with_boundary_highlight(editor, metric_fn, boundary_vertices,
     """Plot mesh highlighting boundary edges and showing metric ellipses.
     
     The blue ellipses visualize the metric tensor at selected points:
-    - Semi-axis length = target edge length h in that direction (since λ = 1/h²)
+    - Semi-axis length = target edge length h in that direction (since λ = 1/h^2)
     - Longer ellipse axis = coarser resolution allowed (parallel to boundary)
     - Shorter ellipse axis = finer resolution required (perpendicular to boundary)
     - Ellipse orientation shows principal directions of anisotropy
@@ -557,7 +558,7 @@ def plot_mesh_with_boundary_highlight(editor, metric_fn, boundary_vertices,
             vals, vecs = np.linalg.eigh(M)
             
             # Ellipse axes: inversely proportional to sqrt(eigenvalues)
-            # Since λ = 1/h², we have sqrt(λ) = 1/h, so 1/sqrt(λ) = h
+            # Since λ = 1/h^2, we have sqrt(λ) = 1/h, so 1/sqrt(λ) = h
             # This gives us the target edge length in each direction
             ellipse_scale = 0.5  # Scale factor for visualization
             a = ellipse_scale / np.sqrt(vals[0])  # semi-axis in direction of eigenvector 0
@@ -889,8 +890,8 @@ def main():
         f"  Net change: {n_pts_final-n_pts_init:+d} vertices, {n_tris_final-n_tris_init:+d} triangles",
         "",
         "Mesh Density:",
-        f"  Initial:  {mesh_density_init:.0f} triangles/unit²",
-        f"  Final:    {mesh_density_final:.0f} triangles/unit²",
+        f"  Initial:  {mesh_density_init:.0f} triangles/unit^2",
+        f"  Final:    {mesh_density_final:.0f} triangles/unit^2",
         f"  Increase: {density_increase:.1f}%",
         "",
         "Operations:",
