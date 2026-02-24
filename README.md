@@ -158,7 +158,7 @@ Check out the `examples/` directory for more:
 - Easy installation, no compilation needed
 
 ### Next (v2.0) - High-Performance C++ Backend
-- **20-50x performance improvement** 🚀
+- **20-50x performance improvement** 
 - Transparent integration (same API)
 - Suitable for meshes up to 1M+ triangles
 - Optional: falls back to Python if C++ unavailable
@@ -190,7 +190,7 @@ If you use SOFIA in your research, please cite:
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
 
 - **Found a bug?** [Open an issue](https://github.com/youssef-mesri/sofia/issues)
 - **Have an idea?** [Start a discussion](https://github.com/youssef-mesri/sofia/discussions)
