@@ -24,17 +24,7 @@ Learn the fundamental mesh operations:
 - Flip edges to improve quality
 - Collapse edges to simplify
 - Check mesh quality metrics
-- VisuaComplete Workflow (15 min)
-
-**Track 4 - Anisotropic Adaptation (Advanced to Expert):**
-11. Anisotropic Level-Set Adaptation → 
-12. Anisotropic Remeshing with Normalization [Expert] → 10. Anisotropic Boundary Adaptation
-         
-Anisotropic Level-Set Adaptation (20 min)
-         
-Anisotropic Remeshing with Normalization (30 min) [Expert]
-         
-Anisotropic Boundary Adaptation (15 min)-by-step results
+- Visualize step-by-step results
 
 ```bash
 python examples/basic_remeshing.py
@@ -221,48 +211,7 @@ python examples/combined_refinement.py
 
 ---
 
-### 9. Anisotropic Remeshing (`anisotropic_remeshing.py`)
-**Difficulty:** Advanced  
-**Time:** ~15 minutes
-
-Metric-guided anisotropic mesh adaptation:
-- Build random Delaunay mesh
-- Define spatially-varying metric tensor field M(x)
-- Compute metric edge lengths L_M(e) = sqrt((q-p)^T M (q-p))
-- Iteratively refine/coarsen based on metric lengths
-- Split edges where L_M > alpha, collapse where L_M < beta
-- Maintain mesh conformity throughout
-- Visualize metric ellipses showing directional scaling
-
-```bash
-python examples/anisotropic_remeshing.py
-```
-
-**Output:** `anisotropic_remeshing_result.png` (6-panel comprehensive visualization)
-
-**Technical Highlights:**
-- Metric tensor M(x): 2×2 symmetric positive-definite matrix at each point
-- Pure Python implementation using split/collapse operations only
-- Preserves mesh conformity (each edge shared by ≤2 triangles)
-- Blue ellipses visualize the anisotropic field (axes = eigenvectors, scaling = eigenvalues)
-
-**Results Example:**
-- Initial: 84 vertices, 162 triangles
-- After: 23 vertices, 37 triangles (-77% triangles, significant coarsening)
-- Operations: 3 splits, 64 collapses, 0 flips
-- Conformity: Maintained throughout
-- Metric deviation: 0.996 -> 0.898 (9.8% improvement)
-
-**Perfect for:** Understanding metric-guided adaptation, anisotropic features
-
-**Key Concepts:** Metric tensors, Riemannian geometry, anisotropic adaptation, conformity preservation
-
-**Note:** This example uses split/collapse only to maintain conformity in pure Python.
-For full remeshing with flips and metric-space smoothing, see `demos/adapt_scenario.py` with C++ core.
-
----
-
-### 11. Anisotropic Level-Set Adaptation (`anisotropic_levelset_adaptation.py`)
+### 9. Anisotropic Level-Set Adaptation (`anisotropic_levelset_adaptation.py`)
 **Difficulty:** Advanced  
 **Time:** ~20 minutes
 
@@ -306,7 +255,7 @@ python examples/anisotropic_levelset_adaptation.py
 
 ---
 
-### 12. Anisotropic Remeshing with Metric Normalization (`anisotropic_remeshing_normalized.py`)
+### 10. Anisotropic Remeshing with Metric Normalization (`anisotropic_remeshing_normalized.py`)
 **Difficulty:** Expert  
 **Time:** ~30 minutes
 
@@ -372,16 +321,12 @@ python examples/anisotropic_remeshing_normalized.py --no-normalize
 - Empirical calibration for remeshing algorithms
 - Mesh quadrature for efficient integration
 
-**Documentation:**
-- See `README_metric_normalization.md` for theory and detailed usage
-- See `MESH_QUADRATURE_RESULTS.md` for performance analysis
-
 **Note:** The calibration factor C depends on split/collapse thresholds. 
 Different (alpha, beta) values require recalibration for optimal accuracy.
 
 ---
 
-### 10. Anisotropic Boundary Adaptation (`anisotropic_boundary_adaptation.py`)
+### 11. Anisotropic Boundary Adaptation (`anisotropic_boundary_adaptation.py`)
 **Difficulty:** Advanced  
 **Time:** ~15 minutes
 
@@ -502,10 +447,8 @@ All examples work with the pure Python implementation on the `main` branch.
 
 **For Expert Users:**
 1. Study `anisotropic_remeshing_normalized.py` for computational budget control
-2. Understand metric normalization theory in `README_metric_normalization.md`
-3. Analyze mesh quadrature performance in `MESH_QUADRATURE_RESULTS.md`
-4. Experiment with different calibration factors for your use case
-5. Apply to `anisotropic_boundary_adaptation.py` for production boundary layers
+2. Experiment with different calibration factors for your use case
+3. Apply to `anisotropic_boundary_adaptation.py` for production boundary layers
 
 **Performance Notes:**
 - Examples use small meshes (20-80 vertices) for fast execution
@@ -533,16 +476,14 @@ Mesh Coarsening   (15 min)
 
 Complete Workflow (15 min)
          
-Anisotropic Remeshing (15 min)
-         
-Simple Anisotropic Remeshing (20 min)
+Anisotropic Level-Set Adaptation (20 min)
          
 Anisotropic Remeshing with Normalization (30 min) [Expert]
          
 Anisotropic Boundary Adaptation (15 min)
 ```
 
-**Total Learning Time:** ~2.5 hours for all examples (3 hours with expert-level normalization)
+**Total Learning Time:** ~2.5 hours for all examples
 
 **Recommended Tracks:**
 
@@ -556,10 +497,10 @@ Anisotropic Boundary Adaptation (15 min)
 5. Mesh Coarsening -> 6. Complete Workflow
 
 **Track 4 - Anisotropic Adaptation (Advanced to Expert):**
-11. Anisotropic Level-Set Adaptation → 
-12. Anisotropic Remeshing with Normalization [Expert] → 10. Anisotropic Boundary Adaptation
+9. Anisotropic Level-Set Adaptation → 
+10. Anisotropic Remeshing with Normalization [Expert] → 11. Anisotropic Boundary Adaptation
 
-**Note:** Example 9 (Anisotropic Remeshing) was removed in favor of the more comprehensive `anisotropic_remeshing_normalized.py` (Example 12) which demonstrates both basic anisotropic remeshing and metric normalization.
+**Note:** There are 11 examples total (numbered 1-11). The progression goes from beginner concepts through advanced anisotropic techniques.
 
 ---
 
@@ -604,61 +545,3 @@ Have a new example idea? See [CONTRIBUTING.md](../docs/CONTRIBUTING.md) for guid
 ---
 
 **Questions?** Open an issue on GitHub or check the documentation in `docs/`.
-- Maintain area preservation
-
-```bash
-python boundary_operations.py
-```
-
-**Output:** `boundary_operations_result.png`
-
----
-
-## Running All Examples
-
-```bash
-# Run all examples
-for script in *.py; do
-    echo "Running $script..."
-    python "$script"
-done
-```
-
----
-
-## Requirements
-
-All examples require:
-- SOFIA installed (`pip install sofia-mesh`)
-- Matplotlib for visualization
-- NumPy and SciPy (automatically installed with SOFIA)
-
----
-
-## Customization
-
-Feel free to modify these examples:
-- Change mesh sizes
-- Adjust quality targets
-- Experiment with parameters
-- Add your own visualizations
-
----
-
-## Need Help?
-
-- **Discussions:** https://github.com/youssef-mesri/sofia/discussions
-- **Issues:** https://github.com/youssef-mesri/sofia/issues
-
----
-
-## Contributing Examples
-
-Have a cool example? Please contribute!
-
-1. Create your example script
-2. Add clear comments and docstrings
-3. Test it works from scratch
-4. Submit a pull request
-
-See `docs/CONTRIBUTING.md` for details.
