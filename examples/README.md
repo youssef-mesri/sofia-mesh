@@ -453,7 +453,6 @@ All examples work with the pure Python implementation on the `main` branch.
 **Performance Notes:**
 - Examples use small meshes (20-80 vertices) for fast execution
 - Scale up point counts for production use
-- Consider C++ backend for large-scale applications (>10K triangles)
 
 ---
 
@@ -497,8 +496,8 @@ Anisotropic Boundary Adaptation (15 min)
 5. Mesh Coarsening -> 6. Complete Workflow
 
 **Track 4 - Anisotropic Adaptation (Advanced to Expert):**
-9. Anisotropic Level-Set Adaptation → 
-10. Anisotropic Remeshing with Normalization [Expert] → 11. Anisotropic Boundary Adaptation
+9. Anisotropic Level-Set Adaptation -> 
+10. Anisotropic Remeshing with Normalization [Expert] -> 11. Anisotropic Boundary Adaptation
 
 **Note:** There are 11 examples total (numbered 1-11). The progression goes from beginner concepts through advanced anisotropic techniques.
 
