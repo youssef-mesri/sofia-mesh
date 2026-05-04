@@ -4,7 +4,7 @@
 
  [project]
  name = "sofia-mesh"
- version = "0.1.0"
+ version = "1.0.0"
  description = "2D triangle mesh remeshing toolkit (greedy + patch drivers, pocket fill, visualization)."
  readme = "README.md"
  license = { file = "LICENSE" }
@@ -14,6 +14,7 @@
    "numpy",
    "matplotlib",
    "scipy",
+   "numba",
    "imageio",
  ]
  classifiers = [
@@ -31,8 +32,8 @@
  ]
 
  [project.urls]
- Homepage = "https://github.com/youssef-mesri/sofia"
- Issues = "https://github.com/youssef-mesri/sofia/issues"
+ Homepage = "https://github.com/youssef-mesri/sofia-mesh"
+ Issues = "https://github.com/youssef-mesri/sofia-mesh/issues"
 
  [project.scripts]
  sofia-remesh = "sofia.core.remesh_driver:main"

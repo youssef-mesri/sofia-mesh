@@ -126,10 +126,10 @@ if git rev-parse --git-dir > /dev/null 2>&1; then
     fi
     
     # Check for tags
-    if git tag | grep -q "v0.1.0"; then
-        echo -e "${GREEN}OK${NC} Version tag v0.1.0 exists"
+    if git tag | grep -q "v1.0.0"; then
+        echo -e "${GREEN}OK${NC} Version tag v1.0.0 exists"
     else
-        echo -e "${YELLOW}WARNING${NC} Version tag v0.1.0 not found - create GitHub release"
+        echo -e "${YELLOW}WARNING${NC} Version tag v1.0.0 not found - create GitHub release"
         ((WARNINGS++))
     fi
 else
@@ -151,7 +151,7 @@ if [ $ERRORS -eq 0 ] && [ $WARNINGS -eq 0 ]; then
     echo "Next steps:"
     echo "  1. Update ORCID in paper.md if needed"
     echo "  2. Publish to PyPI: twine upload dist/*"
-    echo "  3. Create GitHub release v0.1.0"
+    echo "  3. Create GitHub release v1.0.0"
     echo "  4. Submit at: https://joss.theoj.org/papers/new"
 elif [ $ERRORS -eq 0 ]; then
     echo -e "${YELLOW}WARNING GOOD with warnings (${WARNINGS} warnings)${NC}"
