@@ -142,7 +142,7 @@ The library handles meshes ranging from tens to thousands of elements. The repos
 
 # Availability
 
-The source code for `SOFIA` is available on GitHub at [https://github.com/youssef-mesri/sofia-mesh](https://github.com/youssef-mesri/sofia-mesh) and is archived on Zenodo [@sofia2024] with DOI: [10.5281/zenodo.18492172](https://doi.org/10.5281/zenodo.18492172).
+The source code for `SOFIA` is available on GitHub at [https://github.com/youssef-mesri/sofia-mesh](https://github.com/youssef-mesri/sofia-mesh) and is archived on Zenodo [@sofia2024] with DOI: [10.5281/zenodo.20053887](https://doi.org/10.5281/zenodo.20053887).
 
 # Acknowledgements
 

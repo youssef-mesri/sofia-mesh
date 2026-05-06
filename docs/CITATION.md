@@ -39,7 +39,7 @@ If you have published a paper using SOFIA, we'd love to know! Please:
 
 ## Zenodo DOI
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18492172.svg)](https://doi.org/10.5281/zenodo.18492172)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20053887.svg)](https://doi.org/10.5281/zenodo.20053887)
 
 SOFIA is archived on Zenodo. Use the DOI above for permanent citation.
 
