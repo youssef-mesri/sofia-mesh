@@ -81,7 +81,7 @@ For high-Reynolds number flow simulations and other applications requiring fine 
 
 The workflow combines explicit boundary layer construction with metric-driven adaptation for high-fidelity simulations.
 
-![Anisotropic mesh adaptation with boundary layer insertion. Panel (a) shows the initial mesh with 106 triangles, while panel (b) demonstrates the adapted mesh with 522 triangles after inserting 4 boundary layers and performing metric-based adaptation. The boundary layers use a geometric progression with first layer height of 0.015 and growth ratio of 1.4, creating highly anisotropic elements near the boundary while maintaining smooth transitions to isotropic regions in the interior.](docs/images/paper_figure_anisotropic_adaptation_v2.png)
+![Anisotropic mesh adaptation with boundary layer insertion. Panel a shows the initial mesh with 106 triangles, while panel b demonstrates the adapted mesh with 522 triangles after inserting 4 boundary layers and performing metric-based adaptation. The boundary layers use a geometric progression with first layer height of 0.015 and growth ratio of 1.4, creating highly anisotropic elements near the boundary while maintaining smooth transitions to isotropic regions in the interior.](docs/images/paper_figure_anisotropic_adaptation_v2.png)
 
 ## Quality Management
 
@@ -135,7 +135,7 @@ The library handles meshes ranging from tens to thousands of elements. The repos
 
 - **Triangle/MeshPy** [@Shewchuk1996;@MeshPy]: Provides Delaunay triangulation and refinement; `SOFIA` specialises in metric-based anisotropic adaptation and modification with automatic boundary preservation.
 - **PyMesh** [@PyMesh]: Requires substantial C++ dependencies; `SOFIA` aims to remain lightweight with a pure-Python implementation that is easily extensible for research and prototyping.
-- **FEniCS/Firedrake mesh tools** [@Logg2012]: Useful within FEM frameworks; for metric-based adaptation workflows connected to Firedrake via PETSc/ParMmg see e.g. [@wallwork2022parmmsg]. `SOFIA` remains framework-agnostic and can be used upstream of different PDE codes.
+- **FEniCS/Firedrake mesh tools** [@Logg2012]: Useful within FEM frameworks; for metric-based adaptation workflows connected to Firedrake via PETSc/ParMmg see, e.g., [@wallwork2022parmmsg]. `SOFIA` remains framework-agnostic and can be used upstream of different PDE codes.
 - **MMG/BAMG and related remeshers** [@MMG;@BAMG]: High-performance anisotropic remeshers; `SOFIA` provides a Python-native workflow and emphasises boundary-aware collapse.
 
 `SOFIA`'s main differentiators are automatic boundary preservation during edge collapse, quality-driven operations with anisotropic-aware checks, and a readable pure-Python codebase that is easy to extend for research and teaching.
