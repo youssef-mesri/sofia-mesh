@@ -9,7 +9,7 @@ If you use SOFIA in your research or project, please cite it using one of the fo
   author = {Mesri, Youssef},
   title = {SOFIA: Scalable Operators for Field-driven Iso/Ani Adaptation},
   year = {2025},
-  url = {https://github.com/youssef-mesri/sofia},
+  url = {https://github.com/youssef-mesri/sofia-mesh},
   version = {1.0.0},
   note = {A 2D triangular mesh modification and remeshing library}
 }
@@ -17,15 +17,15 @@ If you use SOFIA in your research or project, please cite it using one of the fo
 
 ## APA Style
 
-Mesri, Y. (2025). *SOFIA: Scalable Operators for Field-driven Iso/Ani Adaptation* (Version 1.0.0) [Computer software]. https://github.com/youssef-mesri/sofia
+Mesri, Y. (2025). *SOFIA: Scalable Operators for Field-driven Iso/Ani Adaptation* (Version 1.0.0) [Computer software]. https://github.com/youssef-mesri/sofia-mesh
 
 ## Chicago Style
 
-Mesri, Youssef. 2025. "SOFIA: Scalable Operators for Field-driven Iso/Ani Adaptation." Version 1.0.0. https://github.com/youssef-mesri/sofia.
+Mesri, Youssef. 2025. "SOFIA: Scalable Operators for Field-driven Iso/Ani Adaptation." Version 1.0.0. https://github.com/youssef-mesri/sofia-mesh.
 
 ## IEEE Style
 
-Y. Mesri, "SOFIA: Scalable Operators for Field-driven Iso/Ani Adaptation," 2025. [Online]. Available: https://github.com/youssef-mesri/sofia
+Y. Mesri, "SOFIA: Scalable Operators for Field-driven Iso/Ani Adaptation," 2025. [Online]. Available: https://github.com/youssef-mesri/sofia-mesh
 
 ---
 
@@ -39,7 +39,9 @@ If you have published a paper using SOFIA, we'd love to know! Please:
 
 ## Zenodo DOI
 
-A Zenodo DOI for permanent archival will be created upon first stable release.
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20053887.svg)](https://doi.org/10.5281/zenodo.20053887)
+
+SOFIA is archived on Zenodo. Use the DOI above for permanent citation.
 
 ---
 

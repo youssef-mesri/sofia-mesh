@@ -6,8 +6,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)]()
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18492172.svg)](https://doi.org/10.5281/zenodo.18492172)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](https://github.com/youssef-mesri/sofia-mesh/actions)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20053887.svg)](https://doi.org/10.5281/zenodo.20053887)
 
 [Features](#-features) •
 [Installation](#-installation) •
@@ -68,8 +68,8 @@ pip install sofia-mesh
 ### From Source
 
 ```bash
-git clone https://github.com/youssef-mesri/sofia.git
-cd sofia
+git clone https://github.com/youssef-mesri/sofia-mesh.git
+cd sofia-mesh
 pip install -e .
 ```
 
@@ -151,7 +151,7 @@ Check out the `examples/` directory for more:
 
 ## Roadmap
 
-### Current (v0.1.0) - Python Implementation
+### Current (v1.0.0) - Python Implementation
 - Pure Python implementation
 - All core features working
 - Suitable for meshes up to ~10K triangles
@@ -181,7 +181,7 @@ If you use SOFIA in your research, please cite:
   author = {Mesri, Youssef},
     title = {SOFIA: Scalable Operators for Field-driven Iso/Ani Adaptation},
   year = {2025},
-  url = {https://github.com/youssef-mesri/sofia},
+  url = {https://github.com/youssef-mesri/sofia-mesh},
   version = {1.0.0}
 }
 ```
@@ -192,9 +192,9 @@ If you use SOFIA in your research, please cite:
 
 Contributions are welcome! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
 
-- **Found a bug?** [Open an issue](https://github.com/youssef-mesri/sofia/issues)
-- **Have an idea?** [Start a discussion](https://github.com/youssef-mesri/sofia/discussions)
-- **Want to contribute?** [Submit a pull request](https://github.com/youssef-mesri/sofia/pulls)
+- **Found a bug?** [Open an issue](https://github.com/youssef-mesri/sofia-mesh/issues)
+- **Have an idea?** [Start a discussion](https://github.com/youssef-mesri/sofia-mesh/discussions)
+- **Want to contribute?** [Submit a pull request](https://github.com/youssef-mesri/sofia-mesh/pulls)
 
 ---
 
@@ -216,8 +216,8 @@ SOFIA is released under the [MIT License](LICENSE).
 
 **Author:** Youssef Mesri
 
-- **Issues:** [GitHub Issues](https://github.com/youssef-mesri/sofia/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/youssef-mesri/sofia/discussions)
+- **Issues:** [GitHub Issues](https://github.com/youssef-mesri/sofia-mesh/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/youssef-mesri/sofia-mesh/discussions)
 - **Email:** [youssef.mesri@minesparis.psl.eu](mailto:youssef.mesri@minesparis.psl.eu)
 - **ORCID:** [0000-0002-5136-5435](https://orcid.org/0000-0002-5136-5435) 
 

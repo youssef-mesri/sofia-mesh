@@ -6,9 +6,9 @@ message: "If you use this software, please cite it as below."
 type: software
 title: "SOFIA: Scalable Operators for Field-driven Iso/Ani Adaptation"
 version: 1.0.0
-date-released: 2025-10-24
-url: "https://github.com/youssef-mesri/sofia"
-repository-code: "https://github.com/youssef-mesri/sofia"
+date-released: 2026-05-04
+url: "https://github.com/youssef-mesri/sofia-mesh"
+repository-code: "https://github.com/youssef-mesri/sofia-mesh"
 license: MIT
 authors:
   - family-names: "Mesri"
